@@ -1,0 +1,73 @@
+{
+  "name": "hds-forms",
+  "version": "0.1.0",
+  "description": "HDS Form Components — React field renderers for HDS item definitions",
+  "type": "module",
+  "main": "dist/hds-forms.js",
+  "module": "dist/hds-forms.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/hds-forms.mjs",
+      "require": "./dist/hds-forms.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "setup": "sh ./scripts/setup.sh",
+    "dev": "vite build --watch",
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/healthdatasafe/hds-forms-js.git"
+  },
+  "keywords": [
+    "HDS",
+    "Health",
+    "Data",
+    "Safe",
+    "forms"
+  ],
+  "author": "HDS",
+  "license": "BSD-3-Clause",
+  "dependencies": {
+    "hds-lib": "git+https://github.com/healthdatasafe/hds-lib-js.git"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19",
+    "hds-style": "git+https://github.com/healthdatasafe/style-package.git"
+  },
+  "peerDependenciesMeta": {
+    "hds-style": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react-swc": "^4.0.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.0",
+    "globals": "^15.14.0",
+    "neostandard": "^0.12.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.20.0",
+    "vite": "^6.0.0"
+  }
+}
