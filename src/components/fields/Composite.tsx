@@ -14,9 +14,9 @@ export function Composite ({ label, description, value, onChange, composite, dis
   }
 
   return (
-    <fieldset className='rounded-lg border border-gray-200 p-4'>
-      <legend className='px-2 text-sm font-medium text-gray-900'>{label}</legend>
-      {description && <p className='mb-3 text-sm text-gray-500'>{description}</p>}
+    <fieldset className='rounded-lg border border-gray-200 p-4 dark:border-gray-600'>
+      <legend className='px-2 text-sm font-medium text-gray-900 dark:text-white'>{label}</legend>
+      {description && <p className='mb-3 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
       <div className='space-y-4'>
         {Object.entries(composite).map(([key, itemData]) => (
           <HDSFormField

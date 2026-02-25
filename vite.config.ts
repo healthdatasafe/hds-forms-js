@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: {
+    outDir: 'js',
     lib: {
       entry: 'src/index.ts',
       name: 'HDSForms',

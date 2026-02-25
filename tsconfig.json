@@ -8,7 +8,7 @@
     "strict": true,
     "declaration": true,
     "emitDeclarationOnly": true,
-    "outDir": "dist",
+    "outDir": "js",
     "rootDir": "src",
     "skipLibCheck": true,
     "resolveJsonModule": true,
@@ -18,5 +18,5 @@
     "noImplicitAny": false
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "js", "dist"]
 }

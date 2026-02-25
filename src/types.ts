@@ -6,3 +6,8 @@ export interface FieldProps {
   required?: boolean;
   disabled?: boolean;
 }
+
+export interface SectionEntry {
+  time: number;
+  values: Record<string, any>;
+}
