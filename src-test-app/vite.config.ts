@@ -10,6 +10,7 @@ export default defineConfig({
       'hds-forms': path.resolve(__dirname, '../src')
     }
   },
+  base: './',
   build: {
     outDir: path.resolve(__dirname, '../dist'),
     emptyOutDir: true
