@@ -23,6 +23,7 @@ export interface ItemDefData {
     options?: Record<string | number, unknown>;
     variations?: Variations;
     composite?: Record<string, ItemData>;
+    datasource?: string;
 }
 export interface ItemDef {
     data: ItemDefData;

@@ -6,6 +6,7 @@ import { TextInput } from './fields/TextInput';
 import { NumberInput } from './fields/NumberInput';
 import { Select } from './fields/Select';
 import { Composite } from './fields/Composite';
+import { DatasetSearch } from './fields/DatasetSearch';
 
 const l = localizeText;
 
@@ -44,6 +45,10 @@ export function HDSFormField ({ itemData, value, onChange, required, disabled }:
     case 'composite': {
       const composite = (itemData as any).composite;
       return <Composite {...baseProps} composite={composite} />;
+    }
+    case 'datasource-search': {
+      const dsKey = (itemData as any).datasource;
+      return <DatasetSearch {...baseProps} datasource={dsKey} />;
     }
     default:
       return <div className='text-sm text-red-500'>Unknown field type: {(itemData as any).type}</div>;

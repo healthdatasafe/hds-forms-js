@@ -10,7 +10,7 @@ interface SelectOption {
 }
 
 interface BaseItemData {
-  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite';
+  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite' | 'datasource-search';
   label: localizableText;
   description?: localizableText;
   canBeNull?: boolean;
@@ -42,7 +42,12 @@ interface CompositeData extends BaseItemData {
   composite: Record<string, ItemData>;
 }
 
-export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData;
+interface DatasourceSearchData extends BaseItemData {
+  type: 'datasource-search';
+  datasource: string;
+}
+
+export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData | DatasourceSearchData;
 
 export interface JSONSchema {
   title: string;
@@ -60,7 +65,7 @@ const l = localizeText;
 
 type SchemaAction = (schema: JSONSchema, v: ItemData) => void;
 
-const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, composite };
+const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, composite, 'datasource-search': datasourceSearch };
 
 export function schemaFor (v: ItemData): JSONSchema {
   const schema: JSONSchema = {
@@ -104,6 +109,10 @@ function select (schema: JSONSchema, v: ItemData): void {
   const options = selectData.options.map((option) => ({ const: option.value, title: l(option.label) || '' }));
   schema.type = foundNaN ? 'string' : 'number';
   schema.oneOf = options;
+}
+
+function datasourceSearch (schema: JSONSchema, _v: ItemData): void {
+  schema.type = 'object';
 }
 
 function composite (schema: JSONSchema, v: ItemData): void {

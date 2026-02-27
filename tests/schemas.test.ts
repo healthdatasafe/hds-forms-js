@@ -112,6 +112,15 @@ describe('schemaFor', () => {
     expect(schema.description).toBe('Your full name');
   });
 
+  it('datasource-search → object', () => {
+    const data = { type: 'datasource-search', label: { en: 'Medication' }, datasource: 'medication' } as any;
+    const schema = schemaFor(data);
+    expect(schema).toEqual({
+      title: 'Medication',
+      type: 'object'
+    });
+  });
+
   it('throws for unknown type', () => {
     const data = { type: 'unknown', label: { en: 'Bad' } } as any;
     expect(() => schemaFor(data)).toThrow('Cannot find schema for type: "unknown"');

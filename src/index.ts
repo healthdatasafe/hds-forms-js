@@ -2,6 +2,7 @@
 export { HDSFormField } from './components/HDSFormField';
 export { HDSFormSection } from './components/HDSFormSection';
 export { EntryList } from './components/EntryList';
+export { DatasetSearch } from './components/fields/DatasetSearch';
 
 // Schema utilities
 export { schemaFor } from './schema/schemas';

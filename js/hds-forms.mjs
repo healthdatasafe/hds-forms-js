@@ -1,8 +1,8 @@
-import { jsxs as d, jsx as r } from "react/jsx-runtime";
-import { localizeText as x, getHDSModel as V } from "hds-lib";
-import { useState as C } from "react";
-function $({ label: e, description: t, value: n, onChange: o, disabled: s }) {
-  return /* @__PURE__ */ d("div", { className: "flex items-start gap-3", children: [
+import { jsxs as u, jsx as r } from "react/jsx-runtime";
+import { getHDSModel as V, localizeText as C } from "hds-lib";
+import { useState as S, useRef as R, useEffect as B, useCallback as H } from "react";
+function A({ label: e, description: t, value: n, onChange: o, disabled: s }) {
+  return /* @__PURE__ */ u("div", { className: "flex items-start gap-3", children: [
     /* @__PURE__ */ r(
       "input",
       {
@@ -13,15 +13,15 @@ function $({ label: e, description: t, value: n, onChange: o, disabled: s }) {
         className: "mt-1 h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600"
       }
     ),
-    /* @__PURE__ */ d("div", { children: [
+    /* @__PURE__ */ u("div", { children: [
       /* @__PURE__ */ r("label", { className: "text-sm font-medium text-gray-900 dark:text-gray-300", children: e }),
       t && /* @__PURE__ */ r("p", { className: "text-sm text-gray-500 dark:text-gray-400", children: t })
     ] })
   ] });
 }
-function K({ label: e, description: t, value: n, onChange: o, required: s, disabled: a }) {
-  return /* @__PURE__ */ d("div", { children: [
-    /* @__PURE__ */ d("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+function Q({ label: e, description: t, value: n, onChange: o, required: s, disabled: a }) {
+  return /* @__PURE__ */ u("div", { children: [
+    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
       s && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
@@ -31,7 +31,7 @@ function K({ label: e, description: t, value: n, onChange: o, required: s, disab
       {
         type: "date",
         value: n || "",
-        onChange: (l) => o(l.target.value),
+        onChange: (i) => o(i.target.value),
         required: s,
         disabled: a,
         className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
@@ -39,9 +39,9 @@ function K({ label: e, description: t, value: n, onChange: o, required: s, disab
     )
   ] });
 }
-function Y({ label: e, description: t, value: n, onChange: o, required: s, disabled: a }) {
-  return /* @__PURE__ */ d("div", { children: [
-    /* @__PURE__ */ d("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+function z({ label: e, description: t, value: n, onChange: o, required: s, disabled: a }) {
+  return /* @__PURE__ */ u("div", { children: [
+    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
       s && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
@@ -51,7 +51,7 @@ function Y({ label: e, description: t, value: n, onChange: o, required: s, disab
       {
         type: "text",
         value: n || "",
-        onChange: (l) => o(l.target.value),
+        onChange: (i) => o(i.target.value),
         required: s,
         disabled: a,
         className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
@@ -59,9 +59,9 @@ function Y({ label: e, description: t, value: n, onChange: o, required: s, disab
     )
   ] });
 }
-function B({ label: e, description: t, value: n, onChange: o, required: s, disabled: a }) {
-  return /* @__PURE__ */ d("div", { children: [
-    /* @__PURE__ */ d("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+function U({ label: e, description: t, value: n, onChange: o, required: s, disabled: a }) {
+  return /* @__PURE__ */ u("div", { children: [
+    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
       s && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
@@ -71,7 +71,7 @@ function B({ label: e, description: t, value: n, onChange: o, required: s, disab
       {
         type: "number",
         value: n ?? "",
-        onChange: (l) => o(l.target.value === "" ? null : Number(l.target.value)),
+        onChange: (i) => o(i.target.value === "" ? null : Number(i.target.value)),
         required: s,
         disabled: a,
         className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
@@ -79,106 +79,194 @@ function B({ label: e, description: t, value: n, onChange: o, required: s, disab
     )
   ] });
 }
-function F({ label: e, description: t, value: n, onChange: o, options: s, required: a, disabled: l }) {
-  return /* @__PURE__ */ d("div", { children: [
-    /* @__PURE__ */ d("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+function P({ label: e, description: t, value: n, onChange: o, options: s, required: a, disabled: i }) {
+  return /* @__PURE__ */ u("div", { children: [
+    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
       a && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
     t && /* @__PURE__ */ r("p", { className: "mb-1 text-sm text-gray-500 dark:text-gray-400", children: t }),
-    /* @__PURE__ */ d(
+    /* @__PURE__ */ u(
       "select",
       {
         value: n ?? "",
-        onChange: (i) => {
-          const c = i.target.value, m = Number(c);
-          o(c === "" ? null : isNaN(m) ? c : m);
+        onChange: (c) => {
+          const l = c.target.value, p = Number(l);
+          o(l === "" ? null : isNaN(p) ? l : p);
         },
         required: a,
-        disabled: l,
+        disabled: i,
         className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500",
         children: [
           /* @__PURE__ */ r("option", { value: "", children: "--" }),
-          s.map((i) => /* @__PURE__ */ r("option", { value: i.value, children: i.label }, String(i.value)))
+          s.map((c) => /* @__PURE__ */ r("option", { value: c.value, children: c.label }, String(c.value)))
         ]
       }
     )
   ] });
 }
-function H({ label: e, description: t, value: n, onChange: o, composite: s, disabled: a }) {
-  const l = n || {};
-  function i(c, m) {
-    o({ ...l, [c]: m });
+function J({ label: e, description: t, value: n, onChange: o, composite: s, disabled: a }) {
+  const i = n || {};
+  function c(l, p) {
+    o({ ...i, [l]: p });
   }
-  return /* @__PURE__ */ d("fieldset", { className: "rounded-lg border border-gray-200 p-4 dark:border-gray-600", children: [
+  return /* @__PURE__ */ u("fieldset", { className: "rounded-lg border border-gray-200 p-4 dark:border-gray-600", children: [
     /* @__PURE__ */ r("legend", { className: "px-2 text-sm font-medium text-gray-900 dark:text-white", children: e }),
     t && /* @__PURE__ */ r("p", { className: "mb-3 text-sm text-gray-500 dark:text-gray-400", children: t }),
-    /* @__PURE__ */ r("div", { className: "space-y-4", children: Object.entries(s).map(([c, m]) => /* @__PURE__ */ r(
-      j,
+    /* @__PURE__ */ r("div", { className: "space-y-4", children: Object.entries(s).map(([l, p]) => /* @__PURE__ */ r(
+      Y,
       {
-        itemData: m,
-        value: l[c],
-        onChange: (y) => i(c, y),
+        itemData: p,
+        value: i[l],
+        onChange: (g) => c(l, g),
         disabled: a
       },
-      c
+      l
     )) })
   ] });
 }
-const v = x;
-function j({ itemData: e, value: t, onChange: n, required: o, disabled: s }) {
-  const a = v(e.label) || "", l = e.description && v(e.description) || void 0, i = o ?? e.canBeNull !== !0, c = { label: a, description: l, value: t, onChange: n, required: i, disabled: s };
+const _ = C;
+function G({ label: e, description: t, value: n, onChange: o, required: s, disabled: a, datasource: i }) {
+  const c = V().datasources.forKey(i), l = c.minQueryLength || 3, [p, g] = S(""), [T, x] = S([]), [w, v] = S(!1), [L, F] = S(!1), D = R(null), m = R(null);
+  B(() => {
+    function d(f) {
+      m.current && !m.current.contains(f.target) && v(!1);
+    }
+    return document.addEventListener("mousedown", d), () => document.removeEventListener("mousedown", d);
+  }, []);
+  const y = H(async (d) => {
+    if (d.length < l) {
+      x([]), v(!1);
+      return;
+    }
+    F(!0);
+    try {
+      const f = `${c.endpoint}?${c.queryParam}=${encodeURIComponent(d)}`, k = (await (await fetch(f)).json())[c.resultKey] || [];
+      x(k), v(k.length > 0);
+    } catch (f) {
+      console.error("DatasetSearch fetch error:", f), x([]), v(!1);
+    } finally {
+      F(!1);
+    }
+  }, [c, l]);
+  function b(d) {
+    g(d), D.current && clearTimeout(D.current), D.current = setTimeout(() => y(d), 300);
+  }
+  function j(d) {
+    const f = {};
+    for (const k of c.valueFields)
+      d[k] !== void 0 && (f[k] = d[k]);
+    o(f);
+    const N = c.displayFields.label, h = d[N];
+    g(typeof h == "object" ? _(h) || "" : String(h || "")), v(!1), x([]);
+  }
+  function I() {
+    g(""), o(null), x([]), v(!1);
+  }
+  return /* @__PURE__ */ u("div", { ref: m, className: "relative", children: [
+    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+      e,
+      s && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
+    ] }),
+    t && /* @__PURE__ */ r("p", { className: "mb-1 text-sm text-gray-500 dark:text-gray-400", children: t }),
+    /* @__PURE__ */ u("div", { className: "relative", children: [
+      /* @__PURE__ */ r(
+        "input",
+        {
+          type: "text",
+          value: p,
+          onChange: (d) => b(d.target.value),
+          placeholder: `Type at least ${l} characters to search...`,
+          disabled: a,
+          className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
+        }
+      ),
+      (p || n) && !a && /* @__PURE__ */ r(
+        "button",
+        {
+          type: "button",
+          onClick: I,
+          className: "absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
+          children: "×"
+        }
+      )
+    ] }),
+    L && /* @__PURE__ */ r("div", { className: "mt-1 text-xs text-gray-500 dark:text-gray-400", children: "Searching..." }),
+    w && T.length > 0 && /* @__PURE__ */ r("ul", { className: "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700", children: T.map((d, f) => {
+      const N = d[c.displayFields.label], h = d[c.displayFields.description], k = typeof N == "object" ? _(N) || N.en || "" : String(N || ""), K = typeof h == "object" ? _(h) || h.en || "" : String(h || "");
+      return /* @__PURE__ */ u(
+        "li",
+        {
+          onClick: () => j(d),
+          className: "cursor-pointer border-b border-gray-100 px-3 py-2 last:border-0 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-600",
+          children: [
+            /* @__PURE__ */ r("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: k }),
+            K && /* @__PURE__ */ r("div", { className: "text-xs text-gray-500 dark:text-gray-400", children: K })
+          ]
+        },
+        f
+      );
+    }) })
+  ] });
+}
+const O = C;
+function Y({ itemData: e, value: t, onChange: n, required: o, disabled: s }) {
+  const a = O(e.label) || "", i = e.description && O(e.description) || void 0, c = o ?? e.canBeNull !== !0, l = { label: a, description: i, value: t, onChange: n, required: c, disabled: s };
   switch (e.type) {
     case "checkbox":
-      return /* @__PURE__ */ r($, { ...c });
+      return /* @__PURE__ */ r(A, { ...l });
     case "date":
-      return /* @__PURE__ */ r(K, { ...c });
+      return /* @__PURE__ */ r(Q, { ...l });
     case "text":
-      return /* @__PURE__ */ r(Y, { ...c });
+      return /* @__PURE__ */ r(z, { ...l });
     case "number":
-      return /* @__PURE__ */ r(B, { ...c });
+      return /* @__PURE__ */ r(U, { ...l });
     case "select": {
-      const m = e.options.map((y) => ({
-        value: y.value,
-        label: v(y.label) || ""
+      const p = e.options.map((g) => ({
+        value: g.value,
+        label: O(g.label) || ""
       }));
-      return /* @__PURE__ */ r(F, { ...c, options: m });
+      return /* @__PURE__ */ r(P, { ...l, options: p });
     }
     case "composite": {
-      const m = e.composite;
-      return /* @__PURE__ */ r(H, { ...c, composite: m });
+      const p = e.composite;
+      return /* @__PURE__ */ r(J, { ...l, composite: p });
+    }
+    case "datasource-search": {
+      const p = e.datasource;
+      return /* @__PURE__ */ r(G, { ...l, datasource: p });
     }
     default:
-      return /* @__PURE__ */ d("div", { className: "text-sm text-red-500", children: [
+      return /* @__PURE__ */ u("div", { className: "text-sm text-red-500", children: [
         "Unknown field type: ",
         e.type
       ] });
   }
 }
-function L(e) {
+function W(e) {
   return new Date(e * 1e3).toLocaleDateString(void 0, { year: "numeric", month: "short", day: "numeric" });
 }
-function P(e) {
+function X(e) {
   return e == null ? "—" : typeof e == "boolean" ? e ? "✓" : "✗" : typeof e == "object" ? JSON.stringify(e) : String(e);
 }
-function A({ entries: e, itemKeys: t, fieldLabels: n, onEdit: o, onDelete: s }) {
-  return e.length === 0 ? null : /* @__PURE__ */ d("div", { className: "mt-4", children: [
+function Z({ entries: e, itemKeys: t, fieldLabels: n, onEdit: o, onDelete: s }) {
+  return e.length === 0 ? null : /* @__PURE__ */ u("div", { className: "mt-4", children: [
     /* @__PURE__ */ r("h4", { className: "mb-2 text-sm font-medium text-gray-700 dark:text-gray-300", children: "Previous entries" }),
-    /* @__PURE__ */ r("div", { className: "overflow-x-auto", children: /* @__PURE__ */ d("table", { className: "w-full text-left text-sm text-gray-700 dark:text-gray-300", children: [
-      /* @__PURE__ */ r("thead", { className: "bg-gray-50 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-400", children: /* @__PURE__ */ d("tr", { children: [
+    /* @__PURE__ */ r("div", { className: "overflow-x-auto", children: /* @__PURE__ */ u("table", { className: "w-full text-left text-sm text-gray-700 dark:text-gray-300", children: [
+      /* @__PURE__ */ r("thead", { className: "bg-gray-50 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-400", children: /* @__PURE__ */ u("tr", { children: [
         /* @__PURE__ */ r("th", { className: "px-3 py-2", children: "Date" }),
         t.map((a) => /* @__PURE__ */ r("th", { className: "px-3 py-2", children: n[a] || a }, a)),
         /* @__PURE__ */ r("th", { className: "px-3 py-2 text-right", children: "Actions" })
       ] }) }),
-      /* @__PURE__ */ r("tbody", { children: e.map((a, l) => /* @__PURE__ */ d("tr", { className: "border-b border-gray-200 dark:border-gray-600", children: [
-        /* @__PURE__ */ r("td", { className: "px-3 py-2 whitespace-nowrap", children: L(a.time) }),
-        t.map((i) => /* @__PURE__ */ r("td", { className: "px-3 py-2", children: P(a.values[i]) }, i)),
-        /* @__PURE__ */ d("td", { className: "px-3 py-2 text-right whitespace-nowrap", children: [
+      /* @__PURE__ */ r("tbody", { children: e.map((a, i) => /* @__PURE__ */ u("tr", { className: "border-b border-gray-200 dark:border-gray-600", children: [
+        /* @__PURE__ */ r("td", { className: "px-3 py-2 whitespace-nowrap", children: W(a.time) }),
+        t.map((c) => /* @__PURE__ */ r("td", { className: "px-3 py-2", children: X(a.values[c]) }, c)),
+        /* @__PURE__ */ u("td", { className: "px-3 py-2 text-right whitespace-nowrap", children: [
           /* @__PURE__ */ r(
             "button",
             {
               type: "button",
-              onClick: () => o(l),
+              onClick: () => o(i),
               className: "mr-2 text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300",
               title: "Edit",
               children: "✎"
@@ -188,85 +276,85 @@ function A({ entries: e, itemKeys: t, fieldLabels: n, onEdit: o, onDelete: s }) 
             "button",
             {
               type: "button",
-              onClick: () => s(l),
+              onClick: () => s(i),
               className: "text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300",
               title: "Delete",
               children: "✕"
             }
           )
         ] })
-      ] }, l)) })
+      ] }, i)) })
     ] }) })
   ] });
 }
-const h = x;
-function R() {
+const E = C;
+function ee() {
   return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
 }
-function re({ section: e, values: t, onSubmit: n, disabled: o, submitLabel: s, entries: a, onEditEntry: l, onDeleteEntry: i }) {
-  const [c, m] = C(t || {}), [y, I] = C(R()), N = V(), b = e.type === "recurring";
-  function E(u, p) {
-    m((g) => ({ ...g, [u]: p }));
+function pe({ section: e, values: t, onSubmit: n, disabled: o, submitLabel: s, entries: a, onEditEntry: i, onDeleteEntry: c }) {
+  const [l, p] = S(t || {}), [g, T] = S(ee()), x = V(), w = e.type === "recurring";
+  function v(m, y) {
+    p((b) => ({ ...b, [m]: y }));
   }
-  function O(u, p) {
-    m((g) => ({ ...g, [`${u}__eventType`]: p }));
+  function L(m, y) {
+    p((b) => ({ ...b, [`${m}__eventType`]: y }));
   }
-  function M(u) {
-    if (u.preventDefault(), b) {
-      const p = Math.floor(new Date(y).getTime() / 1e3);
-      n({ ...c, __time: p });
+  function F(m) {
+    if (m.preventDefault(), w) {
+      const y = Math.floor(new Date(g).getTime() / 1e3);
+      n({ ...l, __time: y });
     } else
-      n(c);
+      n(l);
   }
-  const w = {};
-  for (const u of e.itemKeys) {
-    const p = N.itemsDefs.forKey(u);
-    p && (w[u] = h(p.data.label) || u);
+  const D = {};
+  for (const m of e.itemKeys) {
+    const y = x.itemsDefs.forKey(m);
+    y && (D[m] = E(y.data.label) || m);
   }
-  return /* @__PURE__ */ d("form", { onSubmit: M, className: "space-y-6", children: [
-    e.label && /* @__PURE__ */ r("h3", { className: "text-lg font-semibold text-gray-900 dark:text-white", children: h(e.label) }),
-    b && /* @__PURE__ */ d("div", { children: [
+  return /* @__PURE__ */ u("form", { onSubmit: F, className: "space-y-6", children: [
+    e.label && /* @__PURE__ */ r("h3", { className: "text-lg font-semibold text-gray-900 dark:text-white", children: E(e.label) }),
+    w && /* @__PURE__ */ u("div", { children: [
       /* @__PURE__ */ r("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: "Date" }),
       /* @__PURE__ */ r(
         "input",
         {
           type: "date",
-          value: y,
-          onChange: (u) => I(u.target.value),
+          value: g,
+          onChange: (m) => T(m.target.value),
           disabled: o,
           className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
         }
       )
     ] }),
-    e.itemKeys.map((u) => {
-      var D, T;
-      const p = N.itemsDefs.forKey(u);
-      if (!p) return null;
-      const g = (T = (D = p.data) == null ? void 0 : D.variations) == null ? void 0 : T.eventType;
-      return /* @__PURE__ */ d("div", { className: "space-y-2", children: [
+    e.itemKeys.map((m) => {
+      var j, I;
+      const y = x.itemsDefs.forKey(m);
+      if (!y) return null;
+      const b = (I = (j = y.data) == null ? void 0 : j.variations) == null ? void 0 : I.eventType;
+      return /* @__PURE__ */ u("div", { className: "space-y-2", children: [
         /* @__PURE__ */ r(
-          j,
+          Y,
           {
-            itemData: p.data,
-            value: c[u],
-            onChange: (f) => E(u, f),
+            itemData: y.data,
+            value: l[m],
+            onChange: (d) => v(m, d),
             disabled: o
           }
         ),
-        g && /* @__PURE__ */ r(
-          F,
+        b && /* @__PURE__ */ r(
+          P,
           {
-            label: h(g.label) || "",
-            value: c[`${u}__eventType`],
-            onChange: (f) => O(u, f),
-            options: g.options.map((f) => ({
-              value: f.value,
-              label: h(f.label) || ""
+            label: E(b.label) || "",
+            value: l[`${m}__eventType`],
+            onChange: (d) => L(m, d),
+            options: b.options.map((d) => ({
+              value: d.value,
+              label: E(d.label) || ""
             })),
             disabled: o
           }
         )
-      ] }, u);
+      ] }, m);
     }),
     /* @__PURE__ */ r(
       "button",
@@ -274,57 +362,60 @@ function re({ section: e, values: t, onSubmit: n, disabled: o, submitLabel: s, e
         type: "submit",
         disabled: o,
         className: "rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-300 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-        children: s || (b ? "Add entry" : "Submit")
+        children: s || (w ? "Add entry" : "Submit")
       }
     ),
-    b && a && l && i && /* @__PURE__ */ r(
-      A,
+    w && a && i && c && /* @__PURE__ */ r(
+      Z,
       {
         entries: a,
         itemKeys: e.itemKeys,
-        fieldLabels: w,
-        onEdit: l,
-        onDelete: i
+        fieldLabels: D,
+        onEdit: i,
+        onDelete: c
       }
     )
   ] });
 }
-const k = x, q = { checkbox: z, date: J, text: U, number: G, select: Q, composite: W };
-function _(e) {
+const $ = C, te = { checkbox: re, date: ae, text: ne, number: oe, select: se, composite: le, "datasource-search": ce };
+function q(e) {
   const t = {
-    title: k(e.label) || ""
+    title: $(e.label) || ""
   };
-  e.description != null && (t.description = k(e.description) || void 0);
-  const n = q[e.type];
+  e.description != null && (t.description = $(e.description) || void 0);
+  const n = te[e.type];
   if (n == null)
     throw new Error(`Cannot find schema for type: "${e.type}"`);
   return n(t, e), t;
 }
-function z(e, t) {
+function re(e, t) {
   e.type = "boolean";
 }
-function J(e, t) {
+function ae(e, t) {
   e.type = "string", e.format = "date", e.dateSaveFormat = "YYYY-MM-DD";
 }
-function U(e, t) {
+function ne(e, t) {
   e.type = "string", t.canBeNull !== !0 && (e.minLength = 1);
 }
-function G(e, t) {
+function oe(e, t) {
   e.type = "number";
 }
-function Q(e, t) {
-  const n = t, o = n.options.find((a) => isNaN(a.value)), s = n.options.map((a) => ({ const: a.value, title: k(a.label) || "" }));
+function se(e, t) {
+  const n = t, o = n.options.find((a) => isNaN(a.value)), s = n.options.map((a) => ({ const: a.value, title: $(a.label) || "" }));
   e.type = o ? "string" : "number", e.oneOf = s;
 }
-function W(e, t) {
+function ce(e, t) {
+  e.type = "object";
+}
+function le(e, t) {
   const n = t;
   e.type = "object", e.properties = {}, e.required = [];
   for (const [o, s] of Object.entries(n.composite))
-    e.properties[o] = _(s), s.canBeNull !== !0 && e.required.push(o);
+    e.properties[o] = q(s), s.canBeNull !== !0 && e.required.push(o);
 }
-const S = x;
-function ae(e) {
-  const t = X(e);
+const M = C;
+function ye(e) {
+  const t = ie(e);
   function n(o) {
     const s = structuredClone(o);
     if (t.processData && t.processData(s).createEvent === !1)
@@ -334,16 +425,16 @@ function ae(e) {
   }
   return { schema: t.schema, eventDataForFormData: n };
 }
-function X(e) {
+function ie(e) {
   var s, a;
-  const t = e.data.type, n = _(e.data);
+  const t = e.data.type, n = q(e.data);
   if (t === "checkbox" && e.data.eventType === "activity/plain")
     return {
       schema: n,
-      processData: (l) => l === !0 ? {} : { createEvent: !1 }
+      processData: (i) => i === !0 ? {} : { createEvent: !1 }
     };
   if (t === "select" && e.data.eventType === "ratio/generic") {
-    const l = Math.max(...Object.keys(e.data.options || {}).map(Number));
+    const i = Math.max(...Object.keys(e.data.options || {}).map(Number));
     return {
       schema: {
         title: "",
@@ -359,9 +450,9 @@ function X(e) {
           }
         }
       },
-      processData: (i) => {
-        const c = i;
-        return c.content == null ? { createEvent: !1 } : (c.content.relativeTo = l, {});
+      processData: (c) => {
+        const l = c;
+        return l.content == null ? { createEvent: !1 } : (l.content.relativeTo = i, {});
       }
     };
   }
@@ -376,49 +467,50 @@ function X(e) {
     }
   };
   if ((a = (s = e.data) == null ? void 0 : s.variations) != null && a.eventType) {
-    const l = e.data.variations.eventType;
+    const i = e.data.variations.eventType;
     o.schema.properties = {
       ...o.schema.properties,
       type: {
-        title: S(l.label) || "",
+        title: M(i.label) || "",
         type: "string",
-        oneOf: l.options.map((i) => ({ const: i.value, title: S(i.label) || "" }))
+        oneOf: i.options.map((c) => ({ const: c.value, title: M(c.label) || "" }))
       }
     };
   }
   return o;
 }
-function ne(e, t) {
+function ge(e, t) {
   const n = {};
   for (const { key: o, itemDef: s } of e) {
-    const a = s.data.eventType, l = s.data.streamId;
-    if (!a || !l) continue;
-    const i = t.filter((c) => c.type === a && c.streamIds.includes(l)).sort((c, m) => (m.time || 0) - (c.time || 0));
-    i.length > 0 && (n[o] = i[0].content);
+    const a = s.data.eventType, i = s.data.streamId;
+    if (!a || !i) continue;
+    const c = t.filter((l) => l.type === a && l.streamIds.includes(i)).sort((l, p) => (p.time || 0) - (l.time || 0));
+    c.length > 0 && (n[o] = c[0].content);
   }
   return n;
 }
-function oe(e, t, n) {
+function fe(e, t, n) {
   const o = [], s = n || Math.floor(Date.now() / 1e3);
-  for (const { key: a, itemDef: l } of e) {
-    const i = t[a];
-    if (i == null) continue;
-    const c = l.eventTemplate();
+  for (const { key: a, itemDef: i } of e) {
+    const c = t[a];
+    if (c == null) continue;
+    const l = i.eventTemplate();
     o.push({
-      streamIds: c.streamIds,
-      type: c.type,
-      content: i,
+      streamIds: l.streamIds,
+      type: l.type,
+      content: c,
       time: s
     });
   }
   return o;
 }
 export {
-  A as EntryList,
-  j as HDSFormField,
-  re as HDSFormSection,
-  oe as formDataToEventBatch,
-  ae as jsonFormForItemDef,
-  ne as prefillFromEvents,
-  _ as schemaFor
+  G as DatasetSearch,
+  Z as EntryList,
+  Y as HDSFormField,
+  pe as HDSFormSection,
+  fe as formDataToEventBatch,
+  ye as jsonFormForItemDef,
+  ge as prefillFromEvents,
+  q as schemaFor
 };

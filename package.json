@@ -45,13 +45,10 @@
   ],
   "author": "HDS",
   "license": "BSD-3-Clause",
-  "dependencies": {
-    "hds-lib": "git+https://github.com/healthdatasafe/hds-lib-js.git"
-  },
   "peerDependencies": {
+    "hds-style": "git+https://github.com/healthdatasafe/style-package.git",
     "react": ">=19",
-    "react-dom": ">=19",
-    "hds-style": "git+https://github.com/healthdatasafe/style-package.git"
+    "react-dom": ">=19"
   },
   "peerDependenciesMeta": {
     "hds-style": {
@@ -73,7 +70,10 @@
     "tailwindcss": "^4.1.11",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.20.0",
-    "vitest": "^3.0.0",
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "hds-lib": "github:healthdatasafe/hds-lib-js"
   }
 }

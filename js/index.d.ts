@@ -1,6 +1,7 @@
 export { HDSFormField } from './components/HDSFormField';
 export { HDSFormSection } from './components/HDSFormSection';
 export { EntryList } from './components/EntryList';
+export { DatasetSearch } from './components/fields/DatasetSearch';
 export { schemaFor } from './schema/schemas';
 export { jsonFormForItemDef } from './schema/itemDefToSchema';
 export { prefillFromEvents, formDataToEventBatch } from './schema/eventData';

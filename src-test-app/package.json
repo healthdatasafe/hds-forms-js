@@ -9,7 +9,7 @@
     "preview": "vite preview --port 5174"
   },
   "dependencies": {
-    "hds-lib": "git+https://github.com/healthdatasafe/hds-lib-js.git",
+    "hds-lib": "github:healthdatasafe/hds-lib-js",
     "hds-style": "git+https://github.com/healthdatasafe/style-package.git",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

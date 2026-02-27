@@ -8,7 +8,7 @@ interface SelectOption {
     label: localizableText;
 }
 interface BaseItemData {
-    type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite';
+    type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite' | 'datasource-search';
     label: localizableText;
     description?: localizableText;
     canBeNull?: boolean;
@@ -33,7 +33,11 @@ interface CompositeData extends BaseItemData {
     type: 'composite';
     composite: Record<string, ItemData>;
 }
-export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData;
+interface DatasourceSearchData extends BaseItemData {
+    type: 'datasource-search';
+    datasource: string;
+}
+export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData | DatasourceSearchData;
 export interface JSONSchema {
     title: string;
     description?: string;

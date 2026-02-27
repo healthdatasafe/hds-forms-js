@@ -10,6 +10,9 @@ export default defineConfig({
       'hds-forms': path.resolve(__dirname, '../src')
     }
   },
+  optimizeDeps: {
+    include: ['hds-lib']
+  },
   base: './',
   build: {
     outDir: path.resolve(__dirname, '../dist'),
