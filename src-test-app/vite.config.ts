@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
+import backloop from 'vite-plugin-backloop.dev';
 import path from 'path';
 
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
+export default defineConfig(({ mode }) => ({
+  plugins: [react(), tailwindcss(), ...(mode !== 'raw' ? [backloop('forms')] : [])],
   resolve: {
     alias: {
       'hds-forms': path.resolve(__dirname, '../src')
@@ -18,4 +19,4 @@ export default defineConfig({
     outDir: path.resolve(__dirname, '../dist'),
     emptyOutDir: true
   }
-});
+}));
