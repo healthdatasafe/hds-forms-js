@@ -5,8 +5,9 @@ import { HDSFormSection } from 'hds-forms/components/HDSFormSection';
 import { schemaFor } from 'hds-forms/schema/schemas';
 import { jsonFormForItemDef } from 'hds-forms/schema/itemDefToSchema';
 import type { SectionEntry } from 'hds-forms/types';
+import FormBuilder from './FormBuilder';
 
-type Tab = 'fields' | 'section' | 'recurring' | 'medication';
+type Tab = 'fields' | 'section' | 'recurring' | 'medication' | 'builder';
 
 interface IntakeState {
   doseValue: string;
@@ -181,7 +182,7 @@ export default function App () {
   }
 
   return (
-    <div className='mx-auto max-w-3xl px-4 py-8'>
+    <div className={`mx-auto px-4 py-8 ${tab === 'builder' ? 'max-w-6xl' : 'max-w-3xl'}`}>
       <h1 className='mb-6 text-2xl font-bold text-gray-900 dark:text-white'>
         HDS Forms — Test App
       </h1>
@@ -199,6 +200,9 @@ export default function App () {
         </button>
         <button className={tabClass('medication')} onClick={() => setTab('medication')}>
           Medication
+        </button>
+        <button className={tabClass('builder')} onClick={() => setTab('builder')}>
+          Builder
         </button>
       </div>
 
@@ -293,6 +297,9 @@ export default function App () {
             {recurringData && <DebugPanel title='Last submitted' json={recurringDataJson} />}
           </div>
         )}
+
+        {/* ── Builder Tab ── */}
+        {tab === 'builder' && <FormBuilder />}
 
         {/* ── Medication Tab ── */}
         {tab === 'medication' && (() => {
