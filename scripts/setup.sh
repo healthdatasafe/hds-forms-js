@@ -27,11 +27,12 @@ Installing test app dependencies...
 "
 npm --prefix src-test-app install
 
-if [ ! -d dist ]
+if [ ! -d dist/.git ]
 then
   echo "
 Setting up 'dist' folder for publishing to GitHub pages...
 "
+  rm -rf dist
   git clone -b gh-pages git@github.com:healthdatasafe/hds-forms-js.git dist
 fi
 
