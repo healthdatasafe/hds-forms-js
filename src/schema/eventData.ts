@@ -12,7 +12,7 @@ export function prefillFromEvents (
 
   for (const { key, itemDef } of itemDefs) {
     const eventType = itemDef.data.eventType;
-    const streamId = (itemDef.data as any).streamId;
+    const streamId = itemDef.data.streamId;
 
     if (!eventType || !streamId) continue;
 

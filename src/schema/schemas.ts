@@ -14,6 +14,8 @@ interface BaseItemData {
   label: localizableText;
   description?: localizableText;
   canBeNull?: boolean;
+  streamId?: string;
+  eventType?: string;
 }
 
 interface CheckboxData extends BaseItemData {

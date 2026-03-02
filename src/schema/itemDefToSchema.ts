@@ -24,8 +24,9 @@ export interface ItemDefData {
   label: localizableText;
   description?: localizableText;
   canBeNull?: boolean;
+  streamId?: string;
   eventType?: string;
-  options?: Record<string | number, unknown>;
+  options?: Array<{ value: string | number; label: localizableText }>;
   variations?: Variations;
   composite?: Record<string, ItemData>;
   datasource?: string;
@@ -85,7 +86,7 @@ function _jsonFormForItemDef (itemDef: ItemDef): JsonFormResult {
   }
 
   if (type === 'select' && itemDef.data.eventType === 'ratio/generic') {
-    const relativeTo = Math.max(...Object.keys(itemDef.data.options || {}).map(Number));
+    const relativeTo = Math.max(...(itemDef.data.options || []).map(o => Number(o.value)));
     return {
       schema: {
         title: '',

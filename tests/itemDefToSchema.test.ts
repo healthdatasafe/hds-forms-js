@@ -99,9 +99,8 @@ describe('jsonFormForItemDef', () => {
     it('processData injects relativeTo', () => {
       const result = jsonFormForItemDef(makeRatioItemDef({ streamIds: ['s1'], type: 'ratio/generic' }));
       const eventData = result.eventDataForFormData({ content: { value: 5 } }) as any;
-      // Object.keys on array returns indices ['0','1','2'], so max = 2
-      // In real usage with Record options {0:null, 5:null, 10:null}, max = 10
-      expect(eventData.content.relativeTo).toBe(2);
+      // With the fix, relativeTo is the max option value (10), not max array index
+      expect(eventData.content.relativeTo).toBe(10);
     });
 
     it('returns null when content is null', () => {
