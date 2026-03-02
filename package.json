@@ -23,6 +23,7 @@
     "setup": "sh ./scripts/setup.sh",
     "dev": "vite build --watch",
     "build": "vite build && tsc --emitDeclarationOnly",
+    "deploy": "bash scripts/deploy.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",
