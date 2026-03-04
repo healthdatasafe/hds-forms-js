@@ -9,7 +9,7 @@ export { schemaFor } from './schema/schemas';
 export { jsonFormForItemDef } from './schema/itemDefToSchema';
 
 // Event data conversion
-export { prefillFromEvents, formDataToEventBatch } from './schema/eventData';
+export { prefillFromEvents, matchEventsToItemDefs, formDataToActions, formDataToEventBatch } from './schema/eventData';
 
 // Types
 export type { ItemData, JSONSchema } from './schema/schemas';

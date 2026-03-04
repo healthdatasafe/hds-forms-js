@@ -1,15 +1,14 @@
 {
-  "name": "hds-forms",
+  "name": "hds-forms-js",
   "version": "0.1.0",
   "description": "HDS Form Components — React field renderers for HDS item definitions",
   "type": "module",
   "main": "js/hds-forms.js",
-  "module": "js/hds-forms.mjs",
   "types": "js/index.d.ts",
   "exports": {
     ".": {
       "types": "./js/index.d.ts",
-      "import": "./js/hds-forms.mjs",
+      "import": "./src/index.ts",
       "require": "./js/hds-forms.js"
     }
   },

@@ -22,7 +22,7 @@ interface HDSFormFieldProps {
 export function HDSFormField ({ itemData, value, onChange, required, disabled }: HDSFormFieldProps) {
   const label = l(itemData.label) || '';
   const description = itemData.description ? (l(itemData.description) || undefined) : undefined;
-  const isRequired = required ?? (itemData.canBeNull !== true);
+  const isRequired = required ?? false;
 
   const baseProps = { label, description, value, onChange, required: isRequired, disabled };
 

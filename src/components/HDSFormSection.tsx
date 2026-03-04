@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getHDSModel, localizeText } from 'hds-lib';
 import { HDSFormField } from './HDSFormField';
 import { Select } from './fields/Select';
@@ -20,6 +20,7 @@ interface HDSFormSectionProps {
   section: SectionDef;
   values?: Record<string, any>;
   onSubmit: (formData: Record<string, any>) => void;
+  onDateChange?: (dateStr: string) => void;
   disabled?: boolean;
   submitLabel?: string;
   entries?: SectionEntry[];
@@ -31,9 +32,14 @@ function todayString (): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function HDSFormSection ({ section, values: initialValues, onSubmit, disabled, submitLabel, entries, onEditEntry, onDeleteEntry }: HDSFormSectionProps) {
+export function HDSFormSection ({ section, values: initialValues, onSubmit, onDateChange, disabled, submitLabel, entries, onEditEntry, onDeleteEntry }: HDSFormSectionProps) {
   const [formValues, setFormValues] = useState<Record<string, any>>(initialValues || {});
   const [entryDate, setEntryDate] = useState<string>(todayString());
+
+  // Sync form values when initialValues prop changes (e.g. date change triggers new prefill)
+  useEffect(() => {
+    setFormValues(initialValues || {});
+  }, [initialValues]);
   const model = getHDSModel();
   const isRecurring = section.type === 'recurring';
 
@@ -78,7 +84,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, disa
           <input
             type='date'
             value={entryDate}
-            onChange={(e) => setEntryDate(e.target.value)}
+            onChange={(e) => { setEntryDate(e.target.value); onDateChange?.(e.target.value); }}
             disabled={disabled}
             className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
           />
