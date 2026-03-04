@@ -1,243 +1,243 @@
-import { jsxs as u, jsx as r } from "react/jsx-runtime";
-import { getHDSModel as V, localizeText as C } from "hds-lib";
-import { useState as S, useRef as R, useEffect as B, useCallback as H } from "react";
-function A({ label: e, description: t, value: n, onChange: o, disabled: l }) {
-  return /* @__PURE__ */ u("div", { className: "flex items-start gap-3", children: [
+import { jsxs as m, jsx as r } from "react/jsx-runtime";
+import { getHDSModel as q, localizeText as I } from "hds-lib";
+import { useState as S, useRef as K, useEffect as P, useCallback as B } from "react";
+function H({ label: e, description: t, value: o, onChange: s, disabled: a }) {
+  return /* @__PURE__ */ m("div", { className: "flex items-start gap-3", children: [
     /* @__PURE__ */ r(
       "input",
       {
         type: "checkbox",
-        checked: !!n,
-        onChange: (a) => o(a.target.checked),
-        disabled: l,
+        checked: !!o,
+        onChange: (n) => s(n.target.checked),
+        disabled: a,
         className: "mt-1 h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600"
       }
     ),
-    /* @__PURE__ */ u("div", { children: [
+    /* @__PURE__ */ m("div", { children: [
       /* @__PURE__ */ r("label", { className: "text-sm font-medium text-gray-900 dark:text-gray-300", children: e }),
       t && /* @__PURE__ */ r("p", { className: "text-sm text-gray-500 dark:text-gray-400", children: t })
     ] })
   ] });
 }
-function Q({ label: e, description: t, value: n, onChange: o, required: l, disabled: a }) {
-  return /* @__PURE__ */ u("div", { children: [
-    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+function Q({ label: e, description: t, value: o, onChange: s, required: a, disabled: n }) {
+  return /* @__PURE__ */ m("div", { children: [
+    /* @__PURE__ */ m("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
-      l && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
+      a && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
     t && /* @__PURE__ */ r("p", { className: "mb-1 text-sm text-gray-500 dark:text-gray-400", children: t }),
     /* @__PURE__ */ r(
       "input",
       {
         type: "date",
-        value: n || "",
-        onChange: (i) => o(i.target.value),
-        required: l,
-        disabled: a,
+        value: o || "",
+        onChange: (c) => s(c.target.value),
+        required: a,
+        disabled: n,
         className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
       }
     )
   ] });
 }
-function z({ label: e, description: t, value: n, onChange: o, required: l, disabled: a }) {
-  return /* @__PURE__ */ u("div", { children: [
-    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+function z({ label: e, description: t, value: o, onChange: s, required: a, disabled: n }) {
+  return /* @__PURE__ */ m("div", { children: [
+    /* @__PURE__ */ m("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
-      l && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
+      a && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
     t && /* @__PURE__ */ r("p", { className: "mb-1 text-sm text-gray-500 dark:text-gray-400", children: t }),
     /* @__PURE__ */ r(
       "input",
       {
         type: "text",
-        value: n || "",
-        onChange: (i) => o(i.target.value),
-        required: l,
-        disabled: a,
+        value: o || "",
+        onChange: (c) => s(c.target.value),
+        required: a,
+        disabled: n,
         className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
       }
     )
   ] });
 }
-function U({ label: e, description: t, value: n, onChange: o, required: l, disabled: a }) {
-  return /* @__PURE__ */ u("div", { children: [
-    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+function U({ label: e, description: t, value: o, onChange: s, required: a, disabled: n }) {
+  return /* @__PURE__ */ m("div", { children: [
+    /* @__PURE__ */ m("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
-      l && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
+      a && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
     t && /* @__PURE__ */ r("p", { className: "mb-1 text-sm text-gray-500 dark:text-gray-400", children: t }),
     /* @__PURE__ */ r(
       "input",
       {
         type: "number",
-        value: n ?? "",
-        onChange: (i) => o(i.target.value === "" ? null : Number(i.target.value)),
-        required: l,
-        disabled: a,
+        value: o ?? "",
+        onChange: (c) => s(c.target.value === "" ? null : Number(c.target.value)),
+        required: a,
+        disabled: n,
         className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
       }
     )
   ] });
 }
-function P({ label: e, description: t, value: n, onChange: o, options: l, required: a, disabled: i }) {
-  return /* @__PURE__ */ u("div", { children: [
-    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+function V({ label: e, description: t, value: o, onChange: s, options: a, required: n, disabled: c }) {
+  return /* @__PURE__ */ m("div", { children: [
+    /* @__PURE__ */ m("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
-      a && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
+      n && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
     t && /* @__PURE__ */ r("p", { className: "mb-1 text-sm text-gray-500 dark:text-gray-400", children: t }),
-    /* @__PURE__ */ u(
+    /* @__PURE__ */ m(
       "select",
       {
-        value: n ?? "",
-        onChange: (s) => {
-          const c = s.target.value, p = Number(c);
-          o(c === "" ? null : isNaN(p) ? c : p);
+        value: o ?? "",
+        onChange: (l) => {
+          const i = l.target.value, d = Number(i);
+          s(i === "" ? null : isNaN(d) ? i : d);
         },
-        required: a,
-        disabled: i,
+        required: n,
+        disabled: c,
         className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500",
         children: [
           /* @__PURE__ */ r("option", { value: "", children: "--" }),
-          l.map((s) => /* @__PURE__ */ r("option", { value: s.value, children: s.label }, String(s.value)))
+          a.map((l) => /* @__PURE__ */ r("option", { value: l.value, children: l.label }, String(l.value)))
         ]
       }
     )
   ] });
 }
-function J({ label: e, description: t, value: n, onChange: o, composite: l, disabled: a }) {
-  const i = n || {};
-  function s(c, p) {
-    o({ ...i, [c]: p });
+function J({ label: e, description: t, value: o, onChange: s, composite: a, disabled: n }) {
+  const c = o || {};
+  function l(i, d) {
+    s({ ...c, [i]: d });
   }
-  return /* @__PURE__ */ u("fieldset", { className: "rounded-lg border border-gray-200 p-4 dark:border-gray-600", children: [
+  return /* @__PURE__ */ m("fieldset", { className: "rounded-lg border border-gray-200 p-4 dark:border-gray-600", children: [
     /* @__PURE__ */ r("legend", { className: "px-2 text-sm font-medium text-gray-900 dark:text-white", children: e }),
     t && /* @__PURE__ */ r("p", { className: "mb-3 text-sm text-gray-500 dark:text-gray-400", children: t }),
-    /* @__PURE__ */ r("div", { className: "space-y-4", children: Object.entries(l).map(([c, p]) => /* @__PURE__ */ r(
+    /* @__PURE__ */ r("div", { className: "space-y-4", children: Object.entries(a).map(([i, d]) => /* @__PURE__ */ r(
       Y,
       {
-        itemData: p,
-        value: i[c],
-        onChange: (g) => s(c, g),
-        disabled: a
+        itemData: d,
+        value: c[i],
+        onChange: (u) => l(i, u),
+        disabled: n
       },
-      c
+      i
     )) })
   ] });
 }
-const _ = C;
-function G({ label: e, description: t, value: n, onChange: o, required: l, disabled: a, datasource: i }) {
-  const s = V().datasources.forKey(i), c = s.minQueryLength || 3, [p, g] = S(""), [T, x] = S([]), [w, v] = S(!1), [L, F] = S(!1), D = R(null), m = R(null);
-  B(() => {
-    function d(f) {
-      m.current && !m.current.contains(f.target) && v(!1);
+const L = I;
+function G({ label: e, description: t, value: o, onChange: s, required: a, disabled: n, datasource: c }) {
+  const l = q().datasources.forKey(c), i = l.minQueryLength || 3, [d, u] = S(""), [f, x] = S([]), [C, b] = S(!1), [E, F] = S(!1), D = K(null), T = K(null);
+  P(() => {
+    function y(g) {
+      T.current && !T.current.contains(g.target) && b(!1);
     }
-    return document.addEventListener("mousedown", d), () => document.removeEventListener("mousedown", d);
+    return document.addEventListener("mousedown", y), () => document.removeEventListener("mousedown", y);
   }, []);
-  const y = H(async (d) => {
-    if (d.length < c) {
-      x([]), v(!1);
+  const p = B(async (y) => {
+    if (y.length < i) {
+      x([]), b(!1);
       return;
     }
     F(!0);
     try {
-      const f = `${s.endpoint}?${s.queryParam}=${encodeURIComponent(d)}`, k = (await (await fetch(f)).json())[s.resultKey] || [];
-      x(k), v(k.length > 0);
-    } catch (f) {
-      console.error("DatasetSearch fetch error:", f), x([]), v(!1);
+      const g = `${l.endpoint}?${l.queryParam}=${encodeURIComponent(y)}`, N = (await (await fetch(g)).json())[l.resultKey] || [];
+      x(N), b(N.length > 0);
+    } catch (g) {
+      console.error("DatasetSearch fetch error:", g), x([]), b(!1);
     } finally {
       F(!1);
     }
-  }, [s, c]);
-  function h(d) {
-    g(d), D.current && clearTimeout(D.current), D.current = setTimeout(() => y(d), 300);
+  }, [l, i]);
+  function h(y) {
+    u(y), D.current && clearTimeout(D.current), D.current = setTimeout(() => p(y), 300);
   }
-  function j(d) {
-    const f = {};
-    for (const k of s.valueFields)
-      d[k] !== void 0 && (f[k] = d[k]);
-    o(f);
-    const N = s.displayFields.label, b = d[N];
-    g(typeof b == "object" ? _(b) || "" : String(b || "")), v(!1), x([]);
+  function v(y) {
+    const g = {};
+    for (const N of l.valueFields)
+      y[N] !== void 0 && (g[N] = y[N]);
+    s(g);
+    const w = l.displayFields.label, k = y[w];
+    u(typeof k == "object" ? L(k) || "" : String(k || "")), b(!1), x([]);
   }
-  function I() {
-    g(""), o(null), x([]), v(!1);
+  function j() {
+    u(""), s(null), x([]), b(!1);
   }
-  return /* @__PURE__ */ u("div", { ref: m, className: "relative", children: [
-    /* @__PURE__ */ u("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
+  return /* @__PURE__ */ m("div", { ref: T, className: "relative", children: [
+    /* @__PURE__ */ m("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: [
       e,
-      l && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
+      a && /* @__PURE__ */ r("span", { className: "text-red-500", children: " *" })
     ] }),
     t && /* @__PURE__ */ r("p", { className: "mb-1 text-sm text-gray-500 dark:text-gray-400", children: t }),
-    /* @__PURE__ */ u("div", { className: "relative", children: [
+    /* @__PURE__ */ m("div", { className: "relative", children: [
       /* @__PURE__ */ r(
         "input",
         {
           type: "text",
-          value: p,
-          onChange: (d) => h(d.target.value),
-          placeholder: `Type at least ${c} characters to search...`,
-          disabled: a,
+          value: d,
+          onChange: (y) => h(y.target.value),
+          placeholder: `Type at least ${i} characters to search...`,
+          disabled: n,
           className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
         }
       ),
-      (p || n) && !a && /* @__PURE__ */ r(
+      (d || o) && !n && /* @__PURE__ */ r(
         "button",
         {
           type: "button",
-          onClick: I,
+          onClick: j,
           className: "absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
           children: "×"
         }
       )
     ] }),
-    L && /* @__PURE__ */ r("div", { className: "mt-1 text-xs text-gray-500 dark:text-gray-400", children: "Searching..." }),
-    w && T.length > 0 && /* @__PURE__ */ r("ul", { className: "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700", children: T.map((d, f) => {
-      const N = d[s.displayFields.label], b = d[s.displayFields.description], k = typeof N == "object" ? _(N) || N.en || "" : String(N || ""), K = typeof b == "object" ? _(b) || b.en || "" : String(b || "");
-      return /* @__PURE__ */ u(
+    E && /* @__PURE__ */ r("div", { className: "mt-1 text-xs text-gray-500 dark:text-gray-400", children: "Searching..." }),
+    C && f.length > 0 && /* @__PURE__ */ r("ul", { className: "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700", children: f.map((y, g) => {
+      const w = y[l.displayFields.label], k = y[l.displayFields.description], N = typeof w == "object" ? L(w) || w.en || "" : String(w || ""), R = typeof k == "object" ? L(k) || k.en || "" : String(k || "");
+      return /* @__PURE__ */ m(
         "li",
         {
-          onClick: () => j(d),
+          onClick: () => v(y),
           className: "cursor-pointer border-b border-gray-100 px-3 py-2 last:border-0 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-600",
           children: [
-            /* @__PURE__ */ r("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: k }),
-            K && /* @__PURE__ */ r("div", { className: "text-xs text-gray-500 dark:text-gray-400", children: K })
+            /* @__PURE__ */ r("div", { className: "text-sm font-medium text-gray-900 dark:text-white", children: N }),
+            R && /* @__PURE__ */ r("div", { className: "text-xs text-gray-500 dark:text-gray-400", children: R })
           ]
         },
-        f
+        g
       );
     }) })
   ] });
 }
-const $ = C;
-function Y({ itemData: e, value: t, onChange: n, required: o, disabled: l }) {
-  const a = $(e.label) || "", i = e.description && $(e.description) || void 0, s = o ?? e.canBeNull !== !0, c = { label: a, description: i, value: t, onChange: n, required: s, disabled: l };
+const $ = I;
+function Y({ itemData: e, value: t, onChange: o, required: s, disabled: a }) {
+  const n = $(e.label) || "", c = e.description && $(e.description) || void 0, i = { label: n, description: c, value: t, onChange: o, required: s ?? !1, disabled: a };
   switch (e.type) {
     case "checkbox":
-      return /* @__PURE__ */ r(A, { ...c });
+      return /* @__PURE__ */ r(H, { ...i });
     case "date":
-      return /* @__PURE__ */ r(Q, { ...c });
+      return /* @__PURE__ */ r(Q, { ...i });
     case "text":
-      return /* @__PURE__ */ r(z, { ...c });
+      return /* @__PURE__ */ r(z, { ...i });
     case "number":
-      return /* @__PURE__ */ r(U, { ...c });
+      return /* @__PURE__ */ r(U, { ...i });
     case "select": {
-      const p = e.options.map((g) => ({
-        value: g.value,
-        label: $(g.label) || ""
+      const d = e.options.map((u) => ({
+        value: u.value,
+        label: $(u.label) || ""
       }));
-      return /* @__PURE__ */ r(P, { ...c, options: p });
+      return /* @__PURE__ */ r(V, { ...i, options: d });
     }
     case "composite": {
-      const p = e.composite;
-      return /* @__PURE__ */ r(J, { ...c, composite: p });
+      const d = e.composite;
+      return /* @__PURE__ */ r(J, { ...i, composite: d });
     }
     case "datasource-search": {
-      const p = e.datasource;
-      return /* @__PURE__ */ r(G, { ...c, datasource: p });
+      const d = e.datasource;
+      return /* @__PURE__ */ r(G, { ...i, datasource: d });
     }
     default:
-      return /* @__PURE__ */ u("div", { className: "text-sm text-red-500", children: [
+      return /* @__PURE__ */ m("div", { className: "text-sm text-red-500", children: [
         "Unknown field type: ",
         e.type
       ] });
@@ -249,24 +249,24 @@ function W(e) {
 function X(e) {
   return e == null ? "—" : typeof e == "boolean" ? e ? "✓" : "✗" : typeof e == "object" ? JSON.stringify(e) : String(e);
 }
-function Z({ entries: e, itemKeys: t, fieldLabels: n, onEdit: o, onDelete: l }) {
-  return e.length === 0 ? null : /* @__PURE__ */ u("div", { className: "mt-4", children: [
+function Z({ entries: e, itemKeys: t, fieldLabels: o, onEdit: s, onDelete: a }) {
+  return e.length === 0 ? null : /* @__PURE__ */ m("div", { className: "mt-4", children: [
     /* @__PURE__ */ r("h4", { className: "mb-2 text-sm font-medium text-gray-700 dark:text-gray-300", children: "Previous entries" }),
-    /* @__PURE__ */ r("div", { className: "overflow-x-auto", children: /* @__PURE__ */ u("table", { className: "w-full text-left text-sm text-gray-700 dark:text-gray-300", children: [
-      /* @__PURE__ */ r("thead", { className: "bg-gray-50 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-400", children: /* @__PURE__ */ u("tr", { children: [
+    /* @__PURE__ */ r("div", { className: "overflow-x-auto", children: /* @__PURE__ */ m("table", { className: "w-full text-left text-sm text-gray-700 dark:text-gray-300", children: [
+      /* @__PURE__ */ r("thead", { className: "bg-gray-50 text-xs uppercase text-gray-600 dark:bg-gray-700 dark:text-gray-400", children: /* @__PURE__ */ m("tr", { children: [
         /* @__PURE__ */ r("th", { className: "px-3 py-2", children: "Date" }),
-        t.map((a) => /* @__PURE__ */ r("th", { className: "px-3 py-2", children: n[a] || a }, a)),
+        t.map((n) => /* @__PURE__ */ r("th", { className: "px-3 py-2", children: o[n] || n }, n)),
         /* @__PURE__ */ r("th", { className: "px-3 py-2 text-right", children: "Actions" })
       ] }) }),
-      /* @__PURE__ */ r("tbody", { children: e.map((a, i) => /* @__PURE__ */ u("tr", { className: "border-b border-gray-200 dark:border-gray-600", children: [
-        /* @__PURE__ */ r("td", { className: "px-3 py-2 whitespace-nowrap", children: W(a.time) }),
-        t.map((s) => /* @__PURE__ */ r("td", { className: "px-3 py-2", children: X(a.values[s]) }, s)),
-        /* @__PURE__ */ u("td", { className: "px-3 py-2 text-right whitespace-nowrap", children: [
+      /* @__PURE__ */ r("tbody", { children: e.map((n, c) => /* @__PURE__ */ m("tr", { className: "border-b border-gray-200 dark:border-gray-600", children: [
+        /* @__PURE__ */ r("td", { className: "px-3 py-2 whitespace-nowrap", children: W(n.time) }),
+        t.map((l) => /* @__PURE__ */ r("td", { className: "px-3 py-2", children: X(n.values[l]) }, l)),
+        /* @__PURE__ */ m("td", { className: "px-3 py-2 text-right whitespace-nowrap", children: [
           /* @__PURE__ */ r(
             "button",
             {
               type: "button",
-              onClick: () => o(i),
+              onClick: () => s(c),
               className: "mr-2 text-primary-600 hover:text-primary-800 dark:text-primary-400 dark:hover:text-primary-300",
               title: "Edit",
               children: "✎"
@@ -276,117 +276,123 @@ function Z({ entries: e, itemKeys: t, fieldLabels: n, onEdit: o, onDelete: l }) 
             "button",
             {
               type: "button",
-              onClick: () => l(i),
+              onClick: () => a(c),
               className: "text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300",
               title: "Delete",
               children: "✕"
             }
           )
         ] })
-      ] }, i)) })
+      ] }, c)) })
     ] }) })
   ] });
 }
-const E = C;
+const _ = I;
 function ee() {
   return (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
 }
-function pe({ section: e, values: t, onSubmit: n, disabled: o, submitLabel: l, entries: a, onEditEntry: i, onDeleteEntry: s }) {
-  const [c, p] = S(t || {}), [g, T] = S(ee()), x = V(), w = e.type === "recurring";
-  function v(m, y) {
-    p((h) => ({ ...h, [m]: y }));
+function ge({ section: e, values: t, onSubmit: o, onDateChange: s, disabled: a, submitLabel: n, entries: c, onEditEntry: l, onDeleteEntry: i }) {
+  const [d, u] = S(t || {}), [f, x] = S(ee());
+  P(() => {
+    u(t || {});
+  }, [t]);
+  const C = q(), b = e.type === "recurring";
+  function E(p, h) {
+    u((v) => ({ ...v, [p]: h }));
   }
-  function L(m, y) {
-    p((h) => ({ ...h, [`${m}__eventType`]: y }));
+  function F(p, h) {
+    u((v) => ({ ...v, [`${p}__eventType`]: h }));
   }
-  function F(m) {
-    if (m.preventDefault(), w) {
-      const y = Math.floor(new Date(g).getTime() / 1e3);
-      n({ ...c, __time: y });
+  function D(p) {
+    if (p.preventDefault(), b) {
+      const h = Math.floor(new Date(f).getTime() / 1e3);
+      o({ ...d, __time: h });
     } else
-      n(c);
+      o(d);
   }
-  const D = {};
-  for (const m of e.itemKeys) {
-    const y = x.itemsDefs.forKey(m);
-    y && (D[m] = E(y.data.label) || m);
+  const T = {};
+  for (const p of e.itemKeys) {
+    const h = C.itemsDefs.forKey(p);
+    h && (T[p] = _(h.data.label) || p);
   }
-  return /* @__PURE__ */ u("form", { onSubmit: F, className: "space-y-6", children: [
-    e.label && /* @__PURE__ */ r("h3", { className: "text-lg font-semibold text-gray-900 dark:text-white", children: E(e.label) }),
-    w && /* @__PURE__ */ u("div", { children: [
+  return /* @__PURE__ */ m("form", { onSubmit: D, className: "space-y-6", children: [
+    e.label && /* @__PURE__ */ r("h3", { className: "text-lg font-semibold text-gray-900 dark:text-white", children: _(e.label) }),
+    b && /* @__PURE__ */ m("div", { children: [
       /* @__PURE__ */ r("label", { className: "mb-1 block text-sm font-medium text-gray-900 dark:text-white", children: "Date" }),
       /* @__PURE__ */ r(
         "input",
         {
           type: "date",
-          value: g,
-          onChange: (m) => T(m.target.value),
-          disabled: o,
+          value: f,
+          onChange: (p) => {
+            x(p.target.value), s == null || s(p.target.value);
+          },
+          disabled: a,
           className: "block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500"
         }
       )
     ] }),
-    e.itemKeys.map((m) => {
-      var j, I;
-      const y = x.itemsDefs.forKey(m);
-      if (!y) return null;
-      const h = (I = (j = y.data) == null ? void 0 : j.variations) == null ? void 0 : I.eventType;
-      return /* @__PURE__ */ u("div", { className: "space-y-2", children: [
+    e.itemKeys.map((p) => {
+      var j, y;
+      const h = C.itemsDefs.forKey(p);
+      if (!h) return null;
+      const v = (y = (j = h.data) == null ? void 0 : j.variations) == null ? void 0 : y.eventType;
+      return /* @__PURE__ */ m("div", { className: "space-y-2", children: [
         /* @__PURE__ */ r(
           Y,
           {
-            itemData: y.data,
-            value: c[m],
-            onChange: (d) => v(m, d),
-            disabled: o
+            itemData: h.data,
+            value: d[p],
+            onChange: (g) => E(p, g),
+            disabled: a
           }
         ),
-        h && /* @__PURE__ */ r(
-          P,
+        v && /* @__PURE__ */ r(
+          V,
           {
-            label: E(h.label) || "",
-            value: c[`${m}__eventType`],
-            onChange: (d) => L(m, d),
-            options: h.options.map((d) => ({
-              value: d.value,
-              label: E(d.label) || ""
+            label: _(v.label) || "",
+            value: d[`${p}__eventType`],
+            onChange: (g) => F(p, g),
+            options: v.options.map((g) => ({
+              value: g.value,
+              label: _(g.label) || ""
             })),
-            disabled: o
+            disabled: a
           }
         )
-      ] }, m);
+      ] }, p);
     }),
     /* @__PURE__ */ r(
       "button",
       {
         type: "submit",
-        disabled: o,
+        disabled: a,
         className: "rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-300 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800",
-        children: l || (w ? "Add entry" : "Submit")
+        children: n || (b ? "Add entry" : "Submit")
       }
     ),
-    w && a && i && s && /* @__PURE__ */ r(
+    b && c && l && i && /* @__PURE__ */ r(
       Z,
       {
-        entries: a,
+        entries: c,
         itemKeys: e.itemKeys,
-        fieldLabels: D,
-        onEdit: i,
-        onDelete: s
+        fieldLabels: T,
+        onEdit: l,
+        onDelete: i
       }
     )
   ] });
 }
-const O = C, te = { checkbox: re, date: ae, text: ne, number: oe, select: se, composite: ce, "datasource-search": le };
-function q(e) {
+const O = I, te = { checkbox: re, date: ae, text: ne, number: oe, select: se, composite: le, "datasource-search": ce };
+function A(e) {
   const t = {
     title: O(e.label) || ""
   };
   e.description != null && (t.description = O(e.description) || void 0);
-  const n = te[e.type];
-  if (n == null)
+  const o = te[e.type];
+  if (o == null)
     throw new Error(`Cannot find schema for type: "${e.type}"`);
-  return n(t, e), t;
+  return o(t, e), t;
 }
 function re(e, t) {
   e.type = "boolean";
@@ -401,40 +407,40 @@ function oe(e, t) {
   e.type = "number";
 }
 function se(e, t) {
-  const n = t, o = n.options.find((a) => isNaN(a.value)), l = n.options.map((a) => ({ const: a.value, title: O(a.label) || "" }));
-  e.type = o ? "string" : "number", e.oneOf = l;
-}
-function le(e, t) {
-  e.type = "object";
+  const o = t, s = o.options.find((n) => isNaN(n.value)), a = o.options.map((n) => ({ const: n.value, title: O(n.label) || "" }));
+  e.type = s ? "string" : "number", e.oneOf = a;
 }
 function ce(e, t) {
-  const n = t;
-  e.type = "object", e.properties = {}, e.required = [];
-  for (const [o, l] of Object.entries(n.composite))
-    e.properties[o] = q(l), l.canBeNull !== !0 && e.required.push(o);
+  e.type = "object";
 }
-const M = C;
-function ye(e) {
+function le(e, t) {
+  const o = t;
+  e.type = "object", e.properties = {}, e.required = [];
+  for (const [s, a] of Object.entries(o.composite))
+    e.properties[s] = A(a), a.canBeNull !== !0 && e.required.push(s);
+}
+const M = I;
+function fe(e) {
   const t = ie(e);
-  function n(o) {
-    const l = structuredClone(o);
-    if (t.processData && t.processData(l).createEvent === !1)
+  function o(s) {
+    const a = structuredClone(s);
+    if (t.processData && t.processData(a).createEvent === !1)
       return null;
-    const a = e.eventTemplate();
-    return Object.assign(a, l), a;
+    const n = e.eventTemplate();
+    return Object.assign(n, a), n;
   }
-  return { schema: t.schema, eventDataForFormData: n };
+  return { schema: t.schema, eventDataForFormData: o };
 }
 function ie(e) {
-  var l, a;
-  const t = e.data.type, n = q(e.data);
+  var a, n;
+  const t = e.data.type, o = A(e.data);
   if (t === "checkbox" && e.data.eventType === "activity/plain")
     return {
-      schema: n,
-      processData: (i) => i === !0 ? {} : { createEvent: !1 }
+      schema: o,
+      processData: (c) => c === !0 ? {} : { createEvent: !1 }
     };
   if (t === "select" && e.data.eventType === "ratio/generic") {
-    const i = Math.max(...(e.data.options || []).map((s) => Number(s.value)));
+    const c = Math.max(...(e.data.options || []).map((l) => Number(l.value)));
     return {
       schema: {
         title: "",
@@ -444,73 +450,150 @@ function ie(e) {
             title: "",
             type: "object",
             properties: {
-              value: n
+              value: o
             },
             required: ["value"]
           }
         }
       },
-      processData: (s) => {
-        const c = s;
-        return c.content == null ? { createEvent: !1 } : (c.content.relativeTo = i, {});
+      processData: (l) => {
+        const i = l;
+        return i.content == null ? { createEvent: !1 } : (i.content.relativeTo = c, {});
       }
     };
   }
-  const o = {
+  const s = {
     schema: {
       title: "",
       type: "object",
       properties: {
-        content: n
+        content: o
       },
       required: ["content"]
     }
   };
-  if ((a = (l = e.data) == null ? void 0 : l.variations) != null && a.eventType) {
-    const i = e.data.variations.eventType;
-    o.schema.properties = {
-      ...o.schema.properties,
+  if ((n = (a = e.data) == null ? void 0 : a.variations) != null && n.eventType) {
+    const c = e.data.variations.eventType;
+    s.schema.properties = {
+      ...s.schema.properties,
       type: {
-        title: M(i.label) || "",
+        title: M(c.label) || "",
         type: "string",
-        oneOf: i.options.map((s) => ({ const: s.value, title: M(s.label) || "" }))
+        oneOf: c.options.map((l) => ({ const: l.value, title: M(l.label) || "" }))
       }
     };
   }
-  return o;
+  return s;
 }
-function ge(e, t) {
-  const n = {};
-  for (const { key: o, itemDef: l } of e) {
-    const a = l.data.eventType, i = l.data.streamId;
-    if (!a || !i) continue;
-    const s = t.filter((c) => c.type === a && c.streamIds.includes(i)).sort((c, p) => (p.time || 0) - (c.time || 0));
-    s.length > 0 && (n[o] = s[0].content);
+function de(e) {
+  var s;
+  if (e.data.eventType) return [e.data.eventType];
+  const t = (s = e.data.variations) == null ? void 0 : s.eventType;
+  if (t != null && t.options)
+    return t.options.map((a) => a.value).filter(Boolean);
+  const o = e.eventTemplate();
+  return o.type ? [o.type] : [];
+}
+function he(e, t) {
+  return ue(e, t).values;
+}
+function ue(e, t) {
+  const o = {}, s = {}, a = {};
+  for (const { key: n, itemDef: c } of e) {
+    const l = de(c), i = c.data.streamId;
+    if (l.length === 0 || !i) continue;
+    const d = t.filter((u) => {
+      var f;
+      return l.includes(u.type) && ((f = u.streamIds) == null ? void 0 : f.includes(i));
+    }).sort((u, f) => (f.time || 0) - (u.time || 0));
+    if (d.length > 0) {
+      const u = d[0];
+      u.type === "activity/plain" ? o[n] = !0 : o[n] = u.content, u.id && (s[n] = u.id), a[n] = u.type;
+    }
   }
-  return n;
+  return { values: o, eventIds: s, eventTypes: a };
 }
-function fe(e, t, n) {
-  const o = [], l = n || Math.floor(Date.now() / 1e3);
-  for (const { key: a, itemDef: i } of e) {
-    const s = t[a];
-    if (s == null) continue;
-    const c = i.eventTemplate();
-    o.push({
-      streamIds: c.streamIds,
-      type: c.type,
-      content: s,
-      time: l
+function be(e, t, o, s) {
+  const a = [], n = s || Math.floor(Date.now() / 1e3);
+  for (const { key: c, itemDef: l } of e) {
+    const i = t[c], d = o[c], u = l.eventTemplate(), f = t[`${c}__eventType`] || u.type;
+    if (f === "activity/plain") {
+      if (i === !0) {
+        if (d)
+          continue;
+        a.push({
+          action: "create",
+          key: c,
+          params: {
+            streamIds: u.streamIds,
+            type: f,
+            content: null,
+            time: n
+          }
+        });
+      } else
+        d && a.push({ action: "delete", key: c, params: { id: d } });
+      continue;
+    }
+    if (i == null || i === "") {
+      d && a.push({ action: "delete", key: c, params: { id: d } });
+      continue;
+    }
+    if (d) {
+      const x = { content: i };
+      t[`${c}__eventType`] && (x.type = f), a.push({
+        action: "update",
+        key: c,
+        params: { id: d, update: x }
+      });
+    } else
+      a.push({
+        action: "create",
+        key: c,
+        params: {
+          streamIds: u.streamIds,
+          type: f,
+          content: i,
+          time: n
+        }
+      });
+  }
+  return a;
+}
+function xe(e, t, o) {
+  const s = [], a = o || Math.floor(Date.now() / 1e3);
+  for (const { key: n, itemDef: c } of e) {
+    const l = t[n];
+    if (l == null) continue;
+    const i = c.eventTemplate(), d = i.type;
+    if (d === "activity/plain") {
+      if (l === !1) continue;
+      s.push({
+        streamIds: i.streamIds,
+        type: d,
+        content: null,
+        time: a
+      });
+      continue;
+    }
+    s.push({
+      streamIds: i.streamIds,
+      type: d,
+      content: l,
+      time: a
     });
   }
-  return o;
+  return s;
 }
 export {
   G as DatasetSearch,
   Z as EntryList,
   Y as HDSFormField,
-  pe as HDSFormSection,
-  fe as formDataToEventBatch,
-  ye as jsonFormForItemDef,
-  ge as prefillFromEvents,
-  q as schemaFor
+  ge as HDSFormSection,
+  be as formDataToActions,
+  xe as formDataToEventBatch,
+  fe as jsonFormForItemDef,
+  ue as matchEventsToItemDefs,
+  he as prefillFromEvents,
+  A as schemaFor
 };

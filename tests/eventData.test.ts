@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { prefillFromEvents, formDataToEventBatch } from '../src/schema/eventData';
+import { prefillFromEvents, matchEventsToItemDefs, formDataToActions, formDataToEventBatch } from '../src/schema/eventData';
 import type { ItemDef } from '../src/schema/itemDefToSchema';
 
 function makeItemDef (overrides: Partial<ItemDef['data']> & { streamId?: string }): ItemDef {
@@ -105,5 +105,110 @@ describe('formDataToEventBatch', () => {
     const after = Math.floor(Date.now() / 1000);
     expect(events[0].time).toBeGreaterThanOrEqual(before);
     expect(events[0].time).toBeLessThanOrEqual(after);
+  });
+});
+
+// Helper for items with variations (no single eventType, uses variations.eventType)
+function makeVariationItemDef (streamId: string, options: Array<{ value: string; label: any }>): ItemDef {
+  return {
+    data: {
+      type: 'number',
+      label: { en: 'Weight' },
+      streamId,
+      variations: {
+        eventType: {
+          label: { en: 'Unit' },
+          options
+        }
+      }
+    } as any,
+    eventTemplate: () => ({
+      streamIds: [streamId],
+      type: options[0].value // default to first option
+    })
+  };
+}
+
+describe('matchEventsToItemDefs — variations', () => {
+  it('returns matched event type for variation items', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } },
+      { value: 'mass/lb', label: { en: 'lb' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    const events = [
+      { id: 'e1', type: 'mass/lb', streamIds: ['body'], content: 150, time: 100 }
+    ];
+    const result = matchEventsToItemDefs(itemDefs, events);
+    expect(result.values.weight).toBe(150);
+    expect(result.eventIds.weight).toBe('e1');
+    expect(result.eventTypes.weight).toBe('mass/lb');
+  });
+
+  it('picks most recent among variation types', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } },
+      { value: 'mass/lb', label: { en: 'lb' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    const events = [
+      { id: 'e1', type: 'mass/kg', streamIds: ['body'], content: 70, time: 100 },
+      { id: 'e2', type: 'mass/lb', streamIds: ['body'], content: 155, time: 200 }
+    ];
+    const result = matchEventsToItemDefs(itemDefs, events);
+    expect(result.values.weight).toBe(155);
+    expect(result.eventTypes.weight).toBe('mass/lb');
+  });
+});
+
+describe('formDataToActions — variations', () => {
+  it('uses __eventType override for create', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } },
+      { value: 'mass/lb', label: { en: 'lb' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    const formData = { weight: 155, 'weight__eventType': 'mass/lb' };
+    const actions = formDataToActions(itemDefs, formData, {}, 1000);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].action).toBe('create');
+    expect(actions[0].params.type).toBe('mass/lb');
+    expect(actions[0].params.content).toBe(155);
+  });
+
+  it('uses __eventType override for update (includes type in update)', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } },
+      { value: 'mass/lb', label: { en: 'lb' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    const formData = { weight: 70, 'weight__eventType': 'mass/kg' };
+    const actions = formDataToActions(itemDefs, formData, { weight: 'e1' }, 1000);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].action).toBe('update');
+    expect(actions[0].params.update.content).toBe(70);
+    expect(actions[0].params.update.type).toBe('mass/kg');
+  });
+
+  it('defaults to template type when no __eventType', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } },
+      { value: 'mass/lb', label: { en: 'lb' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    const formData = { weight: 70 };
+    const actions = formDataToActions(itemDefs, formData, {}, 1000);
+    expect(actions[0].params.type).toBe('mass/kg'); // first option = template default
+  });
+
+  it('does not include type in update when no __eventType', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } },
+      { value: 'mass/lb', label: { en: 'lb' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    const formData = { weight: 70 };
+    const actions = formDataToActions(itemDefs, formData, { weight: 'e1' }, 1000);
+    expect(actions[0].params.update.type).toBeUndefined();
   });
 });
