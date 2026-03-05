@@ -343,7 +343,10 @@ export default function App () {
                   <h3 className='mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300'>Intake</h3>
                   <div className='grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
                     <div>
-                      <label className='mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300'>Dose value</label>
+                      <label className='mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300'>
+                        Dose value
+                        {medicationValue.doseValue && <span className='ml-1 text-primary-500'>(pre-filled)</span>}
+                      </label>
                       <input
                         type='number'
                         min='0'
@@ -351,7 +354,8 @@ export default function App () {
                         value={intake.doseValue}
                         onChange={e => updateIntake('doseValue', e.target.value)}
                         placeholder='e.g. 1, 2, 0.5'
-                        className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                        disabled={!!medicationValue.doseValue}
+                        className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
                       />
                     </div>
                     <div>
@@ -362,7 +366,8 @@ export default function App () {
                       <select
                         value={intake.doseUnit}
                         onChange={e => updateIntake('doseUnit', e.target.value)}
-                        className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                        disabled={!!medicationValue.doseUnit}
+                        className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
                       >
                         <option value=''>-- select --</option>
                         {DOSE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
@@ -376,7 +381,8 @@ export default function App () {
                       <select
                         value={intake.route}
                         onChange={e => updateIntake('route', e.target.value)}
-                        className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                        disabled={!!medicationValue.route}
+                        className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
                       >
                         <option value=''>-- select --</option>
                         {ROUTES.map(r => <option key={r} value={r}>{r}</option>)}
