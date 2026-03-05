@@ -48,7 +48,8 @@ export function HDSFormField ({ itemData, value, onChange, required, disabled }:
     }
     case 'datasource-search': {
       const dsKey = (itemData as any).datasource;
-      return <DatasetSearch {...baseProps} datasource={dsKey} />;
+      const eventType = (itemData as any).eventType;
+      return <DatasetSearch {...baseProps} datasource={dsKey} eventType={eventType} />;
     }
     default:
       return <div className='text-sm text-red-500'>Unknown field type: {(itemData as any).type}</div>;
