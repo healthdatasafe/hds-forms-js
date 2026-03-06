@@ -2,6 +2,8 @@
 export { HDSFormField } from './components/HDSFormField';
 export { HDSFormSection } from './components/HDSFormSection';
 export { EntryList } from './components/EntryList';
+export { ReminderEditor } from './components/ReminderEditor';
+export type { ReminderEditorConfig } from './components/ReminderEditor';
 export { DatasetSearch } from './components/fields/DatasetSearch';
 
 // Schema utilities
