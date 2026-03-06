@@ -2,6 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { getModel } from './hdsLibService';
 import { appTemplates } from 'hds-lib';
 import { HDSFormSection } from 'hds-forms/components/HDSFormSection';
+import { ReminderEditor } from 'hds-forms/components/ReminderEditor';
+import type { ReminderEditorConfig } from 'hds-forms/components/ReminderEditor';
 
 const { CollectorRequest } = appTemplates;
 
@@ -186,6 +188,19 @@ export default function FormBuilder () {
       section.setItemCustomization(itemKey, {});
     } else {
       section.setItemCustomization(itemKey, { repeatable: value });
+    }
+    refresh();
+  }
+
+  function setReminder (sectionKey: string, itemKey: string, reminder: Partial<ReminderEditorConfig> | undefined) {
+    const section = request.getSectionByKey(sectionKey);
+    if (!section) return;
+    const existing = section.getItemCustomization(itemKey) || {};
+    if (reminder === undefined) {
+      const { reminder: _removed, ...rest } = existing as any;
+      section.setItemCustomization(itemKey, rest);
+    } else {
+      section.setItemCustomization(itemKey, { ...existing, reminder });
     }
     refresh();
   }
@@ -393,18 +408,26 @@ export default function FormBuilder () {
                           </div>
                           {/* Inline customization panel */}
                           {isEditing && (
-                            <div className='ml-4 mt-1 flex items-center gap-2 rounded bg-gray-100 p-2 text-xs dark:bg-gray-700'>
-                              <label className='text-gray-600 dark:text-gray-400'>Repeatable:</label>
-                              <select
-                                value={isOverridden ? String(customization.repeatable) : ''}
-                                onChange={e => setRepeatable(section.key, itemKey, e.target.value)}
-                                className='rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
-                              >
-                                <option value=''>default ({repeatableLabel(defaultRepeatable)})</option>
-                                {REPEATABLE_OPTIONS.filter(o => o.value !== '').map(opt => (
-                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                              </select>
+                            <div className='ml-4 mt-1 space-y-1 rounded bg-gray-100 p-2 text-xs dark:bg-gray-700'>
+                              <div className='flex items-center gap-2'>
+                                <label className='text-gray-600 dark:text-gray-400'>Repeatable:</label>
+                                <select
+                                  value={isOverridden ? String(customization.repeatable) : ''}
+                                  onChange={e => setRepeatable(section.key, itemKey, e.target.value)}
+                                  className='rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                                >
+                                  <option value=''>default ({repeatableLabel(defaultRepeatable)})</option>
+                                  {REPEATABLE_OPTIONS.filter(o => o.value !== '').map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <ReminderEditor
+                                defaultReminder={itemDef?.reminder || null}
+                                override={customization?.reminder as Partial<ReminderEditorConfig> | undefined}
+                                onChange={r => setReminder(section.key, itemKey, r)}
+                                availableItemKeys={section.itemKeys.filter(k => k !== itemKey).map(k => ({ key: k, label: itemLabel(k) }))}
+                              />
                             </div>
                           )}
                         </div>
