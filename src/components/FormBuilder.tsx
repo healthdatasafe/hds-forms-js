@@ -95,15 +95,15 @@ export default function FormBuilder ({
 
   // Group and filter items for the browser
   const groupedItems = useMemo(() => {
-    const groups: Record<string, Array<{ key: string; label: string; streamId: string }>> = {};
+    const groups: Record<string, Array<{ key: string; label: string; description: string; streamId: string }>> = {};
     for (const itemDef of allItemDefs) {
       const label = itemDef.label;
       if (searchQuery && !label.toLowerCase().includes(searchQuery.toLowerCase()) && !itemDef.key.toLowerCase().includes(searchQuery.toLowerCase())) {
         continue;
       }
-      const group = getItemGroup(itemDef.data.streamId);
+      const group = getItemGroup(itemDef.key);
       if (!groups[group]) groups[group] = [];
-      groups[group].push({ key: itemDef.key, label, streamId: itemDef.data.streamId });
+      groups[group].push({ key: itemDef.key, label, description: itemDef.description, streamId: itemDef.data.streamId });
     }
     return groups;
   }, [allItemDefs, searchQuery]);
@@ -239,6 +239,12 @@ export default function FormBuilder ({
     } catch { return key; }
   }
 
+  function itemDescription (key: string): string {
+    try {
+      return model.itemsDefs.forKey(key)?.description || key;
+    } catch { return key; }
+  }
+
   const contentJson = useMemo(() => JSON.stringify(request.content, null, 2), [version]); // eslint-disable-line react-hooks/exhaustive-deps
   const sortedGroups = useMemo(() => Object.keys(groupedItems).sort(), [groupedItems]);
 
@@ -287,7 +293,7 @@ export default function FormBuilder ({
                                 ? 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 dark:text-gray-300 dark:hover:bg-blue-900 dark:hover:text-blue-300'
                                 : 'text-gray-500 dark:text-gray-400'
                           }`}
-                          title={item.key}
+                          title={item.description || item.key}
                         >
                           {used && <span className='mr-1'>✓</span>}
                           {item.label}
@@ -386,7 +392,7 @@ export default function FormBuilder ({
                         return (
                           <div key={itemKey}>
                             <div className='flex items-center gap-1.5 rounded px-2 py-1 text-sm hover:bg-gray-50 dark:hover:bg-gray-700'>
-                              <span className='flex-1 text-gray-700 dark:text-gray-300' title={itemKey}>
+                              <span className='flex-1 text-gray-700 dark:text-gray-300' title={itemDescription(itemKey)}>
                                 {itemLabel(itemKey)}
                                 <span className='ml-1 text-xs text-gray-400'>({itemKey})</span>
                                 <span className={`ml-1 rounded px-1 ${

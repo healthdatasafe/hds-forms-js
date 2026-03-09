@@ -20,8 +20,8 @@ export const REPEATABLE_OPTIONS = [
   { value: 'unlimited', label: 'Unlimited' }
 ];
 
-/** Group items by top-level stream prefix (body, profile, fertility, ...) */
-export function getItemGroup (streamId: string): string {
-  if (!streamId) return 'other';
-  return streamId.split('-')[0];
+/** Group items by top-level key prefix (body, profile, fertility, ...) */
+export function getItemGroup (itemKey: string): string {
+  if (!itemKey) return 'other';
+  return itemKey.split('-')[0];
 }
