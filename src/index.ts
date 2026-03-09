@@ -5,6 +5,9 @@ export { EntryList } from './components/EntryList';
 export { ReminderEditor } from './components/ReminderEditor';
 export type { ReminderEditorConfig } from './components/ReminderEditor';
 export { DatasetSearch } from './components/fields/DatasetSearch';
+export { default as FormBuilder } from './components/FormBuilder';
+export type { FormBuilderProps, FormBuilderLabels } from './components/FormBuilder';
+export { REPEATABLE_LABELS, REPEATABLE_OPTIONS, repeatableLabel, getItemGroup } from './formBuilderUtils';
 
 // Schema utilities
 export { schemaFor } from './schema/schemas';

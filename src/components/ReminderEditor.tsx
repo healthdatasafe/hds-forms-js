@@ -78,8 +78,12 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
     override?.enabled === false ? false : (override != null || defaultReminder != null)
   );
   const [type, setType] = useState<ReminderType>(() => {
-    const t = detectType(override) || detectType(defaultReminder);
-    return t || 'cooldown';
+    if (override) {
+      const t = detectType(override);
+      if (t !== 'none') return t;
+    }
+    const t = detectType(defaultReminder);
+    return t !== 'none' ? t : 'cooldown';
   });
 
   function handleToggle (checked: boolean) {
@@ -156,7 +160,7 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
               <select value={type} onChange={e => handleTypeChange(e.target.value as ReminderType)} className={selectClass}>
                 <option value='cooldown'>Cooldown</option>
                 <option value='interval'>Expected interval</option>
-                {availableItemKeys && availableItemKeys.length > 0 && (
+                {(type === 'relative' || (availableItemKeys && availableItemKeys.length > 0)) && (
                   <option value='relative'>Relative to item</option>
                 )}
               </select>
@@ -240,16 +244,7 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
             <div className='flex flex-wrap items-center gap-3'>
               <div className='flex items-center gap-1'>
                 <label className={labelClass}>Relative to:</label>
-                <select
-                  value={effective?.relativeTo || ''}
-                  onChange={e => update({ relativeTo: e.target.value || undefined })}
-                  className={selectClass}
-                >
-                  <option value=''>— select item —</option>
-                  {(availableItemKeys || []).map(item => (
-                    <option key={item.key} value={item.key}>{item.label}</option>
-                  ))}
-                </select>
+                <span className='text-xs text-gray-700 dark:text-gray-300'>{effective?.relativeTo || '—'}</span>
               </div>
               <div className='flex items-center gap-1'>
                 <label className={labelClass}>Days:</label>
