@@ -7,7 +7,7 @@ import { jsonFormForItemDef } from 'hds-forms/schema/itemDefToSchema';
 import type { SectionEntry } from 'hds-forms/types';
 import FormBuilder from './FormBuilder';
 
-type Tab = 'fields' | 'section' | 'recurring' | 'medication' | 'builder';
+type Tab = 'fields' | 'section' | 'recurring' | 'medication' | 'builder' | 'settings';
 
 interface IntakeState {
   doseValue: string;
@@ -198,6 +198,9 @@ export default function App () {
         <button className={tabClass('builder')} onClick={() => setTab('builder')}>
           Builder
         </button>
+        <button className={tabClass('settings')} onClick={() => setTab('settings')}>
+          Settings
+        </button>
       </div>
 
       <div className='rounded-b-lg border border-t-0 border-gray-200 bg-white p-6 dark:border-gray-600 dark:bg-gray-800'>
@@ -294,6 +297,9 @@ export default function App () {
 
         {/* ── Builder Tab ── */}
         {tab === 'builder' && <FormBuilder />}
+
+        {/* ── Settings Tab ── */}
+        {tab === 'settings' && <SettingsPanel />}
 
         {/* ── Medication Tab ── */}
         {tab === 'medication' && (() => {
@@ -400,6 +406,207 @@ export default function App () {
             </div>
           );
         })()}
+      </div>
+    </div>
+  );
+}
+
+const LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'fr', label: 'Français' },
+  { value: 'es', label: 'Español' },
+];
+
+const DATE_FORMATS = [
+  { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY (31.12.2026)' },
+  { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY (31/12/2026)' },
+  { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY (12/31/2026)' },
+  { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD (2026-12-31)' },
+];
+
+const TIMEZONES = [
+  'Europe/Zurich', 'Europe/Paris', 'Europe/London',
+  'America/New_York', 'America/Los_Angeles', 'Asia/Tokyo',
+];
+
+const UNIT_SYSTEMS = [
+  { value: 'metric', label: 'Metric (kg, cm, °C)' },
+  { value: 'imperial', label: 'Imperial (lbs, ft/in, °F)' },
+];
+
+const THEMES = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
+
+function SettingsPanel () {
+  const [settings, setSettings] = useState({
+    preferredLocales: ['en'],
+    theme: 'light',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Zurich',
+    dateFormat: 'DD.MM.YYYY',
+    unitSystem: 'metric',
+    displayName: '',
+  });
+
+  const update = (key: string, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const settingsEvents = useMemo(() => [
+    { type: 'settings/preferredLocales', streamIds: ['app-baseStream'], content: settings.preferredLocales },
+    { type: 'settings/theme', streamIds: ['app-baseStream'], content: settings.theme },
+    { type: 'settings/timezone', streamIds: ['app-baseStream'], content: settings.timezone },
+    { type: 'settings/dateFormat', streamIds: ['app-baseStream'], content: settings.dateFormat },
+    { type: 'settings/unitSystem', streamIds: ['app-baseStream'], content: settings.unitSystem },
+    ...(settings.displayName
+      ? [{ type: 'note/txt', streamIds: ['profile-displayName'], content: settings.displayName }]
+      : []),
+  ], [settings]);
+
+  const selectClass = 'block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+  const inputClass = 'block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
+  const labelClass = 'mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300';
+  const sectionTitle = 'mb-3 text-base font-semibold text-gray-900 dark:text-white';
+
+  return (
+    <div className='space-y-8'>
+      <p className='text-sm text-gray-500 dark:text-gray-400'>
+        Default settings panel — preview of how settings will appear in web apps.
+        Each setting is stored as <strong>1 event per setting</strong> on the HDS server.
+      </p>
+
+      {/* ── Locale & Display ── */}
+      <div>
+        <h3 className={sectionTitle}>Locale &amp; Display</h3>
+        <div className='space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
+          <div>
+            <label className={labelClass}>Language</label>
+            <select
+              value={settings.preferredLocales[0]}
+              onChange={e => update('preferredLocales', [e.target.value])}
+              className={selectClass}
+            >
+              {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+            </select>
+            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/preferredLocales</p>
+          </div>
+          <div>
+            <label className={labelClass}>Date format</label>
+            <select
+              value={settings.dateFormat}
+              onChange={e => update('dateFormat', e.target.value)}
+              className={selectClass}
+            >
+              {DATE_FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/dateFormat</p>
+          </div>
+          <div>
+            <label className={labelClass}>Timezone</label>
+            <select
+              value={settings.timezone}
+              onChange={e => update('timezone', e.target.value)}
+              className={selectClass}
+            >
+              {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
+            </select>
+            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/timezone</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Units ── */}
+      <div>
+        <h3 className={sectionTitle}>Unit System</h3>
+        <div className='space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
+          <div>
+            <label className={labelClass}>Measurement system</label>
+            <div className='flex gap-3'>
+              {UNIT_SYSTEMS.map(u => (
+                <label key={u.value} className='flex items-center gap-2 cursor-pointer'>
+                  <input
+                    type='radio'
+                    name='unitSystem'
+                    value={u.value}
+                    checked={settings.unitSystem === u.value}
+                    onChange={e => update('unitSystem', e.target.value)}
+                    className='text-primary-600 focus:ring-primary-500'
+                  />
+                  <span className='text-sm text-gray-700 dark:text-gray-300'>{u.label}</span>
+                </label>
+              ))}
+            </div>
+            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/unitSystem — determines default variation for body-weight (mass/kg vs mass/lb), body-height (length/m vs length/ft), etc.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Theme ── */}
+      <div>
+        <h3 className={sectionTitle}>Appearance</h3>
+        <div className='space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
+          <div>
+            <label className={labelClass}>Theme</label>
+            <div className='flex gap-3'>
+              {THEMES.map(t => (
+                <label key={t.value} className='flex items-center gap-2 cursor-pointer'>
+                  <input
+                    type='radio'
+                    name='theme'
+                    value={t.value}
+                    checked={settings.theme === t.value}
+                    onChange={e => update('theme', e.target.value)}
+                    className='text-primary-600 focus:ring-primary-500'
+                  />
+                  <span className='text-sm text-gray-700 dark:text-gray-300'>{t.label}</span>
+                </label>
+              ))}
+            </div>
+            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/theme</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Profile ── */}
+      <div>
+        <h3 className={sectionTitle}>Profile</h3>
+        <div className='space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
+          <p className='text-xs text-gray-400'>Profile data is stored in account-level streams (<code>profile/profile-displayName</code>) and shared across all connections. Falls back to app-scoped settings when profile streams are not accessible.</p>
+          <div className='flex items-start gap-4'>
+            <div className='flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xl font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-300'>
+              {settings.displayName ? settings.displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : '?'}
+            </div>
+            <div className='flex-1 space-y-3'>
+              <div>
+                <label className={labelClass}>Display name</label>
+                <input
+                  type='text'
+                  value={settings.displayName}
+                  onChange={e => update('displayName', e.target.value)}
+                  placeholder='e.g. Dr. Smith'
+                  className={inputClass}
+                />
+                <p className='mt-1 text-xs text-gray-400'>Stored as: note/txt in stream profile-displayName</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Debug: Event representations ── */}
+      <div>
+        <h3 className={sectionTitle}>Storage Preview (1 event per setting)</h3>
+        <div className='space-y-2'>
+          {settingsEvents.map((evt, i) => (
+            <div key={i} className='rounded border border-gray-200 bg-gray-50 px-3 py-2 text-xs dark:border-gray-600 dark:bg-gray-700'>
+              <span className='font-mono font-semibold text-primary-600 dark:text-primary-400'>{evt.type}</span>
+              <span className='mx-2 text-gray-400'>→</span>
+              <span className='text-gray-600 dark:text-gray-300'>{JSON.stringify(evt.content)}</span>
+              <span className='ml-2 text-gray-400'>in [{evt.streamIds.join(', ')}]</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
