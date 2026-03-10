@@ -454,13 +454,13 @@ function SettingsPanel () {
   };
 
   const settingsEvents = useMemo(() => [
-    { type: 'settings/preferredLocales', streamIds: ['app-baseStream'], content: settings.preferredLocales },
+    { type: 'settings/preferred-locales', streamIds: ['app-baseStream'], content: settings.preferredLocales },
     { type: 'settings/theme', streamIds: ['app-baseStream'], content: settings.theme },
     { type: 'settings/timezone', streamIds: ['app-baseStream'], content: settings.timezone },
-    { type: 'settings/dateFormat', streamIds: ['app-baseStream'], content: settings.dateFormat },
-    { type: 'settings/unitSystem', streamIds: ['app-baseStream'], content: settings.unitSystem },
+    { type: 'settings/date-format', streamIds: ['app-baseStream'], content: settings.dateFormat },
+    { type: 'settings/unit-system', streamIds: ['app-baseStream'], content: settings.unitSystem },
     ...(settings.displayName
-      ? [{ type: 'note/txt', streamIds: ['profile-displayName'], content: settings.displayName }]
+      ? [{ type: 'contact/display-name', streamIds: ['app-baseStream'], content: settings.displayName }]
       : []),
   ], [settings]);
 
@@ -489,7 +489,7 @@ function SettingsPanel () {
             >
               {LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
             </select>
-            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/preferredLocales</p>
+            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/preferred-locales</p>
           </div>
           <div>
             <label className={labelClass}>Date format</label>
@@ -500,7 +500,7 @@ function SettingsPanel () {
             >
               {DATE_FORMATS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
             </select>
-            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/dateFormat</p>
+            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/date-format</p>
           </div>
           <div>
             <label className={labelClass}>Timezone</label>
@@ -537,7 +537,7 @@ function SettingsPanel () {
                 </label>
               ))}
             </div>
-            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/unitSystem — determines default variation for body-weight (mass/kg vs mass/lb), body-height (length/m vs length/ft), etc.</p>
+            <p className='mt-1 text-xs text-gray-400'>Stored as: settings/unit-system — determines default variation for body-weight (mass/kg vs mass/lb), body-height (length/m vs length/ft), etc.</p>
           </div>
         </div>
       </div>
@@ -572,7 +572,7 @@ function SettingsPanel () {
       <div>
         <h3 className={sectionTitle}>Profile</h3>
         <div className='space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
-          <p className='text-xs text-gray-400'>Profile data is stored in account-level streams (<code>profile/profile-displayName</code>) and shared across all connections. Falls back to app-scoped settings when profile streams are not accessible.</p>
+          <p className='text-xs text-gray-400'>Display name is stored as a <code>contact/display-name</code> event in the app&apos;s baseStream, like other settings.</p>
           <div className='flex items-start gap-4'>
             <div className='flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-100 text-xl font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-300'>
               {settings.displayName ? settings.displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : '?'}
@@ -587,7 +587,7 @@ function SettingsPanel () {
                   placeholder='e.g. Dr. Smith'
                   className={inputClass}
                 />
-                <p className='mt-1 text-xs text-gray-400'>Stored as: note/txt in stream profile-displayName</p>
+                <p className='mt-1 text-xs text-gray-400'>Stored as: contact/display-name</p>
               </div>
             </div>
           </div>
