@@ -368,7 +368,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
                 const itemDesc = item[descField];
                 const displayLabel = typeof itemLabel === 'object' ? (l(itemLabel) || itemLabel.en || '') : String(itemLabel || '');
                 const displayDesc = typeof itemDesc === 'object' ? (l(itemDesc) || itemDesc.en || '') : String(itemDesc || '');
-                const systems = Array.from(new Set((item.codes || []).map((c: any) => String(c.system)).filter(Boolean)));
+                const systems: string[] = Array.from(new Set((item.codes || []).map((c: any) => String(c.system)).filter(Boolean)));
                 return (
                   <li
                     key={idx}
