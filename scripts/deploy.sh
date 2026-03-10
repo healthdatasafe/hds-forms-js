@@ -31,6 +31,9 @@ echo "Building..."
 npm run build
 echo "Build OK."
 
+# CNAME for custom domain
+echo "demo-forms.datasafe.dev" > dist/CNAME
+
 # Generate version.json
 cat > dist/version.json << VEOF
 {

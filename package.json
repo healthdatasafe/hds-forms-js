@@ -16,7 +16,7 @@
     "js"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "setup": "sh ./scripts/setup.sh",
