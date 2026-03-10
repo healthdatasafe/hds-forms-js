@@ -33,6 +33,8 @@ echo "Build OK."
 
 # CNAME for custom domain
 echo "demo-forms.datasafe.dev" > dist/CNAME
+# Bypass Jekyll processing (needed for version.json etc.)
+touch dist/.nojekyll
 
 # Generate version.json
 cat > dist/version.json << VEOF
