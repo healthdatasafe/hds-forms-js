@@ -19,6 +19,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "prepare": "npm run build",
     "setup": "sh ./scripts/setup.sh",
     "dev": "vite build --watch",
     "build": "vite build && tsc --emitDeclarationOnly",
