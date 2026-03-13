@@ -10,7 +10,13 @@ export function Composite ({ label, description, value, onChange, composite, dis
   const compositeValue = value || {};
 
   function handleFieldChange (key: string, fieldValue: any) {
-    onChange({ ...compositeValue, [key]: fieldValue });
+    const updated = { ...compositeValue };
+    if (fieldValue == null) {
+      delete updated[key];
+    } else {
+      updated[key] = fieldValue;
+    }
+    onChange(Object.keys(updated).length > 0 ? updated : null);
   }
 
   return (
@@ -24,6 +30,7 @@ export function Composite ({ label, description, value, onChange, composite, dis
             itemData={itemData}
             value={compositeValue[key]}
             onChange={(v) => handleFieldChange(key, v)}
+            required={!(itemData as any).canBeNull}
             disabled={disabled}
           />
         ))}
