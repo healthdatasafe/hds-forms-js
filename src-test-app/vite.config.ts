@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       'hds-forms': path.resolve(__dirname, '../src')
-    }
+    },
+    dedupe: ['hds-lib', 'react', 'react-dom'],
   },
   optimizeDeps: {
     include: ['hds-lib']
