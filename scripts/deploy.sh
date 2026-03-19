@@ -27,8 +27,10 @@ COMMIT_SHORT="$(git rev-parse --short HEAD)"
 COMMIT_FULL="$(git rev-parse HEAD)"
 echo "Deploying commit $COMMIT_SHORT ..."
 
-echo "Building..."
+echo "Building library..."
 npm run build
+echo "Building test app..."
+npx vite build src-test-app
 echo "Build OK."
 
 # No custom domain — served at healthdatasafe.github.io/hds-forms-js/
