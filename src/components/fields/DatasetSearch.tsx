@@ -311,92 +311,92 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
           <div className='block w-full rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'>
             {editDrugLabel}
           </div>
-        )
+          )
         : (
-        /* Create mode: search input */
-        <>
-          <div style={{ position: 'relative' }}>
-            <input
-              type='text'
-              value={query}
-              onChange={(e) => handleInputChange(e.target.value)}
-              placeholder={`Type at least ${minQueryLength} characters to search...`}
-              disabled={disabled}
-              className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
-            />
-            {(query || value) && !disabled && (
-              <button
-                type='button'
-                onClick={handleClear}
-                style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)' }}
-                className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-              >
-                &times;
-              </button>
-            )}
-          </div>
-
-          {availableSources.length > 1 && (
-            <div className='mt-1 flex items-center gap-3'>
-              {availableSources.map(source => {
-                const active = selectedSources.has(source);
-                return (
-                  <label key={source} className='flex cursor-pointer items-center gap-1 select-none'>
-                    <input
-                      type='checkbox'
-                      checked={active}
-                      onChange={() => toggleSource(source)}
-                      className='h-3 w-3 rounded border-gray-300 text-primary-600 focus:ring-1 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-700'
-                    />
-                    <span className={`text-xs ${active ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 line-through dark:text-gray-600'}`}>
-                      {source}
-                    </span>
-                  </label>
-                );
-              })}
+      /* Create mode: search input */
+          <>
+            <div style={{ position: 'relative' }}>
+              <input
+                type='text'
+                value={query}
+                onChange={(e) => handleInputChange(e.target.value)}
+                placeholder={`Type at least ${minQueryLength} characters to search...`}
+                disabled={disabled}
+                className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
+              />
+              {(query || value) && !disabled && (
+                <button
+                  type='button'
+                  onClick={handleClear}
+                  style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)' }}
+                  className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                >
+                  &times;
+                </button>
+              )}
             </div>
-          )}
 
-          {isLoading && (
-            <div className='mt-1 text-xs text-gray-500 dark:text-gray-400'>Searching...</div>
-          )}
+            {availableSources.length > 1 && (
+              <div className='mt-1 flex items-center gap-3'>
+                {availableSources.map(source => {
+                  const active = selectedSources.has(source);
+                  return (
+                    <label key={source} className='flex cursor-pointer items-center gap-1 select-none'>
+                      <input
+                        type='checkbox'
+                        checked={active}
+                        onChange={() => toggleSource(source)}
+                        className='h-3 w-3 rounded border-gray-300 text-primary-600 focus:ring-1 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-700'
+                      />
+                      <span className={`text-xs ${active ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 line-through dark:text-gray-600'}`}>
+                        {source}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
 
-          {isOpen && results.length > 0 && (
-            <ul className='mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700'>
-              {results.map((item, idx) => {
-                const itemLabel = item[labelField];
-                const itemDesc = item[descField];
-                const displayLabel = typeof itemLabel === 'object' ? (l(itemLabel) || itemLabel.en || '') : String(itemLabel || '');
-                const displayDesc = typeof itemDesc === 'object' ? (l(itemDesc) || itemDesc.en || '') : String(itemDesc || '');
-                const systems: string[] = Array.from(new Set((item.codes || []).map((c: any) => String(c.system)).filter(Boolean)));
-                return (
-                  <li
-                    key={idx}
-                    onClick={() => handleSelect(item)}
-                    className='cursor-pointer border-b border-gray-100 px-3 py-2 last:border-0 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-600'
-                  >
-                    <div className='flex items-start justify-between gap-2'>
-                      <div className='min-w-0'>
-                        <div className='text-sm font-medium text-gray-900 dark:text-white'>{displayLabel}</div>
-                        {displayDesc && (
-                          <div className='text-xs text-gray-500 dark:text-gray-400'>{displayDesc}</div>
+            {isLoading && (
+              <div className='mt-1 text-xs text-gray-500 dark:text-gray-400'>Searching...</div>
+            )}
+
+            {isOpen && results.length > 0 && (
+              <ul className='mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700'>
+                {results.map((item, idx) => {
+                  const itemLabel = item[labelField];
+                  const itemDesc = item[descField];
+                  const displayLabel = typeof itemLabel === 'object' ? (l(itemLabel) || itemLabel.en || '') : String(itemLabel || '');
+                  const displayDesc = typeof itemDesc === 'object' ? (l(itemDesc) || itemDesc.en || '') : String(itemDesc || '');
+                  const systems: string[] = Array.from(new Set((item.codes || []).map((c: any) => String(c.system)).filter(Boolean)));
+                  return (
+                    <li
+                      key={idx}
+                      onClick={() => handleSelect(item)}
+                      className='cursor-pointer border-b border-gray-100 px-3 py-2 last:border-0 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-600'
+                    >
+                      <div className='flex items-start justify-between gap-2'>
+                        <div className='min-w-0'>
+                          <div className='text-sm font-medium text-gray-900 dark:text-white'>{displayLabel}</div>
+                          {displayDesc && (
+                            <div className='text-xs text-gray-500 dark:text-gray-400'>{displayDesc}</div>
+                          )}
+                        </div>
+                        {systems.length > 0 && (
+                          <div className='flex shrink-0 gap-1'>
+                            {systems.map(s => (
+                              <span key={s} className='rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-600 dark:text-gray-300'>{s}</span>
+                            ))}
+                          </div>
                         )}
                       </div>
-                      {systems.length > 0 && (
-                        <div className='flex shrink-0 gap-1'>
-                          {systems.map(s => (
-                            <span key={s} className='rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-600 dark:text-gray-300'>{s}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </>
           )}
-        </>
-      )}
 
       {drugValue && companionSchema && companionSchema.companions.map(({ key, schema }) => (
         <div key={key} className='mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700'>

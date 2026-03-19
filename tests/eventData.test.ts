@@ -168,7 +168,7 @@ describe('formDataToActions — variations', () => {
       { value: 'mass/lb', label: { en: 'lb' } }
     ]);
     const itemDefs = [{ key: 'weight', itemDef }];
-    const formData = { weight: 155, 'weight__eventType': 'mass/lb' };
+    const formData = { weight: 155, weight__eventType: 'mass/lb' };
     const actions = formDataToActions(itemDefs, formData, {}, 1000);
     expect(actions).toHaveLength(1);
     expect(actions[0].action).toBe('create');
@@ -182,7 +182,7 @@ describe('formDataToActions — variations', () => {
       { value: 'mass/lb', label: { en: 'lb' } }
     ]);
     const itemDefs = [{ key: 'weight', itemDef }];
-    const formData = { weight: 70, 'weight__eventType': 'mass/kg' };
+    const formData = { weight: 70, weight__eventType: 'mass/kg' };
     const actions = formDataToActions(itemDefs, formData, { weight: 'e1' }, 1000);
     expect(actions).toHaveLength(1);
     expect(actions[0].action).toBe('update');
