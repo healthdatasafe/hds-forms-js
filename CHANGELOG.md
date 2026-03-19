@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-19
+
+### Added
+- `convertible` item type with `Convertible.tsx` field component (dimension sliders + source display)
+- `ConvertibleData` interface with `converter-engine` field in schema types
+
 ### Changed
 - Removed CNAME: publish at `healthdatasafe.github.io/hds-forms-js/`
 
