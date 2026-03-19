@@ -94,9 +94,19 @@ export default function FormBuilder ({
   const _version = version; // trigger re-render
 
   // Group and filter items for the browser
+  // When a section is selected, filter items by section type:
+  //   permanent → only repeatable:'once' items
+  //   recurring → only repeatable!='once' items
+  const selectedSection = selectedSectionKey ? request.getSectionByKey(selectedSectionKey) : null;
+  const selectedSectionType = selectedSection?.type as string | undefined;
+
   const groupedItems = useMemo(() => {
     const groups: Record<string, Array<{ key: string; label: string; description: string; streamId: string }>> = {};
     for (const itemDef of allItemDefs) {
+      // Filter by section type when a section is selected
+      if (selectedSectionType === 'permanent' && itemDef.repeatable !== 'once') continue;
+      if (selectedSectionType === 'recurring' && itemDef.repeatable === 'once') continue;
+
       const label = itemDef.label;
       if (searchQuery && !label.toLowerCase().includes(searchQuery.toLowerCase()) && !itemDef.key.toLowerCase().includes(searchQuery.toLowerCase())) {
         continue;
@@ -106,7 +116,7 @@ export default function FormBuilder ({
       groups[group].push({ key: itemDef.key, label, description: itemDef.description, streamId: itemDef.data.streamId });
     }
     return groups;
-  }, [allItemDefs, searchQuery]);
+  }, [allItemDefs, searchQuery, selectedSectionType]);
 
   const usedItemKeys = useMemo(() => {
     const keys = new Set<string>();

@@ -157,10 +157,20 @@ export default function App () {
     setIntake(prev => ({ ...prev, [field]: value }));
   }
 
-  // Pick first 5 items for section demo
-  const sectionKeys = useMemo(() => items.slice(0, 5).map(i => i.key), [items]);
-  // Pick next 3 items for recurring demo
-  const recurringKeys = useMemo(() => items.slice(5, 8).map(i => i.key), [items]);
+  // Pick first 5 non-recurring items (repeatable:'once') for permanent section demo
+  const sectionKeys = useMemo(() => {
+    const model = getModel();
+    return items.filter(i => {
+      try { return model.itemsDefs.forKey(i.key)?.repeatable === 'once'; } catch { return false; }
+    }).slice(0, 5).map(i => i.key);
+  }, [items]);
+  // Pick first 3 recurring items (repeatable!='once') for recurring section demo
+  const recurringKeys = useMemo(() => {
+    const model = getModel();
+    return items.filter(i => {
+      try { return model.itemsDefs.forKey(i.key)?.repeatable !== 'once'; } catch { return false; }
+    }).slice(0, 3).map(i => i.key);
+  }, [items]);
 
   const tabClass = (t: Tab) =>
     `px-4 py-2 text-sm font-medium rounded-t-lg ${tab === t
