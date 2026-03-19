@@ -159,6 +159,7 @@ export default function App () {
 
   // Pick first 5 non-recurring items (repeatable:'once') for permanent section demo
   const sectionKeys = useMemo(() => {
+    if (items.length === 0) return [];
     const model = getModel();
     return items.filter(i => {
       try { return model.itemsDefs.forKey(i.key)?.repeatable === 'once'; } catch { return false; }
@@ -166,6 +167,7 @@ export default function App () {
   }, [items]);
   // Pick first 3 recurring items (repeatable!='once') for recurring section demo
   const recurringKeys = useMemo(() => {
+    if (items.length === 0) return [];
     const model = getModel();
     return items.filter(i => {
       try { return model.itemsDefs.forKey(i.key)?.repeatable !== 'once'; } catch { return false; }
