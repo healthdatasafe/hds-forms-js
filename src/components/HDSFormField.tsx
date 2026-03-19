@@ -7,6 +7,7 @@ import { NumberInput } from './fields/NumberInput';
 import { Select } from './fields/Select';
 import { Composite } from './fields/Composite';
 import { DatasetSearch } from './fields/DatasetSearch';
+import { Convertible } from './fields/Convertible';
 
 const l = localizeText;
 
@@ -50,6 +51,9 @@ export function HDSFormField ({ itemData, value, onChange, required, disabled }:
       const dsKey = (itemData as any).datasource;
       const eventType = (itemData as any).eventType;
       return <DatasetSearch {...baseProps} datasource={dsKey} eventType={eventType} />;
+    }
+    case 'convertible': {
+      return <Convertible {...baseProps} />;
     }
     default:
       return <div className='text-sm text-red-500'>Unknown field type: {(itemData as any).type}</div>;

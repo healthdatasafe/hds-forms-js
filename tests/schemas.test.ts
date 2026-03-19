@@ -121,6 +121,19 @@ describe('schemaFor', () => {
     });
   });
 
+  it('convertible → object', () => {
+    const data: ItemData = {
+      type: 'convertible',
+      label: { en: 'Cervical Fluid' },
+      'converter-engine': { key: 'euclidian-distance', version: 'v0', models: 'cervical-fluid' }
+    };
+    const schema = schemaFor(data);
+    expect(schema).toEqual({
+      title: 'Cervical Fluid',
+      type: 'object'
+    });
+  });
+
   it('throws for unknown type', () => {
     const data = { type: 'unknown', label: { en: 'Bad' } } as any;
     expect(() => schemaFor(data)).toThrow('Cannot find schema for type: "unknown"');

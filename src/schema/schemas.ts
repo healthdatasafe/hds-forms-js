@@ -9,13 +9,20 @@ interface SelectOption {
   label: localizableText;
 }
 
+interface ConverterEngine {
+  key: string;
+  version: string;
+  models: string;
+}
+
 interface BaseItemData {
-  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite' | 'datasource-search';
+  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite' | 'datasource-search' | 'convertible';
   label: localizableText;
   description?: localizableText;
   canBeNull?: boolean;
   streamId?: string;
   eventType?: string;
+  'converter-engine'?: ConverterEngine;
 }
 
 interface CheckboxData extends BaseItemData {
@@ -49,7 +56,12 @@ interface DatasourceSearchData extends BaseItemData {
   datasource: string;
 }
 
-export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData | DatasourceSearchData;
+interface ConvertibleData extends BaseItemData {
+  type: 'convertible';
+  'converter-engine': ConverterEngine;
+}
+
+export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData | DatasourceSearchData | ConvertibleData;
 
 export interface JSONSchema {
   title: string;
@@ -67,7 +79,7 @@ const l = localizeText;
 
 type SchemaAction = (schema: JSONSchema, v: ItemData) => void;
 
-const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, composite, 'datasource-search': datasourceSearch };
+const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, composite, 'datasource-search': datasourceSearch, convertible };
 
 export function schemaFor (v: ItemData): JSONSchema {
   const schema: JSONSchema = {
@@ -126,4 +138,8 @@ function composite (schema: JSONSchema, v: ItemData): void {
     schema.properties[key] = schemaFor(value);
     if (value.canBeNull !== true) schema.required.push(key);
   }
+}
+
+function convertible (schema: JSONSchema, _v: ItemData): void {
+  schema.type = 'object';
 }
