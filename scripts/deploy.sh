@@ -31,8 +31,8 @@ echo "Building..."
 npm run build
 echo "Build OK."
 
-# CNAME for custom domain
-echo "demo-forms.datasafe.dev" > dist/CNAME
+# No custom domain — served at healthdatasafe.github.io/hds-forms-js/
+rm -f dist/CNAME
 # Bypass Jekyll processing (needed for version.json etc.)
 touch dist/.nojekyll
 
