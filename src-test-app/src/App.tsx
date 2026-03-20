@@ -1,5 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { getItems, getModel } from './hdsLibService';
+import { HDSSettings, localizeText } from 'hds-lib';
 import { HDSFormField } from 'hds-forms/components/HDSFormField';
 import { HDSFormSection } from 'hds-forms/components/HDSFormSection';
 import { schemaFor } from 'hds-forms/schema/schemas';
@@ -461,20 +462,102 @@ function SettingsPanel () {
     displayName: '',
   });
 
-  const update = (key: string, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  };
+  // Converter settings: { itemKey → methodId } for auto and default
+  const [converterAuto, setConverterAuto] = useState<Record<string, string>>({});
+  const [converterDefault, setConverterDefault] = useState<Record<string, string>>({});
+  const [converterItems, setConverterItems] = useState<Array<{ itemKey: string; label: string; methods: Array<{ id: string; name: string }> }>>([]);
 
-  const settingsEvents = useMemo(() => [
-    { type: 'settings/preferred-locales', streamIds: ['app-baseStream'], content: settings.preferredLocales },
-    { type: 'settings/theme', streamIds: ['app-baseStream'], content: settings.theme },
-    { type: 'settings/timezone', streamIds: ['app-baseStream'], content: settings.timezone },
-    { type: 'settings/date-format', streamIds: ['app-baseStream'], content: settings.dateFormat },
-    { type: 'settings/unit-system', streamIds: ['app-baseStream'], content: settings.unitSystem },
-    ...(settings.displayName
-      ? [{ type: 'contact/display-name', streamIds: ['app-baseStream'], content: settings.displayName }]
-      : []),
-  ], [settings]);
+  // Load available converters from model
+  useEffect(() => {
+    (async () => {
+      try {
+        const model = getModel();
+        const items: typeof converterItems = [];
+        for (const ik of model.converters.availableItemKeys) {
+          const engine = await model.converters.ensureEngine(ik);
+          const itemDef = model.itemsDefs.getAll().find((d: any) => d.data['converter-engine']?.models === ik);
+          const methods = engine.methodIds
+            .filter((m: string) => m !== '_raw')
+            .map((m: string) => {
+              const def = engine.getMethodDef(m);
+              return { id: m, name: def?.name ? (localizeText(def.name) || m) : m };
+            });
+          items.push({
+            itemKey: ik,
+            label: itemDef?.label || ik,
+            methods,
+          });
+        }
+        setConverterItems(items);
+      } catch { /* model may not be loaded yet */ }
+    })();
+  }, []);
+
+  const update = useCallback((key: string, value: any) => {
+    setSettings(prev => {
+      const next = { ...prev, [key]: value };
+      // Wire to HDSSettings._testInject
+      HDSSettings._testInject(key, value);
+      return next;
+    });
+  }, []);
+
+  // Wire initial settings on mount
+  useEffect(() => {
+    for (const [key, value] of Object.entries(settings)) {
+      HDSSettings._testInject(key, value);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const updateConverterAuto = useCallback((itemKey: string, method: string) => {
+    setConverterAuto(prev => {
+      const next = { ...prev };
+      const settingKey = `converter-auto-${itemKey}`;
+      if (method === '') {
+        delete next[itemKey];
+        HDSSettings._testClear(settingKey);
+      } else {
+        next[itemKey] = method;
+        HDSSettings._testInject(settingKey, method);
+      }
+      return next;
+    });
+  }, []);
+
+  const updateConverterDefault = useCallback((itemKey: string, method: string) => {
+    setConverterDefault(prev => {
+      const next = { ...prev };
+      const settingKey = `converter-default-${itemKey}`;
+      if (method === '') {
+        delete next[itemKey];
+        HDSSettings._testClear(settingKey);
+      } else {
+        next[itemKey] = method;
+        HDSSettings._testInject(settingKey, method);
+      }
+      return next;
+    });
+  }, []);
+
+  const settingsEvents = useMemo(() => {
+    const events = [
+      { type: 'settings/preferred-locales', streamIds: ['app-baseStream'], content: settings.preferredLocales },
+      { type: 'settings/theme', streamIds: ['app-baseStream'], content: settings.theme },
+      { type: 'settings/timezone', streamIds: ['app-baseStream'], content: settings.timezone },
+      { type: 'settings/date-format', streamIds: ['app-baseStream'], content: settings.dateFormat },
+      { type: 'settings/unit-system', streamIds: ['app-baseStream'], content: settings.unitSystem },
+      ...(settings.displayName
+        ? [{ type: 'contact/display-name', streamIds: ['app-baseStream'], content: settings.displayName }]
+        : []),
+    ];
+    for (const [itemKey, method] of Object.entries(converterAuto)) {
+      events.push({ type: 'settings/converter-auto', streamIds: ['app-baseStream'], content: { itemKey, method } as any });
+    }
+    for (const [itemKey, method] of Object.entries(converterDefault)) {
+      events.push({ type: 'settings/converter-default', streamIds: ['app-baseStream'], content: { itemKey, method } as any });
+    }
+    return events;
+  }, [settings, converterAuto, converterDefault]);
 
   const selectClass = 'block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
   const inputClass = 'block w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white';
@@ -484,7 +567,7 @@ function SettingsPanel () {
   return (
     <div className='space-y-8'>
       <p className='text-sm text-gray-500 dark:text-gray-400'>
-        Default settings panel — preview of how settings will appear in web apps.
+        Settings panel — changes are injected live into HDSSettings via <code>_testInject</code>.
         Each setting is stored as <strong>1 event per setting</strong> on the HDS server.
       </p>
 
@@ -605,6 +688,54 @@ function SettingsPanel () {
           </div>
         </div>
       </div>
+
+      {/* ── Converter Settings ── */}
+      {converterItems.length > 0 && (
+        <div>
+          <h3 className={sectionTitle}>Converter Preferences</h3>
+          <div className='space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
+            <p className='text-xs text-gray-400'>
+              <strong>Auto-convert</strong>: display stored events converted to this method (in diary, timeline, etc.).<br />
+              <strong>Default input</strong>: pre-select this method when creating new entries in forms (hides method selector).
+            </p>
+            {converterItems.map(item => (
+              <div key={item.itemKey} className='rounded border border-gray-200 bg-white p-3 dark:border-gray-600 dark:bg-gray-800'>
+                <div className='mb-2 text-sm font-medium text-gray-900 dark:text-white'>{item.label} <span className='text-xs text-gray-400'>({item.itemKey})</span></div>
+                <div className='grid grid-cols-2 gap-3'>
+                  <div>
+                    <label className={labelClass}>Auto-convert display</label>
+                    <select
+                      value={converterAuto[item.itemKey] || ''}
+                      onChange={e => updateConverterAuto(item.itemKey, e.target.value)}
+                      className={selectClass}
+                    >
+                      <option value=''>None (show source)</option>
+                      {item.methods.map(m => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                    <p className='mt-1 text-xs text-gray-400'>settings/converter-auto</p>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Default input method</label>
+                    <select
+                      value={converterDefault[item.itemKey] || ''}
+                      onChange={e => updateConverterDefault(item.itemKey, e.target.value)}
+                      className={selectClass}
+                    >
+                      <option value=''>Show method selector</option>
+                      {item.methods.map(m => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                      ))}
+                    </select>
+                    <p className='mt-1 text-xs text-gray-400'>settings/converter-default</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Debug: Event representations ── */}
       <div>
