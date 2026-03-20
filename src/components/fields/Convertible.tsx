@@ -12,16 +12,16 @@ interface ConvertibleFieldProps extends FieldProps {
  * When a source block is present, shows the source method and observation as read-only context.
  */
 export function Convertible ({ label, description, value, onChange, dimensionNames, required, disabled }: ConvertibleFieldProps) {
-  const data = value?.data ?? value ?? {};
+  const vectors = value?.vectors ?? value ?? {};
   const source = value?.source;
-  const dims = dimensionNames ?? Object.keys(data).filter(k => typeof data[k] === 'number');
+  const dims = dimensionNames ?? Object.keys(vectors).filter(k => typeof vectors[k] === 'number');
 
   function handleDimChange (dim: string, newVal: number) {
-    const newData = { ...data, [dim]: newVal };
+    const newVectors = { ...vectors, [dim]: newVal };
     if (source) {
-      onChange({ data: newData, source });
+      onChange({ vectors: newVectors, source });
     } else {
-      onChange(newData);
+      onChange(newVectors);
     }
   }
 
@@ -41,7 +41,7 @@ export function Convertible ({ label, description, value, onChange, dimensionNam
 
       <div className='space-y-2'>
         {dims.map((dim) => {
-          const val = typeof data[dim] === 'number' ? data[dim] : 0;
+          const val = typeof vectors[dim] === 'number' ? vectors[dim] : 0;
           return (
             <div key={dim} className='flex items-center gap-2'>
               <span className='w-28 text-xs text-gray-700 dark:text-gray-300 truncate' title={dim}>{dim}</span>
