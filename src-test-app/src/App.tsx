@@ -3,12 +3,14 @@ import { getItems, getModel } from './hdsLibService';
 import { HDSSettings, localizeText } from 'hds-lib';
 import { HDSFormField } from 'hds-forms/components/HDSFormField';
 import { HDSFormSection } from 'hds-forms/components/HDSFormSection';
+import { ItemSearchPicker } from 'hds-forms/components/ItemSearchPicker';
 import { schemaFor } from 'hds-forms/schema/schemas';
 import { jsonFormForItemDef } from 'hds-forms/schema/itemDefToSchema';
 import type { SectionEntry } from 'hds-forms/types';
 import FormBuilder from './FormBuilder';
 
 type Tab = 'fields' | 'section' | 'recurring' | 'medication' | 'builder' | 'settings';
+
 
 interface IntakeState {
   doseValue: string;
@@ -225,16 +227,7 @@ export default function App () {
               <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
                 Select an HDS item
               </label>
-              <select
-                value={selectedKey}
-                onChange={(e) => setSelectedKey(e.target.value)}
-                className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-              >
-                <option value=''>-- Pick an item --</option>
-                {items.map((item) => (
-                  <option key={item.key} value={item.key}>{item.label} ({item.key})</option>
-                ))}
-              </select>
+              <ItemSearchPicker items={items} selectedKey={selectedKey} onSelect={setSelectedKey} />
             </div>
 
             {selectedKey && (() => {

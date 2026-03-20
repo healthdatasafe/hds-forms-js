@@ -5,6 +5,8 @@ export { EntryList } from './components/EntryList';
 export { ReminderEditor } from './components/ReminderEditor';
 export type { ReminderEditorConfig } from './components/ReminderEditor';
 export { DatasetSearch } from './components/fields/DatasetSearch';
+export { ItemSearchPicker } from './components/ItemSearchPicker';
+export type { ItemSearchPickerProps } from './components/ItemSearchPicker';
 export { default as FormBuilder } from './components/FormBuilder';
 export type { FormBuilderProps, FormBuilderLabels } from './components/FormBuilder';
 export { REPEATABLE_LABELS, REPEATABLE_OPTIONS, repeatableLabel, getItemGroup } from './formBuilderUtils';
