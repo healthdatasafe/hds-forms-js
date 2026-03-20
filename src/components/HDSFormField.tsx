@@ -53,7 +53,8 @@ export function HDSFormField ({ itemData, value, onChange, required, disabled }:
       return <DatasetSearch {...baseProps} datasource={dsKey} eventType={eventType} />;
     }
     case 'convertible': {
-      return <Convertible {...baseProps} />;
+      const converterEngine = (itemData as any)['converter-engine'];
+      return <Convertible {...baseProps} converterEngine={converterEngine} />;
     }
     default:
       return <div className='text-sm text-red-500'>Unknown field type: {(itemData as any).type}</div>;

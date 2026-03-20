@@ -191,10 +191,16 @@ export default function App () {
   }
 
   return (
-    <div className={`mx-auto px-4 py-8 ${tab === 'builder' ? 'max-w-6xl' : 'max-w-3xl'}`}>
-      <h1 className='mb-6 text-2xl font-bold text-gray-900 dark:text-white'>
-        HDS Forms — Test App
-      </h1>
+    <div className={`mx-auto px-4 py-8 ${(tab === 'builder' || tab === 'fields') ? 'max-w-6xl' : 'max-w-3xl'}`}>
+      <div className='mb-6 flex items-center gap-3'>
+        <a href='https://docs.datasafe.dev' target='_blank' rel='noopener noreferrer'>
+          <img src='https://style.datasafe.dev/images/logos/horizontal/hds-logo-hz-color.svg' alt='HDS' className='h-10' />
+        </a>
+        <div>
+          <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>HDS Forms — Test App</h1>
+          <a href='https://docs.datasafe.dev' target='_blank' rel='noopener noreferrer' className='text-xs text-primary-600 hover:underline dark:text-primary-400'>docs.datasafe.dev</a>
+        </div>
+      </div>
 
       {/* Tab bar */}
       <div className='mb-0 flex gap-1 border-b border-gray-200 dark:border-gray-600'>
@@ -222,35 +228,33 @@ export default function App () {
 
         {/* ── Single Field Tab ── */}
         {tab === 'fields' && (
-          <div className='space-y-6'>
-            <div>
-              <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-                Select an HDS item
-              </label>
+          <div className='flex gap-4' style={{ minHeight: '400px' }}>
+            <div className='w-64 shrink-0'>
               <ItemSearchPicker items={items} selectedKey={selectedKey} onSelect={setSelectedKey} />
             </div>
-
-            {selectedKey && (() => {
-              const model = getModel();
-              const itemDef = model.itemsDefs.forKey(selectedKey);
-              if (!itemDef) return <p className='text-red-500'>Item not found</p>;
-              return (
-                <div className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
-                  <HDSFormField
-                    itemData={itemDef.data}
-                    value={fieldValue}
-                    onChange={setFieldValue}
-
-                  />
-                </div>
-              );
-            })()}
-
-            {/* Debug panels */}
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-              <DebugPanel title='Field value' json={fieldValueJson} />
-              <DebugPanel title='JSON Schema' json={fieldSchemaJson} />
-              <DebugPanel title='Event data' json={eventDataJson} />
+            <div className='min-w-0 flex-1 space-y-4'>
+              {selectedKey && (() => {
+                const model = getModel();
+                const itemDef = model.itemsDefs.forKey(selectedKey);
+                if (!itemDef) return <p className='text-red-500'>Item not found</p>;
+                return (
+                  <div className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
+                    <HDSFormField
+                      itemData={itemDef.data}
+                      value={fieldValue}
+                      onChange={setFieldValue}
+                    />
+                  </div>
+                );
+              })()}
+              {!selectedKey && (
+                <p className='py-8 text-center text-sm text-gray-400'>Select an item from the list</p>
+              )}
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+                <DebugPanel title='Field value' json={fieldValueJson} />
+                <DebugPanel title='JSON Schema' json={fieldSchemaJson} />
+                <DebugPanel title='Event data' json={eventDataJson} />
+              </div>
             </div>
           </div>
         )}

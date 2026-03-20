@@ -1,28 +1,132 @@
+import { useState, useEffect, useMemo } from 'react';
+import { getHDSModel, localizeText, HDSSettings } from 'hds-lib';
 import type { FieldProps } from '../../types';
 
+interface ConverterEngine {
+  key: string;
+  version: string;
+  models: string; // itemKey for the converter (e.g. 'cervical-fluid', 'mood')
+}
+
 interface ConvertibleFieldProps extends FieldProps {
-  /** Dimension names from the converter engine */
-  dimensionNames?: string[];
+  /** converter-engine block from the itemDef */
+  converterEngine?: ConverterEngine;
 }
 
 /**
  * Field component for convertible items (euclidian-distance converter engine).
  *
- * Renders the N-D vector as a set of range sliders (0.0–1.0 per dimension).
- * When a source block is present, shows the source method and observation as read-only context.
+ * Option B: Method picker → observation selector, with _raw (dimension stops) as fallback.
+ * - If converter-default-{itemKey} setting is set, pre-selects that method and hides the method picker.
+ * - Otherwise shows a method dropdown, then the method's observation options.
+ * - Selecting an observation calls convertMethodToEvent to produce the vector + source block.
+ * - "_raw" virtual method shows dimension stop selectors.
  */
-export function Convertible ({ label, description, value, onChange, dimensionNames, required, disabled }: ConvertibleFieldProps) {
-  const vectors = value?.vectors ?? value ?? {};
-  const source = value?.source;
-  const dims = dimensionNames ?? Object.keys(vectors).filter(k => typeof vectors[k] === 'number');
+export function Convertible ({ label, description, value, onChange, converterEngine, required, disabled }: ConvertibleFieldProps) {
+  const [engine, setEngine] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedMethod, setSelectedMethod] = useState<string>('');
 
-  function handleDimChange (dim: string, newVal: number) {
-    const newVectors = { ...vectors, [dim]: newVal };
-    if (source) {
-      onChange({ vectors: newVectors, source });
-    } else {
-      onChange(newVectors);
+  const itemKey = converterEngine?.models;
+  const source = value?.source;
+  const vectors = value?.vectors;
+
+  // Load converter engine
+  useEffect(() => {
+    if (!itemKey) { setLoading(false); return; }
+    (async () => {
+      try {
+        const model = getHDSModel();
+        const eng = await model.converters.ensureEngine(itemKey);
+        setEngine(eng);
+
+        // Check for converter-default setting
+        if (HDSSettings.isHooked) {
+          const defaultMethod = HDSSettings.get(`converter-default-${itemKey}`);
+          if (defaultMethod && typeof defaultMethod === 'string') {
+            setSelectedMethod(defaultMethod);
+          }
+        }
+
+        // If value already has a source, pre-select that method
+        if (source?.key) {
+          setSelectedMethod(source.key);
+        }
+      } catch (e) {
+        console.error('Failed to load converter engine:', e);
+      }
+      setLoading(false);
+    })();
+  }, [itemKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Available methods (excluding _raw, shown separately)
+  const methods = useMemo(() => {
+    if (!engine) return [];
+    return engine.methodIds
+      .filter((m: string) => m !== '_raw')
+      .map((m: string) => {
+        const def = engine.getMethodDef(m);
+        return {
+          id: m,
+          name: def?.name ? (localizeText(def.name) || m) : m,
+        };
+      });
+  }, [engine]);
+
+  // Check if method selector should be hidden (converter-default set)
+  const hideMethodSelector = useMemo(() => {
+    if (!HDSSettings.isHooked || !itemKey) return false;
+    const defaultMethod = HDSSettings.get(`converter-default-${itemKey}`);
+    return !!defaultMethod;
+  }, [itemKey]);
+
+  // Get components (observation options) for the selected method
+  const methodDef = selectedMethod && engine ? engine.getMethodDef(selectedMethod) : null;
+  const components = methodDef?.components || [];
+  const isSingleComponent = components.length === 1;
+
+  // Handle observation selection
+  async function handleObservationSelect (observation: any) {
+    if (!itemKey || !selectedMethod) return;
+    try {
+      const model = getHDSModel();
+      const event = await model.converters.convertMethodToEvent(itemKey, selectedMethod, observation);
+      onChange(event.content);
+    } catch (e) {
+      console.error('Conversion error:', e);
     }
+  }
+
+  // Handle _raw dimension changes
+  function handleRawDimChange (dim: string, newVal: number) {
+    const newVectors = { ...(vectors || {}), [dim]: newVal };
+    onChange({ vectors: newVectors });
+  }
+
+  // Resolve current observation value from source for highlighting
+  const currentObservation = source?.sourceData;
+
+  if (loading) {
+    return (
+      <div>
+        <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+          {label}{required && <span className='text-red-500'> *</span>}
+        </label>
+        <p className='text-sm text-gray-400'>Loading converter...</p>
+      </div>
+    );
+  }
+
+  if (!engine) {
+    return (
+      <div>
+        <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+          {label}{required && <span className='text-red-500'> *</span>}
+        </label>
+        {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
+        <p className='text-sm text-red-500'>Converter engine not available</p>
+      </div>
+    );
   }
 
   return (
@@ -30,36 +134,112 @@ export function Convertible ({ label, description, value, onChange, dimensionNam
       <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
         {label}{required && <span className='text-red-500'> *</span>}
       </label>
-      {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
+      {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
 
-      {source && (
-        <div className='mb-2 rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400'>
-          Source: <span className='font-medium'>{String(source.sourceData)}</span>
-          <span className='ml-1 text-gray-400'>({source.key})</span>
+      {/* Method selector (hidden when converter-default is set — show label instead) */}
+      {!hideMethodSelector ? (
+        <div className='mb-3'>
+          <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>Input method</label>
+          <select
+            value={selectedMethod}
+            onChange={e => { setSelectedMethod(e.target.value); onChange(undefined); }}
+            disabled={disabled}
+            className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+          >
+            <option value=''>-- Select method --</option>
+            {methods.map((m: any) => (
+              <option key={m.id} value={m.id}>{m.name}</option>
+            ))}
+            <option value='_raw'>Raw dimensions</option>
+          </select>
+        </div>
+      ) : selectedMethod && (
+        <p className='mb-3 text-xs font-medium text-gray-500 dark:text-gray-400'>
+          {methods.find((m: any) => m.id === selectedMethod)?.name || selectedMethod}
+        </p>
+      )}
+
+      {/* Observation selector for the chosen method — dropdown per component */}
+      {selectedMethod && selectedMethod !== '_raw' && components.length > 0 && (
+        <div className='space-y-3'>
+          {components.map((comp: any) => {
+            const compLabel = comp.label ? (localizeText(comp.label) || comp.field) : comp.field;
+            const currentVal = isSingleComponent
+              ? currentObservation
+              : (typeof currentObservation === 'object' ? currentObservation?.[comp.field] : undefined);
+
+            return (
+              <div key={comp.field}>
+                {!isSingleComponent && (
+                  <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>{compLabel}</label>
+                )}
+                <select
+                  value={currentVal ?? ''}
+                  disabled={disabled}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    // Parse back to original type (number or string)
+                    const opt = comp.options.find((o: any) => String(o.value) === raw);
+                    const val = opt ? opt.value : raw;
+                    if (isSingleComponent) {
+                      handleObservationSelect(val);
+                    } else {
+                      const obs = typeof currentObservation === 'object' ? { ...currentObservation } : {};
+                      obs[comp.field] = val;
+                      handleObservationSelect(obs);
+                    }
+                  }}
+                  className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                >
+                  <option value=''>--</option>
+                  {comp.options.map((opt: any) => {
+                    const optLabel = opt.label ? (localizeText(opt.label) || String(opt.value)) : String(opt.value);
+                    return <option key={String(opt.value)} value={String(opt.value)}>{optLabel}</option>;
+                  })}
+                </select>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      <div className='space-y-2'>
-        {dims.map((dim) => {
-          const val = typeof vectors[dim] === 'number' ? vectors[dim] : 0;
-          return (
-            <div key={dim} className='flex items-center gap-2'>
-              <span className='w-28 text-xs text-gray-700 dark:text-gray-300 truncate' title={dim}>{dim}</span>
-              <input
-                type='range'
-                min='0'
-                max='1'
-                step='0.05'
-                value={val}
-                onChange={(e) => handleDimChange(dim, parseFloat(e.target.value))}
-                disabled={disabled}
-                className='h-1.5 flex-1 cursor-pointer appearance-none rounded-lg bg-gray-200 accent-primary-600 dark:bg-gray-700'
-              />
-              <span className='w-8 text-right text-xs text-gray-500'>{val.toFixed(2)}</span>
-            </div>
-          );
-        })}
-      </div>
+      {/* _raw method: dimension stop dropdowns */}
+      {selectedMethod === '_raw' && engine.dimensions && (
+        <div className='space-y-3'>
+          {engine.dimensionNames.map((dim: string) => {
+            const dimDef = engine.dimensions[dim];
+            if (!dimDef?.stops) return null;
+            const dimLabel = dimDef.shortLabel ? (localizeText(dimDef.shortLabel) || dim) : dim;
+            const currentDimVal = vectors?.[dim];
+
+            return (
+              <div key={dim}>
+                <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>{dimLabel}</label>
+                <select
+                  value={currentDimVal ?? ''}
+                  disabled={disabled}
+                  onChange={e => handleRawDimChange(dim, parseFloat(e.target.value))}
+                  className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                >
+                  <option value=''>--</option>
+                  {dimDef.stops.map((stop: any) => {
+                    const stopLabel = stop.label ? (localizeText(stop.label) || String(stop.value)) : String(stop.value);
+                    return <option key={stop.value} value={stop.value}>{stopLabel}</option>;
+                  })}
+                </select>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Show current source info if value has source block */}
+      {source && (
+        <div className='mt-2 rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400'>
+          Source: <span className='font-medium'>{String(source.sourceData)}</span>
+          <span className='ml-1 text-gray-400'>({localizeText(engine.getMethodDef(source.key)?.name) || source.key})</span>
+        </div>
+      )}
     </div>
   );
 }

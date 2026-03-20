@@ -1,27 +1,46 @@
 import { useState, useMemo } from 'react';
 import { getHDSModel, localizeText } from 'hds-lib';
+import { getItemGroup } from '../formBuilderUtils';
+
+export interface ItemSearchPickerItem {
+  key: string;
+  label: string;
+  description?: string;
+}
 
 export interface ItemSearchPickerProps {
   /** Pre-loaded item list. If not provided, loads from HDSModel. */
-  items?: Array<{ key: string; label: string }>;
+  items?: ItemSearchPickerItem[];
   /** Currently selected item key */
-  selectedKey: string;
-  /** Called when an item is selected (or '' when cleared) */
+  selectedKey?: string;
+  /** Called when an item is selected */
   onSelect: (key: string) => void;
-  /** Placeholder text */
+  /** Search placeholder */
   placeholder?: string;
   /** Filter function to restrict which items are shown */
-  filter?: (item: { key: string; label: string }) => boolean;
+  filter?: (item: ItemSearchPickerItem) => boolean;
+  /** Set of item keys to mark as used (shown with checkmark, non-clickable) */
+  usedKeys?: Set<string>;
+  /** If true, items can only be selected (not marked as used). Default true. */
+  selectable?: boolean;
 }
 
 /**
  * Searchable item picker for HDS itemDefs.
- * Groups items by stream prefix and supports text search on label + key.
- * Can be used standalone or within forms to select items.
+ * Displays collapsible groups with item counts and text search.
+ * Same pattern as FormBuilder's item browser — reusable across apps.
  */
-export function ItemSearchPicker ({ items: externalItems, selectedKey, onSelect, placeholder, filter }: ItemSearchPickerProps) {
+export function ItemSearchPicker ({
+  items: externalItems,
+  selectedKey,
+  onSelect,
+  placeholder = 'Search items...',
+  filter,
+  usedKeys,
+  selectable = true,
+}: ItemSearchPickerProps) {
   const [search, setSearch] = useState('');
-  const [open, setOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Use provided items or load from model
   const allItems = useMemo(() => {
@@ -31,82 +50,92 @@ export function ItemSearchPicker ({ items: externalItems, selectedKey, onSelect,
       return model.itemsDefs.getAll().map((d: any) => ({
         key: d.key,
         label: typeof d.label === 'object' ? (localizeText(d.label) || d.key) : (d.label || d.key),
+        description: d.description || undefined,
       }));
     } catch { return []; }
   }, [externalItems]);
 
   const items = filter ? allItems.filter(filter) : allItems;
 
-  const filtered = useMemo(() => {
-    if (!search) return items;
+  // Group and filter
+  const groupedItems = useMemo(() => {
+    const groups: Record<string, ItemSearchPickerItem[]> = {};
     const q = search.toLowerCase();
-    return items.filter(i => i.label.toLowerCase().includes(q) || i.key.toLowerCase().includes(q));
-  }, [items, search]);
-
-  // Group by stream prefix (first two segments of key)
-  const grouped = useMemo(() => {
-    const groups: Record<string, Array<{ key: string; label: string }>> = {};
-    for (const item of filtered) {
-      const parts = item.key.split('-');
-      const prefix = parts.length > 2 ? parts.slice(0, 2).join('-') : parts[0];
-      if (!groups[prefix]) groups[prefix] = [];
-      groups[prefix].push(item);
+    for (const item of items) {
+      if (q && !item.label.toLowerCase().includes(q) && !item.key.toLowerCase().includes(q)) continue;
+      const group = getItemGroup(item.key);
+      if (!groups[group]) groups[group] = [];
+      groups[group].push(item);
     }
     return groups;
-  }, [filtered]);
+  }, [items, search]);
 
-  const selectedLabel = items.find(i => i.key === selectedKey)?.label;
+  const sortedGroups = useMemo(() => Object.keys(groupedItems).sort(), [groupedItems]);
+
+  function toggleGroup (group: string) {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
+  }
 
   return (
-    <div className='relative'>
-      <div
-        className='flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm dark:border-gray-600 dark:bg-gray-700'
-        onClick={() => setOpen(!open)}
-      >
-        <span className={`flex-1 ${selectedKey ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
-          {selectedKey ? `${selectedLabel} (${selectedKey})` : (placeholder || '-- Pick an item --')}
-        </span>
-        <span className='text-gray-400'>{open ? '\u25B2' : '\u25BC'}</span>
+    <div className='overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-600 dark:bg-gray-700' style={{ maxHeight: '400px' }}>
+      <div className='sticky top-0 border-b border-gray-200 bg-gray-50 p-2 dark:border-gray-600 dark:bg-gray-700'>
+        <input
+          type='text'
+          placeholder={placeholder}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+        />
       </div>
-      {open && (
-        <div className='absolute z-10 mt-1 max-h-80 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800'>
-          <div className='sticky top-0 bg-white p-2 dark:bg-gray-800'>
-            <input
-              type='text'
-              placeholder='Search items...'
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              autoFocus
-              className='block w-full rounded border border-gray-300 bg-gray-50 px-3 py-1.5 text-sm focus:border-primary-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-            />
-          </div>
-          {selectedKey && (
+      <div className='p-1'>
+        {sortedGroups.map(group => (
+          <div key={group} className='mb-1'>
             <button
-              className='w-full px-3 py-1.5 text-left text-xs text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-              onClick={() => { onSelect(''); setOpen(false); setSearch(''); }}
+              onClick={() => toggleGroup(group)}
+              className='flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm font-semibold text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600'
             >
-              Clear selection
+              <span>{(expandedGroups.has(group) || !!search) ? '\u25BE' : '\u25B8'} {group}</span>
+              <span className='rounded-full bg-gray-200 px-1.5 text-xs text-gray-500 dark:bg-gray-600 dark:text-gray-400'>
+                {groupedItems[group].length}
+              </span>
             </button>
-          )}
-          {Object.entries(grouped).map(([prefix, groupItems]) => (
-            <div key={prefix}>
-              <div className='px-3 py-1 text-xs font-semibold text-gray-400 dark:text-gray-500'>{prefix}</div>
-              {groupItems.map(item => (
-                <button
-                  key={item.key}
-                  className={`w-full px-3 py-1.5 text-left text-sm hover:bg-primary-50 dark:hover:bg-gray-700 ${item.key === selectedKey ? 'bg-primary-50 font-medium text-primary-700 dark:bg-gray-700 dark:text-primary-400' : 'text-gray-700 dark:text-gray-300'}`}
-                  onClick={() => { onSelect(item.key); setOpen(false); setSearch(''); }}
-                >
-                  {item.label} <span className='text-xs text-gray-400'>({item.key})</span>
-                </button>
-              ))}
-            </div>
-          ))}
-          {filtered.length === 0 && (
-            <div className='px-3 py-2 text-sm text-gray-400'>No items match</div>
-          )}
-        </div>
-      )}
+            {(expandedGroups.has(group) || !!search) && (
+              <div className='ml-2'>
+                {groupedItems[group].map(item => {
+                  const used = usedKeys?.has(item.key);
+                  const isSelected = item.key === selectedKey;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => selectable && !used && onSelect(item.key)}
+                      disabled={!selectable || used}
+                      className={`block w-full rounded px-2 py-1 text-left text-sm ${
+                        isSelected
+                          ? 'bg-primary-50 font-medium text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+                          : used
+                            ? 'text-gray-400 dark:text-gray-500'
+                            : 'text-gray-700 hover:bg-primary-50 hover:text-primary-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                      }`}
+                      title={item.description || item.key}
+                    >
+                      {used && <span className='mr-1'>{'\u2713'}</span>}
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+        {sortedGroups.length === 0 && (
+          <div className='px-3 py-2 text-sm text-gray-400'>No items match</div>
+        )}
+      </div>
     </div>
   );
 }
