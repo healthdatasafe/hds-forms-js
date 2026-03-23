@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-23
+
+### Added
+- `ItemSearchPicker` component — reusable searchable item picker with collapsible groups, counts, auto-expand on search. Exported from lib for use across apps.
+- `Convertible.tsx` rewritten: method picker → observation dropdowns (Option B)
+  - Loads converter engine, lists methods from model
+  - `preferred-input-{itemKey}` setting hides method selector, shows method label
+  - `_raw` method shows dimension stop dropdowns
+  - All labels localized via method definitions
+- `NumberInput` now shows unit label (Kg/Lbs) based on `unitSystem` setting + per-item variation override
+- `HDSFormField` accepts `itemKey` prop for preferred API resolution
+- Test app: settings panel wired to `HDSSettings._testInject`, converter preferences UI, HDS logo + docs link, ItemSearchPicker in Single Field tab
+
+### Changed
+- Settings renamed: `converter-auto-` → `preferred-display-`, `converter-default-` → `preferred-input-`
+- Convertible field value uses `vectors` key (was `data`)
+
 ## [0.4.0] - 2026-03-19
 
 ### Added
