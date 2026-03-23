@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getHDSModel, localizeText, HDSSettings } from 'hds-lib';
 import type { FieldProps } from '../../types';
+import { InfoIcon } from './FieldLabel';
 
 interface ConverterEngine {
   key: string;
@@ -59,12 +60,13 @@ export function Convertible ({ label, description, value, onChange, converterEng
     })();
   }, [itemKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Available methods (excluding _raw, shown separately)
+  // Available methods (including _raw which is now "HDS Native")
   const methods = useMemo(() => {
     if (!engine) return [];
-    return engine.methodIds
-      .filter((m: string) => m !== '_raw')
-      .map((m: string) => {
+    const allMethods = [...engine.methodIds];
+    // Add _raw if not already in methodIds (it's auto-generated, not in the pack)
+    if (!allMethods.includes('_raw')) allMethods.push('_raw');
+    return allMethods.map((m: string) => {
         const def = engine.getMethodDef(m);
         return {
           id: m,
@@ -109,9 +111,10 @@ export function Convertible ({ label, description, value, onChange, converterEng
   if (loading) {
     return (
       <div>
-        <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-          {label}{required && <span className='text-red-500'> *</span>}
-        </label>
+              <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+        {label}{required && <span className='text-red-500'> *</span>}
+      </label>
+      {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
         <p className='text-sm text-gray-400'>Loading converter...</p>
       </div>
     );
@@ -120,10 +123,10 @@ export function Convertible ({ label, description, value, onChange, converterEng
   if (!engine) {
     return (
       <div>
-        <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-          {label}{required && <span className='text-red-500'> *</span>}
-        </label>
-        {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
+              <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+        {label}{required && <span className='text-red-500'> *</span>}
+      </label>
+      {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
         <p className='text-sm text-red-500'>Converter engine not available</p>
       </div>
     );
@@ -131,7 +134,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
 
   return (
     <div>
-      <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+            <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
         {label}{required && <span className='text-red-500'> *</span>}
       </label>
       {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
@@ -150,7 +153,6 @@ export function Convertible ({ label, description, value, onChange, converterEng
             {methods.map((m: any) => (
               <option key={m.id} value={m.id}>{m.name}</option>
             ))}
-            <option value='_raw'>Raw dimensions</option>
           </select>
         </div>
       ) : selectedMethod && (
@@ -209,12 +211,17 @@ export function Convertible ({ label, description, value, onChange, converterEng
           {engine.dimensionNames.map((dim: string) => {
             const dimDef = engine.dimensions[dim];
             if (!dimDef?.stops) return null;
-            const dimLabel = dimDef.shortLabel ? (localizeText(dimDef.shortLabel) || dim) : dim;
+            const dimLabel = dimDef.label ? (localizeText(dimDef.label) || dim) : dim;
             const currentDimVal = vectors?.[dim];
+
+            const dimDesc = dimDef.description ? (localizeText(dimDef.description) || undefined) : undefined;
 
             return (
               <div key={dim}>
-                <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>{dimLabel}</label>
+                <div className='mb-1 flex items-center'>
+                  <label className='text-xs font-medium text-gray-500 dark:text-gray-400'>{dimLabel}</label>
+                  {dimDesc && <InfoIcon description={dimDesc} />}
+                </div>
                 <select
                   value={currentDimVal ?? ''}
                   disabled={disabled}

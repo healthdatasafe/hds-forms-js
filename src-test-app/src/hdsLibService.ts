@@ -12,9 +12,8 @@ async function ensureInit (): Promise<HDSModel> {
   if (LOCAL_MODEL_URL) {
     // Bypass service-info entirely — load pack.json directly
     model = new HDSModelClass('local');
-    if (LOCAL_DATASETS_URL) {
-      model.assets = { datasets: LOCAL_DATASETS_URL };
-    }
+    const baseUrl = LOCAL_MODEL_URL.replace(/\/[^/]*$/, '/');
+    model.assets = { 'hds-model': LOCAL_MODEL_URL, ...(LOCAL_DATASETS_URL ? { datasets: LOCAL_DATASETS_URL } : {}) };
     await model.load(LOCAL_MODEL_URL);
   } else {
     // Use service-info (default or overridden)
