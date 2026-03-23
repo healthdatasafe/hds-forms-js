@@ -17,7 +17,7 @@ interface ConvertibleFieldProps extends FieldProps {
  * Field component for convertible items (euclidian-distance converter engine).
  *
  * Option B: Method picker → observation selector, with _raw (dimension stops) as fallback.
- * - If converter-default-{itemKey} setting is set, pre-selects that method and hides the method picker.
+ * - If preferred-input-{itemKey} setting is set, pre-selects that method and hides the method picker.
  * - Otherwise shows a method dropdown, then the method's observation options.
  * - Selecting an observation calls convertMethodToEvent to produce the vector + source block.
  * - "_raw" virtual method shows dimension stop selectors.
@@ -42,7 +42,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
 
         // Check for converter-default setting
         if (HDSSettings.isHooked) {
-          const defaultMethod = HDSSettings.get(`converter-default-${itemKey}`);
+          const defaultMethod = HDSSettings.get(`preferred-input-${itemKey}`);
           if (defaultMethod && typeof defaultMethod === 'string') {
             setSelectedMethod(defaultMethod);
           }
@@ -76,7 +76,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
   // Check if method selector should be hidden (converter-default set)
   const hideMethodSelector = useMemo(() => {
     if (!HDSSettings.isHooked || !itemKey) return false;
-    const defaultMethod = HDSSettings.get(`converter-default-${itemKey}`);
+    const defaultMethod = HDSSettings.get(`preferred-input-${itemKey}`);
     return !!defaultMethod;
   }, [itemKey]);
 

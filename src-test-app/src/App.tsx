@@ -241,6 +241,7 @@ export default function App () {
                   <div className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
                     <HDSFormField
                       itemData={itemDef.data}
+                      itemKey={selectedKey}
                       value={fieldValue}
                       onChange={setFieldValue}
                     />
@@ -509,7 +510,7 @@ function SettingsPanel () {
   const updateConverterAuto = useCallback((itemKey: string, method: string) => {
     setConverterAuto(prev => {
       const next = { ...prev };
-      const settingKey = `converter-auto-${itemKey}`;
+      const settingKey = `preferred-display-${itemKey}`;
       if (method === '') {
         delete next[itemKey];
         HDSSettings._testClear(settingKey);
@@ -524,7 +525,7 @@ function SettingsPanel () {
   const updateConverterDefault = useCallback((itemKey: string, method: string) => {
     setConverterDefault(prev => {
       const next = { ...prev };
-      const settingKey = `converter-default-${itemKey}`;
+      const settingKey = `preferred-input-${itemKey}`;
       if (method === '') {
         delete next[itemKey];
         HDSSettings._testClear(settingKey);
@@ -548,10 +549,10 @@ function SettingsPanel () {
         : []),
     ];
     for (const [itemKey, method] of Object.entries(converterAuto)) {
-      events.push({ type: 'settings/converter-auto', streamIds: ['app-baseStream'], content: { itemKey, method } as any });
+      events.push({ type: 'settings/preferred-display', streamIds: ['app-baseStream'], content: { itemKey, method } as any });
     }
     for (const [itemKey, method] of Object.entries(converterDefault)) {
-      events.push({ type: 'settings/converter-default', streamIds: ['app-baseStream'], content: { itemKey, method } as any });
+      events.push({ type: 'settings/preferred-input', streamIds: ['app-baseStream'], content: { itemKey, method } as any });
     }
     return events;
   }, [settings, converterAuto, converterDefault]);
@@ -711,7 +712,7 @@ function SettingsPanel () {
                         <option key={m.id} value={m.id}>{m.name}</option>
                       ))}
                     </select>
-                    <p className='mt-1 text-xs text-gray-400'>settings/converter-auto</p>
+                    <p className='mt-1 text-xs text-gray-400'>settings/preferred-display</p>
                   </div>
                   <div>
                     <label className={labelClass}>Default input method</label>
@@ -725,7 +726,7 @@ function SettingsPanel () {
                         <option key={m.id} value={m.id}>{m.name}</option>
                       ))}
                     </select>
-                    <p className='mt-1 text-xs text-gray-400'>settings/converter-default</p>
+                    <p className='mt-1 text-xs text-gray-400'>settings/preferred-input</p>
                   </div>
                 </div>
               </div>

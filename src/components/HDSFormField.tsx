@@ -1,4 +1,4 @@
-import { localizeText } from 'hds-lib';
+import { localizeText, HDSSettings, getHDSModel } from 'hds-lib';
 import type { ItemData } from '../schema/schemas';
 import { Checkbox } from './fields/Checkbox';
 import { DateInput } from './fields/DateInput';
@@ -14,13 +14,15 @@ const l = localizeText;
 interface HDSFormFieldProps {
   /** Raw item data (from itemDef.data or composite sub-field) */
   itemData: ItemData;
+  /** Item key (needed for preferred API resolution) */
+  itemKey?: string;
   value: any;
   onChange: (value: any) => void;
   required?: boolean;
   disabled?: boolean;
 }
 
-export function HDSFormField ({ itemData, value, onChange, required, disabled }: HDSFormFieldProps) {
+export function HDSFormField ({ itemData, itemKey, value, onChange, required, disabled }: HDSFormFieldProps) {
   const label = l(itemData.label) || '';
   const description = itemData.description ? (l(itemData.description) || undefined) : undefined;
   const isRequired = required ?? false;
@@ -34,8 +36,42 @@ export function HDSFormField ({ itemData, value, onChange, required, disabled }:
       return <DateInput {...baseProps} />;
     case 'text':
       return <TextInput {...baseProps} />;
-    case 'number':
-      return <NumberInput {...baseProps} />;
+    case 'number': {
+      let unit: string | undefined;
+      const variations = (itemData as any).variations?.eventType;
+      if (variations?.options && HDSSettings.isHooked) {
+        // 1. Per-item override
+        const perItem = HDSSettings.get(`preferred-input-${itemKey}`);
+        let selected = perItem
+          ? variations.options.find((o: any) => o.value === perItem)
+          : undefined;
+        // 2. Fallback: use unitSystem + model conversions to find matching variation
+        if (!selected) {
+          try {
+            const system = HDSSettings.get('unitSystem');
+            const conversions = getHDSModel().modelData.conversions;
+            if (conversions && system) {
+              for (const opt of variations.options) {
+                const et: string = opt.value;
+                const slash = et.indexOf('/');
+                if (slash < 0) continue;
+                const cat = et.substring(0, slash);
+                const u = et.substring(slash + 1);
+                if (conversions[cat]?.[system] === u) { selected = opt; break; }
+              }
+            }
+          } catch { /* model not loaded */ }
+        }
+        // 3. Default: first option
+        if (!selected) selected = variations.options[0];
+        if (selected?.label) unit = l(selected.label) || undefined;
+      } else if (variations?.options) {
+        // Not hooked: show first option label
+        const first = variations.options[0];
+        if (first?.label) unit = l(first.label) || undefined;
+      }
+      return <NumberInput {...baseProps} unit={unit} />;
+    }
     case 'select': {
       const options = (itemData as any).options.map((opt: any) => ({
         value: opt.value,
