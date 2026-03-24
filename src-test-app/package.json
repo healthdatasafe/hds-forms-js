@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "hds-lib": "github:healthdatasafe/hds-lib-js",
+    "hds-react-timeline": "git+https://github.com/healthdatasafe/hds-react-timeline.git",
     "hds-style": "git+https://github.com/healthdatasafe/style-package.git",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
