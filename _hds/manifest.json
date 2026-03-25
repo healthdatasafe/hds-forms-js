@@ -1,0 +1,31 @@
+{
+  "appId": null,
+  "type": "lib",
+  "description": "Form rendering library and form builder — renders HDS data collection forms",
+  "produces": {
+    "items": "*",
+    "eventTypes": [
+      "medication/coded-v1",
+      "settings/preferred-locales",
+      "settings/theme",
+      "settings/timezone",
+      "settings/date-format",
+      "settings/unit-system",
+      "settings/preferred-display",
+      "settings/preferred-input",
+      "contact/display-name"
+    ],
+    "note": "Can produce any item type via form submission"
+  },
+  "consumes": {
+    "items": "*",
+    "eventTypes": [
+      "medication/coded-v1"
+    ],
+    "note": "Consumes all item types for form rendering and schema generation"
+  },
+  "streams": [],
+  "access": {
+    "note": "Library — no access created; runs within host app's context"
+  }
+}
