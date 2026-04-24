@@ -11,6 +11,18 @@ import { Convertible } from './fields/Convertible';
 
 const l = localizeText;
 
+type localizableText = { en: string; fr?: string; es?: string };
+
+/** Optional form-level overrides applied on top of the item definition. */
+export interface FieldLabelOverrides {
+  /** Override for the question label (replaces `itemData.label`). */
+  question?: localizableText;
+  /** Override for the question description (replaces `itemData.description`). */
+  description?: localizableText;
+  /** Overrides for option labels in `select` fields, keyed by the option's raw value. */
+  options?: Record<string | number, localizableText>;
+}
+
 interface HDSFormFieldProps {
   /** Raw item data (from itemDef.data or composite sub-field) */
   itemData: ItemData;
@@ -20,11 +32,14 @@ interface HDSFormFieldProps {
   onChange: (value: any) => void;
   required?: boolean;
   disabled?: boolean;
+  /** Optional form-level label overrides (from `section.itemCustomizations[key].labels`). */
+  labelOverrides?: FieldLabelOverrides;
 }
 
-export function HDSFormField ({ itemData, itemKey, value, onChange, required, disabled }: HDSFormFieldProps) {
-  const label = l(itemData.label) || '';
-  const description = itemData.description ? (l(itemData.description) || undefined) : undefined;
+export function HDSFormField ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides }: HDSFormFieldProps) {
+  const label = l(labelOverrides?.question ?? itemData.label) || '';
+  const descSource = labelOverrides?.description ?? itemData.description;
+  const description = descSource ? (l(descSource) || undefined) : undefined;
   const isRequired = required ?? false;
 
   const baseProps = { label, description, value, onChange, required: isRequired, disabled };
@@ -73,10 +88,14 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
       return <NumberInput {...baseProps} unit={unit} />;
     }
     case 'select': {
-      const options = (itemData as any).options.map((opt: any) => ({
-        value: opt.value,
-        label: l(opt.label) || ''
-      }));
+      const optionOverrides = labelOverrides?.options;
+      const options = (itemData as any).options.map((opt: any) => {
+        const override = optionOverrides?.[opt.value];
+        return {
+          value: opt.value,
+          label: (override ? l(override) : l(opt.label)) || ''
+        };
+      });
       return <Select {...baseProps} options={options} />;
     }
     case 'composite': {

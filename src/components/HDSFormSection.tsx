@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getHDSModel, localizeText } from 'hds-lib';
 import { HDSFormField } from './HDSFormField';
+import type { FieldLabelOverrides } from './HDSFormField';
 import { Select } from './fields/Select';
 import { EntryList } from './EntryList';
 import type { SectionEntry } from '../types';
@@ -9,11 +10,25 @@ const l = localizeText;
 
 type localizableText = { en: string; fr?: string; es?: string };
 
+/**
+ * Per-item customizations stored on the section. Mirrors the `itemCustomizations`
+ * bag on `CollectorRequest.sections[]` in hds-lib. Labels here override the
+ * item definition at render time (storage is unchanged).
+ */
+export interface ItemCustomization {
+  repeatable?: string;
+  reminder?: Record<string, unknown>;
+  labels?: FieldLabelOverrides;
+  [key: string]: unknown;
+}
+
 interface SectionDef {
   key?: string;
   type?: 'permanent' | 'recurring';
   itemKeys: string[];
   label?: localizableText;
+  /** Optional per-itemKey customizations (labels, repeatable, reminder, ...). */
+  itemCustomizations?: Record<string, ItemCustomization>;
 }
 
 interface HDSFormSectionProps {
@@ -61,12 +76,13 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
     }
   }
 
-  // Build field labels map for EntryList
+  // Build field labels map for EntryList (honours per-section label overrides)
   const fieldLabels: Record<string, string> = {};
   for (const key of section.itemKeys) {
     const itemDef = model.itemsDefs.forKey(key);
     if (itemDef) {
-      fieldLabels[key] = l(itemDef.data.label) || key;
+      const override = section.itemCustomizations?.[key]?.labels?.question;
+      fieldLabels[key] = (override ? l(override) : l(itemDef.data.label)) || key;
     }
   }
 
@@ -96,14 +112,17 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
         if (!itemDef) return null;
 
         const variations = itemDef.data?.variations?.eventType;
+        const labelOverrides = section.itemCustomizations?.[key]?.labels;
 
         return (
           <div key={key} className='space-y-2'>
             <HDSFormField
               itemData={itemDef.data}
+              itemKey={key}
               value={formValues[key]}
               onChange={(v) => handleFieldChange(key, v)}
               disabled={disabled}
+              labelOverrides={labelOverrides}
             />
             {variations && (
               <Select
