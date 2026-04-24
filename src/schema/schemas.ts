@@ -16,7 +16,7 @@ interface ConverterEngine {
 }
 
 interface BaseItemData {
-  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite' | 'datasource-search' | 'convertible';
+  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite' | 'datasource-search' | 'convertible' | 'slider';
   label: localizableText;
   description?: localizableText;
   canBeNull?: boolean;
@@ -61,7 +61,38 @@ interface ConvertibleData extends BaseItemData {
   'converter-engine': ConverterEngine;
 }
 
-export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData | DatasourceSearchData | ConvertibleData;
+/** A per-value tick-label entry on a slider. Value keyed by the raw numeric value. */
+export interface SliderLabel {
+  label: localizableText;
+  description?: localizableText;
+}
+
+/** Display-layer knobs on a slider — affect how the raw value is shown to the user only. */
+export interface SliderDisplay {
+  /** Multiplier applied to the raw value for display. Default 1. E.g. 100 for a 0..1 raw → 0..100 displayed. */
+  multiplier?: number;
+  /** Decimal places shown. Default: 0 if multiplier >= 10, else 2. */
+  precision?: number;
+  /** Appended to the displayed value (e.g. '%'). */
+  suffix?: localizableText;
+}
+
+interface SliderData extends BaseItemData {
+  type: 'slider';
+  /** Lower bound in the raw (stored) scale. */
+  min: number;
+  /** Upper bound in the raw scale. */
+  max: number;
+  /** Step increment in the raw scale. Default 1. */
+  step?: number;
+  slider?: {
+    orientation?: 'horizontal' | 'vertical';
+    labels?: Record<string | number, SliderLabel>;
+    display?: SliderDisplay;
+  };
+}
+
+export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData | DatasourceSearchData | ConvertibleData | SliderData;
 
 export interface JSONSchema {
   title: string;
@@ -79,7 +110,7 @@ const l = localizeText;
 
 type SchemaAction = (schema: JSONSchema, v: ItemData) => void;
 
-const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, composite, 'datasource-search': datasourceSearch, convertible };
+const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, composite, 'datasource-search': datasourceSearch, convertible, slider };
 
 export function schemaFor (v: ItemData): JSONSchema {
   const schema: JSONSchema = {
@@ -142,4 +173,9 @@ function composite (schema: JSONSchema, v: ItemData): void {
 
 function convertible (schema: JSONSchema, _v: ItemData): void {
   schema.type = 'object';
+}
+
+function slider (schema: JSONSchema, _v: ItemData): void {
+  // Slider is just a numeric input at the storage layer — display is UI-only.
+  schema.type = 'number';
 }

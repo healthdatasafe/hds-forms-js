@@ -8,6 +8,7 @@ import { Select } from './fields/Select';
 import { Composite } from './fields/Composite';
 import { DatasetSearch } from './fields/DatasetSearch';
 import { Convertible } from './fields/Convertible';
+import { Slider } from './fields/Slider';
 
 const l = localizeText;
 
@@ -110,6 +111,20 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
     case 'convertible': {
       const converterEngine = (itemData as any)['converter-engine'];
       return <Convertible {...baseProps} converterEngine={converterEngine} />;
+    }
+    case 'slider': {
+      const s = itemData as any;
+      return (
+        <Slider
+          {...baseProps}
+          min={s.min}
+          max={s.max}
+          step={s.step}
+          orientation={s.slider?.orientation}
+          labels={s.slider?.labels}
+          display={s.slider?.display}
+        />
+      );
     }
     default:
       return <div className='text-sm text-red-500'>Unknown field type: {(itemData as any).type}</div>;

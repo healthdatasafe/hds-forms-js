@@ -134,6 +134,28 @@ describe('schemaFor', () => {
     });
   });
 
+  it('slider → number (storage is raw; display is UI-only)', () => {
+    const data: ItemData = {
+      type: 'slider',
+      label: { en: 'Self-rated health' },
+      min: 0,
+      max: 1,
+      step: 0.01,
+      slider: {
+        display: { multiplier: 100, precision: 0 },
+        labels: {
+          0: { label: { en: 'Worst' } },
+          1: { label: { en: 'Best' } }
+        }
+      }
+    };
+    const schema = schemaFor(data);
+    expect(schema).toEqual({
+      title: 'Self-rated health',
+      type: 'number'
+    });
+  });
+
   it('throws for unknown type', () => {
     const data = { type: 'unknown', label: { en: 'Bad' } } as any;
     expect(() => schemaFor(data)).toThrow('Cannot find schema for type: "unknown"');
