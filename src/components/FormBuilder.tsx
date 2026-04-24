@@ -542,7 +542,8 @@ export default function FormBuilder ({
                                 section={{
                                   type: section.type,
                                   label: section.name,
-                                  itemKeys: [...section.itemKeys]
+                                  itemKeys: [...section.itemKeys],
+                                  itemCustomizations: section.getData?.().itemCustomizations
                                 }}
                                 onSubmit={() => {}}
                                 disabled
