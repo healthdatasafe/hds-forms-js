@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-27
+
+### Changed — multi-form label overrides (Option A)
+- `HDSFormField.labelOverrides` now accepts either a single `FieldLabelOverrides` object **or** an array of `FieldLabelOverridesWithSource[]`. With a single override the rendering is unchanged. With an array of length > 1 the field renders one stacked block per override, each prefixed by a small caption identifying its source contact + form, all bound to the same value. This lets the patient app surface multiple forms requesting the same item (e.g. EQ-5D-5L wording from one doctor + a custom form from another) without losing either wording.
+- `FieldLabelOverrides`, `FieldLabelOverridesWithSource`, `ItemCustomization` are now type aliases re-exported from `hds-lib` (`appTemplates.ItemLabels`, `appTemplates.ItemLabelsWithSource`, `appTemplates.ItemCustomization`) — single source of truth across forms-js / lib / consumer apps.
+
 ## [0.6.0] - 2026-04-24
 
 ### Added (plan 44 — EQ-5D-5L)

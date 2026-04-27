@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getHDSModel, localizeText } from 'hds-lib';
+import { getHDSModel, localizeText, appTemplates } from 'hds-lib';
 import { HDSFormField } from './HDSFormField';
-import type { FieldLabelOverrides } from './HDSFormField';
 import { Select } from './fields/Select';
 import { EntryList } from './EntryList';
 import type { SectionEntry } from '../types';
@@ -11,16 +10,10 @@ const l = localizeText;
 type localizableText = { en: string; fr?: string; es?: string };
 
 /**
- * Per-item customizations stored on the section. Mirrors the `itemCustomizations`
- * bag on `CollectorRequest.sections[]` in hds-lib. Labels here override the
- * item definition at render time (storage is unchanged).
+ * Per-item customizations stored on the section. Re-exported from hds-lib for
+ * convenience — same shape as `appTemplates.ItemCustomization`.
  */
-export interface ItemCustomization {
-  repeatable?: string;
-  reminder?: Record<string, unknown>;
-  labels?: FieldLabelOverrides;
-  [key: string]: unknown;
-}
+export type ItemCustomization = appTemplates.ItemCustomization;
 
 interface SectionDef {
   key?: string;
