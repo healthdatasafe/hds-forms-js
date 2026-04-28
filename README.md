@@ -45,6 +45,24 @@ import { HDSFormSection } from 'hds-forms';
 
 Recurring sections render a date picker (defaults to today), an "Add entry" button, and a list of previously submitted entries with edit/delete actions.
 
+#### Custom fields (Plan 45)
+
+Sections accept optional `customFieldKeys: string[]` + `customFields: CustomFieldDeclaration[]`. Each custom-field key is rendered alongside canonical items via the existing `<HDSFormField>`. Form values for custom fields live under `__cf::{templateId}::{key}` so they can't collide with canonical itemKeys.
+
+```tsx
+<HDSFormSection
+  section={{
+    type: 'recurring',
+    itemKeys: ['fertility-cycles-start'],
+    customFieldKeys: ['dcom'],
+    customFields: appTemplate.customFields // from hds-lib's loadTemplate()
+  }}
+  onSubmit={...}
+/>
+```
+
+For the submit / prefill round-trip, use `buildCustomFieldEntries(customFieldKeys, customFields)` to produce `{ key, itemDef }[]` entries that plug straight into `formDataToActions()` and `prefillFromEvents()` alongside canonical entries. See `hds-lib`'s [`CUSTOM-FIELDS-AND-SYSTEM.md`](https://github.com/healthdatasafe/hds-lib-js/blob/main/ts/appTemplates/CUSTOM-FIELDS-AND-SYSTEM.md) for the full design reference.
+
 ### `<EntryList>`
 
 Displays a compact table of recurring entries. Used internally by `HDSFormSection` but also exported for custom layouts.
