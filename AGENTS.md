@@ -111,6 +111,7 @@ Type aliases re-export from hds-lib (`appTemplates.ItemLabels`, `appTemplates.It
 
 - **`tsc` stale output**: `tsc` may skip re-emitting a `.js` / `.d.ts` file if it doesn't notice an internal change. After `npm run build`, **verify the relevant file in `js/` actually contains your change** before committing.
 - **Vite cache in consumer apps**: when a public type changes and a Vite-based consumer doesn't pick it up after `npm install`, clear `<consumer>/node_modules/.vite` and restart the dev server.
+- **`exports.import` MUST point at `./src/index.ts`** (TS source) for dev-mode consumers. Pointing at the pre-built bundle (`./js/hds-forms.mjs`) causes Vite to inline a second copy of `hds-lib` into the consumer's chunk → duplicate-singleton bug (broke Plan 45 — fixed in Plan 49). Verify with `cd _local && npm run verify-live-source`. Full methodology in `_claude-memory/conventions.md § Live cross-repo development`.
 - **Display vs. storage drift**: the slider is the canonical example. If you add another field type with `display`-layer scaling, mirror the formatter in hds-lib's `eventToShortText` so the diary / timeline render matches what the user typed.
 - **Override resolution order** in `HDSFormField`: array (length>1 stack) → array (length 1, treated as single) → single object → fall back to `itemDef.data.{label,description}`. Do not introduce a fifth path.
 
