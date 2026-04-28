@@ -2,6 +2,44 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-28
+
+### Added — custom-field rendering & form-engine bridge (45-custom-fields-appTemplates Phase 4)
+
+#### `HDSFormSection`
+- New optional props `customFieldKeys: string[]` + `customFields: CustomFieldDeclaration[]`.
+  For each declared key the section builds a `VirtualItemDef` via
+  `appTemplates.customFieldDeclarationToVirtualItem(decl)` and renders through
+  the existing `<HDSFormField>`. Custom-field form values are stored under
+  `__cf::{templateId}::{key}` so they don't collide with canonical itemKeys.
+
+#### Form-engine bridge — `src/schema/customFields.ts`
+- `CUSTOM_FIELD_KEY_PREFIX` — agreed sentinel `__cf::`.
+- `customFieldFormKey(decl)` — `__cf::{templateId}::{key}` formatter.
+- `isCustomFieldKey(key)` — predicate for downstream filters.
+- `buildCustomFieldEntries(customFieldKeys, customFields) → Array<{ key, itemDef }>`
+  — converts a section's custom-field declarations into entries structurally
+  compatible with `formDataToActions` / `prefillFromEvents`. Mixed canonical
+  + custom-field arrays work without modification: both expose
+  `data.streamId`, `data.eventType` and `eventTemplate()`.
+
+#### Public surface (`src/index.ts`)
+- Exports the four bridge helpers.
+
+#### Tests (`tests/customFields.test.ts`) — 21 new
+- VirtualItemDef shape contract per `note/txt | note/html | count/generic | date/iso-8601 | activity/plain`.
+- Options → select rendering with `{value, label: { en }}` shape.
+- `customFieldFormKey` / `isCustomFieldKey` / `CUSTOM_FIELD_KEY_PREFIX` semantics.
+- `buildCustomFieldEntries` selection + skip-unknown behaviour.
+- Round-trip: `formDataToActions` create / update / delete actions for
+  custom-field values, plus `prefillFromEvents` matching by
+  `(streamId, eventType)` and picking the most recent matching event.
+- Mixed canonical + custom-field round-trip — entries don't interfere.
+
+**Net: 57 tests passing (21 new this version, 36 pre-existing).**
+
+### Requires `hds-lib` ≥ 0.9.0 (custom-field types, helpers and template loader).
+
 ## [0.8.1] - 2026-04-28
 
 ### Changed — hide deprecated itemDefs from pickers (Plan 50 Phase 4)

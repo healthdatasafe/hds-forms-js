@@ -20,6 +20,14 @@ export { jsonFormForItemDef } from './schema/itemDefToSchema';
 // Event data conversion
 export { prefillFromEvents, matchEventsToItemDefs, formDataToActions, formDataToEventBatch } from './schema/eventData';
 
+// Plan 45 — custom-field bridge (CustomFieldDeclaration → form-engine entries)
+export {
+  CUSTOM_FIELD_KEY_PREFIX,
+  customFieldFormKey,
+  isCustomFieldKey,
+  buildCustomFieldEntries
+} from './schema/customFields';
+
 // Companion field utilities (datasource-search)
 export { getCompanionSchema, extractCompanionDefaults, getEnumLabel, keyToLabel } from './schema/companionFields';
 

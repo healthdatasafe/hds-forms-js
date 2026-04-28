@@ -15,6 +15,9 @@ type localizableText = { en: string; fr?: string; es?: string };
  */
 export type ItemCustomization = appTemplates.ItemCustomization;
 
+/** Plan 45 — CustomFieldDeclaration carried on the template / request. */
+export type CustomFieldDeclaration = appTemplates.CustomFieldDeclaration;
+
 interface SectionDef {
   key?: string;
   type?: 'permanent' | 'recurring';
@@ -22,6 +25,10 @@ interface SectionDef {
   label?: localizableText;
   /** Optional per-itemKey customizations (labels, repeatable, reminder, ...). */
   itemCustomizations?: Record<string, ItemCustomization>;
+  /** Plan 45 — custom-field def.keys to render in this section, looked up against `customFields[]`. */
+  customFieldKeys?: string[];
+  /** Plan 45 — custom-field declarations available to this section (typically the template's full customFields[]). */
+  customFields?: CustomFieldDeclaration[];
 }
 
 interface HDSFormSectionProps {
@@ -129,6 +136,26 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
                 disabled={disabled}
               />
             )}
+          </div>
+        );
+      })}
+
+      {/* Plan 45 — custom-field rendering. Uses `__cf::{templateId}::{key}` as the form value key. */}
+      {(section.customFieldKeys || []).map((cfKey) => {
+        const decl = (section.customFields || []).find((c) => c.def.key === cfKey);
+        if (!decl) return null;
+        const virtual = appTemplates.customFieldDeclarationToVirtualItem(decl);
+        const valueKey = `__cf::${virtual.key}`;
+        return (
+          <div key={valueKey} className='space-y-2'>
+            <HDSFormField
+              itemData={virtual.data as any}
+              itemKey={virtual.key}
+              value={formValues[valueKey]}
+              onChange={(v) => handleFieldChange(valueKey, v)}
+              required={virtual.data.required}
+              disabled={disabled}
+            />
           </div>
         );
       })}
