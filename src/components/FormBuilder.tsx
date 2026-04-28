@@ -75,7 +75,7 @@ export default function FormBuilder ({
   const lb = { ...DEFAULT_LABELS, ...labelOverrides };
 
   const model = getHDSModel();
-  const allItemDefs = useMemo(() => model.itemsDefs.getAll(), [model]);
+  const allItemDefs = useMemo(() => model.itemsDefs.getAllActive(), [model]);
 
   const [version, setVersion] = useState(0);
   const refresh = useCallback(() => {

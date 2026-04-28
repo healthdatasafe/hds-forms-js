@@ -23,6 +23,13 @@ export interface ItemSearchPickerProps {
   usedKeys?: Set<string>;
   /** If true, items can only be selected (not marked as used). Default true. */
   selectable?: boolean;
+  /**
+   * If true, deprecated itemDefs are included in the listing. Default false.
+   * Has no effect when `items` is passed explicitly. Intended for engineer-
+   * facing tools (e.g. the data-model browser) that need to inspect every
+   * item, including ones flagged `deprecated: true` in pack.json.
+   */
+  includeDeprecated?: boolean;
 }
 
 /**
@@ -38,6 +45,7 @@ export function ItemSearchPicker ({
   filter,
   usedKeys,
   selectable = true,
+  includeDeprecated = false,
 }: ItemSearchPickerProps) {
   const [search, setSearch] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -47,13 +55,14 @@ export function ItemSearchPicker ({
     if (externalItems) return externalItems;
     try {
       const model = getHDSModel();
-      return model.itemsDefs.getAll().map((d: any) => ({
+      const defs = includeDeprecated ? model.itemsDefs.getAll() : model.itemsDefs.getAllActive();
+      return defs.map((d: any) => ({
         key: d.key,
         label: typeof d.label === 'object' ? (localizeText(d.label) || d.key) : (d.label || d.key),
         description: d.description || undefined,
       }));
     } catch { return []; }
-  }, [externalItems]);
+  }, [externalItems, includeDeprecated]);
 
   const items = filter ? allItems.filter(filter) : allItems;
 

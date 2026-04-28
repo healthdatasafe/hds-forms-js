@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-04-28
+
+### Changed — hide deprecated itemDefs from pickers (Plan 50 Phase 4)
+- `FormBuilder` item browser and `ItemSearchPicker` now load itemDefs via `model.itemsDefs.getAllActive()` (introduced in `hds-lib` 0.7.2) — items flagged `deprecated: true` in pack.json are no longer offered when a doctor is designing a new form. Existing forms still resolve every item correctly (readers use `forKey`/`forEvent`, which are unchanged).
+- `ItemSearchPicker` now accepts an optional `includeDeprecated` prop (default `false`) for engineer-facing tools (e.g. the data-model browser) that need to inspect every item.
+
+Requires `hds-lib` ≥ 0.7.2. Contract documented in `data-model/AGENTS.md § "deprecated: true on items"`.
+
 ## [0.8.0] - 2026-04-28
 
 ### Changed — `package.json.exports.import` now points at TS source (Plan 49)

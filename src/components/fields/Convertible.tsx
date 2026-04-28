@@ -67,12 +67,12 @@ export function Convertible ({ label, description, value, onChange, converterEng
     // Add _raw if not already in methodIds (it's auto-generated, not in the pack)
     if (!allMethods.includes('_raw')) allMethods.push('_raw');
     return allMethods.map((m: string) => {
-        const def = engine.getMethodDef(m);
-        return {
-          id: m,
-          name: def?.name ? (localizeText(def.name) || m) : m,
-        };
-      });
+      const def = engine.getMethodDef(m);
+      return {
+        id: m,
+        name: def?.name ? (localizeText(def.name) || m) : m,
+      };
+    });
   }, [engine]);
 
   // Check if method selector should be hidden (converter-default set)
@@ -111,10 +111,10 @@ export function Convertible ({ label, description, value, onChange, converterEng
   if (loading) {
     return (
       <div>
-              <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-        {label}{required && <span className='text-red-500'> *</span>}
-      </label>
-      {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
+        <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+          {label}{required && <span className='text-red-500'> *</span>}
+        </label>
+        {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
         <p className='text-sm text-gray-400'>Loading converter...</p>
       </div>
     );
@@ -123,10 +123,10 @@ export function Convertible ({ label, description, value, onChange, converterEng
   if (!engine) {
     return (
       <div>
-              <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-        {label}{required && <span className='text-red-500'> *</span>}
-      </label>
-      {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
+        <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+          {label}{required && <span className='text-red-500'> *</span>}
+        </label>
+        {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
         <p className='text-sm text-red-500'>Converter engine not available</p>
       </div>
     );
@@ -134,32 +134,34 @@ export function Convertible ({ label, description, value, onChange, converterEng
 
   return (
     <div>
-            <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+      <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
         {label}{required && <span className='text-red-500'> *</span>}
       </label>
       {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
 
       {/* Method selector (hidden when converter-default is set — show label instead) */}
-      {!hideMethodSelector ? (
-        <div className='mb-3'>
-          <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>Input method</label>
-          <select
-            value={selectedMethod}
-            onChange={e => { setSelectedMethod(e.target.value); onChange(undefined); }}
-            disabled={disabled}
-            className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-          >
-            <option value=''>-- Select method --</option>
-            {methods.map((m: any) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-        </div>
-      ) : selectedMethod && (
-        <p className='mb-3 text-xs font-medium text-gray-500 dark:text-gray-400'>
-          {methods.find((m: any) => m.id === selectedMethod)?.name || selectedMethod}
-        </p>
-      )}
+      {!hideMethodSelector
+        ? (
+          <div className='mb-3'>
+            <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>Input method</label>
+            <select
+              value={selectedMethod}
+              onChange={e => { setSelectedMethod(e.target.value); onChange(undefined); }}
+              disabled={disabled}
+              className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+            >
+              <option value=''>-- Select method --</option>
+              {methods.map((m: any) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          </div>
+          )
+        : selectedMethod && (
+          <p className='mb-3 text-xs font-medium text-gray-500 dark:text-gray-400'>
+            {methods.find((m: any) => m.id === selectedMethod)?.name || selectedMethod}
+          </p>
+        )}
 
       {/* Observation selector for the chosen method — dropdown per component */}
       {selectedMethod && selectedMethod !== '_raw' && components.length > 0 && (
