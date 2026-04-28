@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-28
+
+### Changed — `package.json.exports.import` now points at TS source (Plan 49)
+- `exports[.].import` switched from `./js/hds-forms.mjs` (pre-built ESM bundle) to `./src/index.ts` (TS source).
+- Added wildcard subpath exports: `./src/*` and `./js/*` so deep imports keep working.
+- Added `src` to `"files"` so the published package includes the TS source.
+- `default` export still points at the compiled bundle for non-Vite/CJS consumers.
+
+**Why.** Vite resolves the `import` condition in dev mode. With the previous pre-built bundle as `import`, `require("hds-lib")` inside that bundle was bundled by esbuild into the consumer's chunk separately from the consumer's own `import 'hds-lib'`, creating two `HDSModel` singletons → duplicate-singleton bug that broke Plan 45's mcp-chrome smoke test. Pointing `import` at TS source lets Vite resolve `hds-lib` once through its normal module graph + dedup. Production builds and CJS consumers are unaffected (still hit `default`).
+
+This brings `hds-forms-js` in line with `_claude-memory/conventions.md § Package exports: TS source for bundlers`. See `_plans/49-local-dev-dependency-graph-study/PLAN.md` for the full root-cause analysis.
+
 ## [0.7.0] - 2026-04-27
 
 ### Changed — multi-form label overrides (Option A)
