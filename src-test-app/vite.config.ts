@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     dedupe: ['hds-lib', 'hds-react-timeline', 'react', 'react-dom'],
   },
   optimizeDeps: {
-    include: ['hds-lib'],
+    include: ['hds-lib', 'react-dom', 'react-dom/client'],
     exclude: ['hds-react-timeline']
   },
   base: './',
