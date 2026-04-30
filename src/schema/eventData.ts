@@ -31,6 +31,10 @@ export function prefillFromEvents (
 /**
  * Match events to item defs and return both values and event references.
  * Used for prefilling and for knowing which events to update/delete on submit.
+ *
+ * Uses `itemDef.matchesEvent(event)` when available (Plan 46 D3 — D3-aware
+ * walk-up resolution); falls back to plain `streamIds.includes(streamId)`
+ * when the lib-side helper isn't present (older models).
  */
 export function matchEventsToItemDefs (
   itemDefs: Array<{ key: string; itemDef: ItemDef }>,
@@ -46,9 +50,14 @@ export function matchEventsToItemDefs (
 
     if (possibleTypes.length === 0 || !streamId) continue;
 
-    // Find the most recent matching event (any of the variation types)
+    // Find the most recent matching event (any of the variation types).
+    // Prefer D3-aware matchesEvent when the itemDef supports it.
+    const matchFn = typeof itemDef.matchesEvent === 'function'
+      ? (e: { type: string; streamIds: string[] }) => itemDef.matchesEvent!(e)
+      : (e: { type: string; streamIds: string[] }) => possibleTypes.includes(e.type) && e.streamIds?.includes(streamId);
+
     const matching = events
-      .filter(e => possibleTypes.includes(e.type) && e.streamIds?.includes(streamId))
+      .filter(matchFn)
       .sort((a, b) => (b.time || 0) - (a.time || 0));
 
     if (matching.length > 0) {
@@ -73,12 +82,18 @@ export function matchEventsToItemDefs (
 /**
  * Compute the list of API actions (create/update/delete) for a form submission.
  * Compares current form data against existing event IDs to determine the right action.
+ *
+ * @param contexts Plan 46 D3 — optional per-itemKey context streamId to pass
+ *   to `eventTemplate({ context })`. Lets a section emit events placed at
+ *   descendant streams of the itemDef's canonical home (e.g. `treatment`
+ *   itemDef → events at `treatment-fertility`).
  */
 export function formDataToActions (
   itemDefs: Array<{ key: string; itemDef: ItemDef }>,
   formData: Record<string, any>,
   existingEventIds: Record<string, string>,
-  time?: number
+  time?: number,
+  contexts?: Record<string, string | undefined>
 ): Array<{ action: 'create' | 'update' | 'delete'; key: string; params: Record<string, any> }> {
   const actions: Array<{ action: 'create' | 'update' | 'delete'; key: string; params: Record<string, any> }> = [];
   const eventTime = time || Math.floor(Date.now() / 1000);
@@ -86,7 +101,8 @@ export function formDataToActions (
   for (const { key, itemDef } of itemDefs) {
     const value = formData[key];
     const existingId = existingEventIds[key];
-    const template = itemDef.eventTemplate();
+    const ctx = contexts?.[key];
+    const template = itemDef.eventTemplate(ctx ? { context: ctx } : undefined);
     // Use variation override from formData if present, otherwise default template type
     const eventType = formData[`${key}__eventType`] || template.type as string;
 
@@ -159,7 +175,8 @@ export function formDataToActions (
 export function formDataToEventBatch (
   itemDefs: Array<{ key: string; itemDef: ItemDef }>,
   formData: Record<string, any>,
-  time?: number
+  time?: number,
+  contexts?: Record<string, string | undefined>
 ): Array<{ streamIds: string[]; type: string; content: any; time?: number }> {
   const events: Array<{ streamIds: string[]; type: string; content: any; time?: number }> = [];
   const eventTime = time || Math.floor(Date.now() / 1000);
@@ -168,7 +185,8 @@ export function formDataToEventBatch (
     const value = formData[key];
     if (value === undefined || value === null) continue;
 
-    const template = itemDef.eventTemplate();
+    const ctx = contexts?.[key];
+    const template = itemDef.eventTemplate(ctx ? { context: ctx } : undefined);
     const eventType = template.type as string;
 
     // activity/plain expects null content; checkbox true = create event, false = skip

@@ -211,4 +211,66 @@ describe('formDataToActions — variations', () => {
     const actions = formDataToActions(itemDefs, formData, { weight: 'e1' }, 1000);
     expect(actions[0].params.update.type).toBeUndefined();
   });
+
+  // ─── Plan 46 D3 — context-via-substream ──────────────────────────
+  describe('contexts (Plan 46 D3)', () => {
+    function makeContextItemDef (canonicalStream: string, descendants: string[], evType: string): ItemDef {
+      return {
+        data: { type: 'composite', label: { en: 'X' }, eventType: evType, streamId: canonicalStream } as any,
+        eventTemplate: (opts) => {
+          const ctx = opts?.context;
+          if (ctx && ctx !== canonicalStream && !descendants.includes(ctx)) {
+            throw new Error(`Context streamId "${ctx}" is not a descendant of "${canonicalStream}"`);
+          }
+          return { streamIds: [ctx ?? canonicalStream], type: evType };
+        },
+        matchesEvent: (e) => {
+          if (!e.type || !e.streamIds) return false;
+          if (e.type !== evType) return false;
+          // D3-style match: any of the canonical or descendants
+          return e.streamIds.some(s => s === canonicalStream || descendants.includes(s));
+        }
+      };
+    }
+
+    it('formDataToActions threads per-key context to eventTemplate', () => {
+      const itemDef = makeContextItemDef('treatment', ['treatment-fertility', 'treatment-oncology'], 'treatment/coded-v1');
+      const itemDefs = [{ key: 'tx', itemDef }];
+      const formData = { tx: { regimen: { label: { en: 'IVF' }, codes: [] }, count: 2 } };
+      const contexts = { tx: 'treatment-fertility' };
+      const actions = formDataToActions(itemDefs, formData, {}, 1000, contexts);
+      expect(actions).toHaveLength(1);
+      expect(actions[0].params.streamIds).toEqual(['treatment-fertility']);
+      expect(actions[0].params.type).toBe('treatment/coded-v1');
+    });
+
+    it('formDataToActions falls back to canonical streamId when no context', () => {
+      const itemDef = makeContextItemDef('treatment', ['treatment-fertility'], 'treatment/coded-v1');
+      const itemDefs = [{ key: 'tx', itemDef }];
+      const formData = { tx: { regimen: { label: { en: 'IVF' }, codes: [] } } };
+      const actions = formDataToActions(itemDefs, formData, {}, 1000);
+      expect(actions[0].params.streamIds).toEqual(['treatment']);
+    });
+
+    it('matchEventsToItemDefs uses matchesEvent for D3 walk-up resolution', () => {
+      const itemDef = makeContextItemDef('treatment', ['treatment-fertility'], 'treatment/coded-v1');
+      const itemDefs = [{ key: 'tx', itemDef }];
+      // Event placed at descendant context — would NOT match via streamIds.includes('treatment')
+      const events = [
+        { type: 'treatment/coded-v1', streamIds: ['treatment-fertility'], content: { regimen: { label: { en: 'IVF' } } }, time: 100 }
+      ];
+      const result = matchEventsToItemDefs(itemDefs, events);
+      expect(result.values.tx).toBeDefined();
+    });
+
+    it('formDataToEventBatch threads per-key context', () => {
+      const itemDef = makeContextItemDef('procedure', ['procedure-fertility'], 'procedure/coded-v1');
+      const itemDefs = [{ key: 'lap', itemDef }];
+      const formData = { lap: { procedure: { label: { en: 'Laparoscopy' }, codes: [] } } };
+      const contexts = { lap: 'procedure-fertility' };
+      const events = formDataToEventBatch(itemDefs, formData, 1000, contexts);
+      expect(events).toHaveLength(1);
+      expect(events[0].streamIds).toEqual(['procedure-fertility']);
+    });
+  });
 });

@@ -34,7 +34,18 @@ export interface ItemDefData {
 
 export interface ItemDef {
   data: ItemDefData;
-  eventTemplate: () => Record<string, unknown>;
+  /**
+   * Returns a `{ streamIds, type }` template event. Optional `context`
+   * (Plan 46 §2.1 / D3) lets the caller emit events placed at a descendant
+   * streamId of the itemDef's canonical home — must be `streamId` or
+   * descendant; throws otherwise.
+   */
+  eventTemplate: (opts?: { context?: string }) => Record<string, unknown>;
+  /**
+   * Plan 46 D3 — D3-aware event matching. Returns true if the event resolves
+   * to this itemDef via the parent walk-up resolution rule.
+   */
+  matchesEvent?: (event: { type?: string; streamIds?: string[] }) => boolean;
 }
 
 interface ProcessDataResult {
@@ -53,7 +64,7 @@ export interface JsonFormForItemDefResult {
 
 // --- Functions ---
 
-export function jsonFormForItemDef (itemDef: ItemDef): JsonFormForItemDefResult {
+export function jsonFormForItemDef (itemDef: ItemDef, opts: { context?: string } = {}): JsonFormForItemDefResult {
   const jsonFrom = _jsonFormForItemDef(itemDef);
 
   function eventDataForFormData (formData: Record<string, unknown>): Record<string, unknown> | null {
@@ -62,7 +73,7 @@ export function jsonFormForItemDef (itemDef: ItemDef): JsonFormForItemDefResult 
       const status = jsonFrom.processData(copyFormData);
       if (status.createEvent === false) return null;
     }
-    const eventData = itemDef.eventTemplate();
+    const eventData = itemDef.eventTemplate(opts.context ? { context: opts.context } : undefined);
     Object.assign(eventData, copyFormData);
     return eventData;
   }

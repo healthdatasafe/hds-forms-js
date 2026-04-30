@@ -6,11 +6,12 @@ import { HDSFormSection } from 'hds-forms/components/HDSFormSection';
 import { ItemSearchPicker } from 'hds-forms/components/ItemSearchPicker';
 import { schemaFor } from 'hds-forms/schema/schemas';
 import { jsonFormForItemDef } from 'hds-forms/schema/itemDefToSchema';
+import { formDataToActions } from 'hds-forms/schema/eventData';
 import type { SectionEntry } from 'hds-forms/types';
 import FormBuilder from './FormBuilder';
 import { Timeline } from 'hds-react-timeline';
 
-type Tab = 'fields' | 'section' | 'recurring' | 'medication' | 'builder' | 'timeline' | 'settings';
+type Tab = 'fields' | 'section' | 'recurring' | 'medication' | 'builder' | 'timeline' | 'settings' | 'plan46';
 
 const SAMPLE_MIRA_ENDPOINT = 'https://cmn4ajjwg44xzdjpfcdnqgouv@demo.datasafe.dev/sample-mira/';
 
@@ -74,6 +75,10 @@ export default function App () {
   const [recurringEntries, setRecurringEntries] = useState<SectionEntry[]>([]);
   const [recurringData, setRecurringData] = useState<Record<string, any> | null>(null);
 
+  // Plan-46 demo tab state
+  const [plan46Actions, setPlan46Actions] = useState<any[] | null>(null);
+  const [plan46Resolved, setPlan46Resolved] = useState<Array<{ key: string; resolvedKey: string | null }> | null>(null);
+
   // Medication tab state
   const [medicationValue, setMedicationValue] = useState<any>(undefined);
   const [intake, setIntake] = useState<IntakeState>({
@@ -128,6 +133,43 @@ export default function App () {
 
   function handleSectionSubmit (data: Record<string, any>) {
     setSectionData(data);
+  }
+
+  // Plan-46 D3 demo: section with treatment-coded + procedure-coded items,
+  // each customised with a context streamId of `*-fertility`. Submit folds
+  // the contexts back through formDataToActions.
+  const PLAN46_SECTION = useMemo(() => ({
+    label: { en: 'Plan 46 — D3 fertility intake' },
+    itemKeys: ['treatment-coded', 'procedure-coded'],
+    itemCustomizations: {
+      'treatment-coded': { context: 'treatment-fertility', labels: { question: { en: 'Treatment received' } } },
+      'procedure-coded': { context: 'procedure-fertility', labels: { question: { en: 'Procedure performed' } } }
+    }
+  }), []);
+
+  function handlePlan46Submit (formData: Record<string, any>) {
+    const model = getModel();
+    const contexts: Record<string, string> = {};
+    const itemDefs: Array<{ key: string; itemDef: any }> = [];
+    for (const key of PLAN46_SECTION.itemKeys) {
+      const itemDef = model.itemsDefs.forKey(key);
+      if (!itemDef) continue;
+      itemDefs.push({ key, itemDef });
+      const ctx = (PLAN46_SECTION.itemCustomizations as any)[key]?.context;
+      if (ctx) contexts[key] = ctx;
+    }
+    const actions = formDataToActions(itemDefs, formData, {}, undefined, contexts);
+    setPlan46Actions(actions);
+    // For each create action, run forEvent walk-up against the resulting event
+    // and record which itemDef key it resolves to — proves D3 round-trip.
+    const resolved = actions
+      .filter(a => a.action === 'create')
+      .map(a => {
+        const event = { type: a.params.type, streamIds: a.params.streamIds };
+        const def = model.itemsDefs.forEvent(event, false);
+        return { key: a.key, resolvedKey: def ? def.key : null };
+      });
+    setPlan46Resolved(resolved);
   }
 
   function handleRecurringSubmit (data: Record<string, any>) {
@@ -224,6 +266,9 @@ export default function App () {
         </button>
         <button className={tabClass('timeline')} onClick={() => setTab('timeline')}>
           Timeline
+        </button>
+        <button className={tabClass('plan46')} onClick={() => setTab('plan46')}>
+          Plan 46 (D3)
         </button>
         <button className={tabClass('settings')} onClick={() => setTab('settings')}>
           Settings
@@ -324,6 +369,33 @@ export default function App () {
 
         {/* ── Builder Tab ── */}
         {tab === 'builder' && <FormBuilder />}
+
+        {/* ── Plan 46 (D3) Tab ── */}
+        {tab === 'plan46' && (
+          <div className='space-y-6'>
+            <div className='rounded-md bg-gray-50 p-4 text-sm dark:bg-gray-700/50'>
+              <p className='mb-2 font-semibold'>Plan 46 — context-via-substream demo</p>
+              <p className='text-gray-600 dark:text-gray-300'>
+                Section with two coded items (<code>treatment-coded</code>, <code>procedure-coded</code>),
+                each carrying a per-item <code>context</code> in <code>itemCustomizations</code>:
+                <code> treatment-fertility</code>, <code>procedure-fertility</code>.
+              </p>
+              <p className='mt-2 text-gray-600 dark:text-gray-300'>
+                On submit, <code>formDataToActions(..., contexts)</code> threads each context to
+                <code> eventTemplate(&#123; context &#125;)</code>. Resulting events should have <code>streamIds: [&lt;context&gt;]</code> (length-1).
+                Then <code>forEvent()</code> walks up <code>treatment-fertility → treatment</code> /
+                <code> procedure-fertility → procedure</code> and resolves back to the original itemDefs.
+              </p>
+            </div>
+            <HDSFormSection section={PLAN46_SECTION as any} onSubmit={handlePlan46Submit} />
+            {plan46Actions && (
+              <DebugPanel title='Resulting actions (formDataToActions)' json={JSON.stringify(plan46Actions, null, 2)} />
+            )}
+            {plan46Resolved && (
+              <DebugPanel title='Walk-up resolution (forEvent)' json={JSON.stringify(plan46Resolved, null, 2)} />
+            )}
+          </div>
+        )}
 
         {/* ── Settings Tab ── */}
         {tab === 'settings' && <SettingsPanel />}
