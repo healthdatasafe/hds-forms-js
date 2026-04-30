@@ -1,4 +1,4 @@
-import HDSLib, { initHDSModel, type HDSModel, HDSModel as HDSModelClass } from 'hds-lib';
+import HDSLib, { initHDSModel, getHDSModel, type HDSModel } from 'hds-lib';
 
 let model: HDSModel | null = null;
 
@@ -10,11 +10,17 @@ const LOCAL_DATASETS_URL = import.meta.env.VITE_DATASETS_URL;
 async function ensureInit (): Promise<HDSModel> {
   if (model != null) return model;
   if (LOCAL_MODEL_URL) {
-    // Bypass service-info entirely — load pack.json directly
-    model = new HDSModelClass('local');
-    const baseUrl = LOCAL_MODEL_URL.replace(/\/[^/]*$/, '/');
-    model.assets = { 'hds-model': LOCAL_MODEL_URL, ...(LOCAL_DATASETS_URL ? { datasets: LOCAL_DATASETS_URL } : {}) };
-    await model.load(LOCAL_MODEL_URL);
+    // Bypass service-info entirely — load pack.json directly into the
+    // hds-lib singleton so components that call `getHDSModel()` (e.g.
+    // HDSFormSection) get the same instance.
+    model = getHDSModel();
+    if (!model.isLoaded) {
+      model.assets = {
+        'hds-model': LOCAL_MODEL_URL,
+        ...(LOCAL_DATASETS_URL ? { datasets: LOCAL_DATASETS_URL } : {}),
+      };
+      await model.load(LOCAL_MODEL_URL);
+    }
   } else {
     // Use service-info (default or overridden)
     if (LOCAL_SERVICE_INFO_URL) {
