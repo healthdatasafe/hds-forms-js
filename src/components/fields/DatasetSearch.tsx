@@ -398,16 +398,79 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
           </>
           )}
 
-      {drugValue && companionSchema && companionSchema.companions.map(({ key, schema }) => (
-        <div key={key} className='mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700'>
-          <CompanionFields
-            schema={schema}
-            value={companionValues[key]}
-            onChange={(v) => handleCompanionChange(key, v)}
-            readonlyKeys={prefilledKeys[key]}
-          />
-        </div>
-      ))}
+      {drugValue && companionSchema && companionSchema.companions.map(({ key, schema }) => {
+        if (schema?.type === 'object') {
+          return (
+            <div key={key} className='mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700'>
+              <CompanionFields
+                schema={schema}
+                value={companionValues[key]}
+                onChange={(v) => handleCompanionChange(key, v)}
+                readonlyKeys={prefilledKeys[key]}
+              />
+            </div>
+          );
+        }
+        const cur = companionValues[key];
+        const setScalar = (raw: string | boolean | undefined) => {
+          if (raw === undefined || raw === '' || raw === null) {
+            handleCompanionChange(key, undefined);
+            return;
+          }
+          if (schema?.type === 'number') {
+            const n = typeof raw === 'string' ? parseFloat(raw) : NaN;
+            handleCompanionChange(key, Number.isFinite(n) ? n : undefined);
+          } else {
+            handleCompanionChange(key, raw);
+          }
+        };
+        return (
+          <div key={key} className='mt-3' title={schema?.description || ''}>
+            <label className={labelClass}>{keyToLabel(key)}</label>
+            {schema?.type === 'number' && (
+              <input
+                type='number'
+                value={cur ?? ''}
+                onChange={e => setScalar(e.target.value)}
+                placeholder='—'
+                className={inputClass}
+              />
+            )}
+            {schema?.type === 'boolean' && (
+              <input
+                type='checkbox'
+                checked={!!cur}
+                onChange={e => setScalar(e.target.checked || undefined)}
+                className='h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-700'
+              />
+            )}
+            {schema?.type === 'string' && (
+              schema?.enum
+                ? (
+                  <select
+                    value={cur ?? ''}
+                    onChange={e => setScalar(e.target.value || undefined)}
+                    className={inputClass}
+                  >
+                    <option value=''>—</option>
+                    {schema.enum.map((v: string) => (
+                      <option key={v} value={v}>{getEnumLabel(v)}</option>
+                    ))}
+                  </select>
+                )
+                : (
+                  <input
+                    type='text'
+                    value={cur ?? ''}
+                    onChange={e => setScalar(e.target.value || undefined)}
+                    placeholder={schema?.description || keyToLabel(key)}
+                    className={inputClass}
+                  />
+                )
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

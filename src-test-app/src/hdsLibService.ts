@@ -34,7 +34,7 @@ async function ensureInit (): Promise<HDSModel> {
 export async function getItems (): Promise<Array<{ key: string; label: string }>> {
   const m = await ensureInit();
   const items: Array<{ key: string; label: string }> = [];
-  for (const itemDef of m.itemsDefs.getAll()) {
+  for (const itemDef of m.itemsDefs.getAllActive()) {
     items.push({ key: itemDef.key, label: itemDef.label });
   }
   return items;

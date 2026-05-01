@@ -1,106 +1,60 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { getItems, getModel } from './hdsLibService';
-import { HDSSettings, localizeText } from 'hds-lib';
+import { HDSSettings, localizeText, eventToShortText, durationToLabel } from 'hds-lib';
 import { HDSFormField } from 'hds-forms/components/HDSFormField';
 import { HDSFormSection } from 'hds-forms/components/HDSFormSection';
 import { ItemSearchPicker } from 'hds-forms/components/ItemSearchPicker';
+import type { ItemSearchPickerItem } from 'hds-forms/components/ItemSearchPicker';
+import { EventTimeInput } from 'hds-forms/components/EventTimeInput';
+import { EventDurationInput } from 'hds-forms/components/EventDurationInput';
+import type { EventDuration } from 'hds-forms/components/EventDurationInput';
 import { schemaFor } from 'hds-forms/schema/schemas';
 import { jsonFormForItemDef } from 'hds-forms/schema/itemDefToSchema';
-import { formDataToActions } from 'hds-forms/schema/eventData';
 import type { SectionEntry } from 'hds-forms/types';
 import FormBuilder from './FormBuilder';
 import { Timeline } from 'hds-react-timeline';
 
-type Tab = 'fields' | 'section' | 'recurring' | 'medication' | 'builder' | 'timeline' | 'settings' | 'plan46';
+type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'timeline' | 'settings';
 
 const SAMPLE_MIRA_ENDPOINT = 'https://cmn4ajjwg44xzdjpfcdnqgouv@demo.datasafe.dev/sample-mira/';
 
-
-interface IntakeState {
-  doseValue: string;
-  doseUnit: string;
-  route: string;
-  note: string;
+interface SingleFieldPanelProps {
+  items: ItemSearchPickerItem[];
+  emptyMessage?: string;
 }
 
-const DOSE_UNITS = [
-  'dose/tablet', 'dose/drop', 'dose/puff', 'dose/application',
-  'dose/suppository', 'dose/unit', 'volume/ml',
-  'mass/mg', 'mass/mcg', 'mass/g'
-];
-
-const ROUTES = [
-  'oral', 'sublingual', 'parenteral', 'intravenous', 'intramuscular',
-  'subcutaneous', 'inhalation', 'nasal', 'topical', 'transdermal',
-  'ophthalmic', 'otic', 'rectal', 'vaginal'
-];
-
-function buildMedicationEvent (drug: any, intake: IntakeState) {
-  const drugObj: any = {
-    label: drug.label,
-    description: drug.description,
-    codes: drug.codes || []
-  };
-
-  const intakeObj: any = {};
-  if (intake.doseValue) intakeObj.doseValue = parseFloat(intake.doseValue);
-  if (intake.doseUnit) intakeObj.doseUnit = intake.doseUnit;
-  if (intake.route) intakeObj.route = intake.route;
-  if (intake.note) intakeObj.note = intake.note;
-
-  return {
-    type: 'medication/coded-v1',
-    content: {
-      drug: drugObj,
-      ...(Object.keys(intakeObj).length > 0 ? { intake: intakeObj } : {})
-    }
-  };
+function safeLabel (sec: number): string {
+  try { return durationToLabel(sec); } catch { return `${sec}s`; }
 }
 
-export default function App () {
-  const [tab, setTab] = useState<Tab>('fields');
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<Array<{ key: string; label: string }>>([]);
-  const [selectedKey, setSelectedKey] = useState('');
+/** Picker + form + envelope toggles (time/duration) + Short text + 3 debug panels. Owns its own state. */
+function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list' }: SingleFieldPanelProps) {
+  // Selection + value share one state so changing the selected item atomically clears the value.
+  // (Using two states with a useEffect-reset would race against the first render of HDSFormField
+  // — the new DatasetSearch instance would capture the prior value into its initialDrugRef and
+  // get stuck in edit-mode showing an empty static-text view.)
+  const [selection, setSelection] = useState<{ key: string; value: any }>({ key: '', value: undefined });
+  const selectedKey = selection.key;
+  const fieldValue = selection.value;
+  const setSelectedKey = useCallback((key: string) => setSelection({ key, value: undefined }), []);
+  const setFieldValue = useCallback((value: any) => setSelection(prev => ({ ...prev, value })), []);
 
-  // Field tab state
-  const [fieldValue, setFieldValue] = useState<any>(undefined);
   const [fieldSchema, setFieldSchema] = useState<any>(null);
   const [eventData, setEventData] = useState<any>(null);
+  // Item-declared duration metadata (mandatory / canBeNull / maxSeconds), null when the item declares no duration.
+  const [durationMeta, setDurationMeta] = useState<{ mandatory: boolean; canBeNull: boolean; maxSeconds?: number } | null>(null);
 
-  // Section tab state
-  const [sectionData, setSectionData] = useState<Record<string, any> | null>(null);
+  // Event-envelope toggles
+  const [showTime, setShowTime] = useState(false);
+  const [showDuration, setShowDuration] = useState(false);
+  const [eventTime, setEventTime] = useState<number | undefined>(undefined);
+  const [eventDuration, setEventDuration] = useState<EventDuration | undefined>(undefined);
 
-  // Recurring tab state
-  const [recurringEntries, setRecurringEntries] = useState<SectionEntry[]>([]);
-  const [recurringData, setRecurringData] = useState<Record<string, any> | null>(null);
-
-  // Plan-46 demo tab state
-  const [plan46Actions, setPlan46Actions] = useState<any[] | null>(null);
-  const [plan46Resolved, setPlan46Resolved] = useState<Array<{ key: string; resolvedKey: string | null }> | null>(null);
-
-  // Medication tab state
-  const [medicationValue, setMedicationValue] = useState<any>(undefined);
-  const [intake, setIntake] = useState<IntakeState>({
-    doseValue: '',
-    doseUnit: '',
-    route: '',
-    note: ''
-  });
-
-  useEffect(() => {
-    getItems().then((list) => {
-      setItems(list);
-      setLoading(false);
-    });
-  }, []);
-
-  // When item selection changes, compute schema and reset
   useEffect(() => {
     if (!selectedKey) {
       setFieldSchema(null);
       setEventData(null);
-      setFieldValue(undefined);
+      setDurationMeta(null);
       return;
     }
     try {
@@ -109,67 +63,174 @@ export default function App () {
       if (!itemDef) return;
       const schema = schemaFor(itemDef.data);
       setFieldSchema(schema);
-      setFieldValue(undefined);
       setEventData(null);
-
-      // Also compute event data conversion info
       const jsonForm = jsonFormForItemDef(itemDef);
       setEventData({ converter: jsonForm.eventDataForFormData, schema: jsonForm.schema });
+      const dur = (itemDef.data as any)?.duration;
+      setDurationMeta(dur
+        ? { mandatory: !!dur.mandatory, canBeNull: dur.canBeNull !== false, maxSeconds: dur.maxSeconds }
+        : null);
     } catch (e) {
       console.error('Schema error:', e);
     }
   }, [selectedKey]);
 
+  // Synthesize a full event { time, duration?, type, streamIds, content } from current inputs.
+  const synthesizedEvent = useMemo<any>(() => {
+    if (!eventData?.converter || fieldValue === undefined) return null;
+    // The form-engine's converter expects the same shape it would receive from a
+    // bound form. For standard items that's `{ content: <value> }`; for special
+    // cases like activity/plain checkboxes it's a bare value (the schema is the
+    // field's content schema, not an object wrapping it).
+    const wrapsContent = eventData.schema?.type === 'object'
+      && (eventData.schema as any)?.properties?.content !== undefined;
+    const formData = wrapsContent ? { content: fieldValue } : fieldValue;
+    let raw: any;
+    try { raw = eventData.converter(formData); } catch { return null; }
+    if (raw == null) return null;
+    const event: any = { ...raw };
+    event.time = (showTime && eventTime != null)
+      ? eventTime
+      : Math.floor(Date.now() / 1000);
+    if (showDuration && eventDuration !== undefined) {
+      // Only emit duration when the picker has a resolved value (number or null = ongoing).
+      // Skip 0 since point-in-time is the Pryv default (no key).
+      if (eventDuration === null || eventDuration > 0) event.duration = eventDuration;
+    }
+    return event;
+  }, [eventData, fieldValue, showTime, eventTime, showDuration, eventDuration]);
+
+  // Short text (only when the event is well-formed enough for the lib to summarize it)
+  const shortText = useMemo<string | null>(() => {
+    if (!synthesizedEvent) return null;
+    try { return eventToShortText(synthesizedEvent); } catch { return null; }
+  }, [synthesizedEvent]);
+
   const fieldValueJson = useMemo(() => JSON.stringify(fieldValue, null, 2), [fieldValue]);
   const fieldSchemaJson = useMemo(() => JSON.stringify(fieldSchema, null, 2), [fieldSchema]);
-  const eventDataJson = useMemo(() => {
-    if (!eventData?.converter || fieldValue === undefined) return 'null';
-    try {
-      return JSON.stringify(eventData.converter({ content: fieldValue }), null, 2);
-    } catch { return 'null'; }
-  }, [eventData, fieldValue]);
+  const eventDataJson = useMemo(
+    () => (synthesizedEvent ? JSON.stringify(synthesizedEvent, null, 2) : 'null'),
+    [synthesizedEvent]
+  );
+
+  return (
+    <div className='flex gap-4' style={{ minHeight: '400px' }}>
+      <div className='w-64 shrink-0'>
+        <ItemSearchPicker items={items} selectedKey={selectedKey} onSelect={setSelectedKey} />
+      </div>
+      <div className='min-w-0 flex-1 space-y-4'>
+        {/* Event envelope toggles — let the user complete a full event sample */}
+        <div className='rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-600 dark:bg-gray-700'>
+          <div className='flex flex-wrap items-center gap-x-6 gap-y-2'>
+            <label className='flex cursor-pointer items-center gap-2 select-none'>
+              <input
+                type='checkbox'
+                checked={showTime}
+                onChange={e => setShowTime(e.target.checked)}
+                className='h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-700'
+              />
+              <span className='text-gray-700 dark:text-gray-300'>Show date/time selector</span>
+            </label>
+            {durationMeta != null && (
+              <label className='flex cursor-pointer items-center gap-2 select-none'>
+                <input
+                  type='checkbox'
+                  checked={showDuration}
+                  onChange={e => setShowDuration(e.target.checked)}
+                  className='h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-700'
+                />
+                <span className='text-gray-700 dark:text-gray-300'>Show duration selector</span>
+                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                  ({durationMeta.mandatory ? 'required' : 'optional'}
+                  {durationMeta.canBeNull ? ', allows ongoing' : ''}
+                  {durationMeta.maxSeconds != null ? `, max ${safeLabel(durationMeta.maxSeconds)}` : ''})
+                </span>
+              </label>
+            )}
+            {selectedKey && durationMeta == null && (
+              <span className='text-xs text-gray-400 italic dark:text-gray-500'>(item is point-in-time — no duration)</span>
+            )}
+          </div>
+          {(showTime || (showDuration && durationMeta != null)) && (
+            <div className='mt-3 space-y-3'>
+              {showTime && <EventTimeInput value={eventTime} onChange={setEventTime} />}
+              {showDuration && durationMeta != null && (
+                <EventDurationInput
+                  key={selectedKey}
+                  value={eventDuration}
+                  onChange={setEventDuration}
+                  eventTime={eventTime}
+                  mandatory={durationMeta.mandatory}
+                  allowNull={durationMeta.canBeNull}
+                  maxSeconds={durationMeta.maxSeconds}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        {selectedKey && (() => {
+          const model = getModel();
+          const itemDef = model.itemsDefs.forKey(selectedKey);
+          if (!itemDef) return <p className='text-red-500'>Item not found</p>;
+          return (
+            <div className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
+              <HDSFormField
+                key={selectedKey}
+                itemData={itemDef.data}
+                itemKey={selectedKey}
+                value={fieldValue}
+                onChange={setFieldValue}
+              />
+            </div>
+          );
+        })()}
+        {!selectedKey && (
+          <p className='py-8 text-center text-sm text-gray-400'>{emptyMessage}</p>
+        )}
+
+        {/* Short text — appears when the lib can summarize the event (i.e. mandatory fields are filled) */}
+        {shortText !== null && (
+          <div className='rounded-lg border border-green-300 bg-green-50 p-3 dark:border-green-700 dark:bg-green-900/30'>
+            <div className='text-xs font-semibold tracking-wide text-green-700 uppercase dark:text-green-400'>Short text (eventToShortText)</div>
+            <div className='mt-1 text-sm text-gray-900 dark:text-gray-100'>{shortText}</div>
+          </div>
+        )}
+
+        <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
+          <DebugPanel title='Field value' json={fieldValueJson} />
+          <DebugPanel title='JSON Schema' json={fieldSchemaJson} />
+          <DebugPanel title='Event data' json={eventDataJson} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function App () {
+  const [tab, setTab] = useState<Tab>('fields');
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<ItemSearchPickerItem[]>([]);
+
+  // Section tab state
+  const [sectionData, setSectionData] = useState<Record<string, any> | null>(null);
+
+  // Recurring tab state
+  const [recurringEntries, setRecurringEntries] = useState<SectionEntry[]>([]);
+  const [recurringData, setRecurringData] = useState<Record<string, any> | null>(null);
+
+  useEffect(() => {
+    getItems().then((list) => {
+      setItems(list);
+      setLoading(false);
+    });
+  }, []);
+
   const sectionDataJson = useMemo(() => JSON.stringify(sectionData, null, 2), [sectionData]);
   const recurringDataJson = useMemo(() => JSON.stringify(recurringData, null, 2), [recurringData]);
 
   function handleSectionSubmit (data: Record<string, any>) {
     setSectionData(data);
-  }
-
-  // Plan-46 D3 demo: section with treatment-coded + procedure-coded items,
-  // each customised with a context streamId of `*-fertility`. Submit folds
-  // the contexts back through formDataToActions.
-  const PLAN46_SECTION = useMemo(() => ({
-    label: { en: 'Plan 46 — D3 fertility intake' },
-    itemKeys: ['treatment-coded', 'procedure-coded'],
-    itemCustomizations: {
-      'treatment-coded': { context: 'treatment-fertility', labels: { question: { en: 'Treatment received' } } },
-      'procedure-coded': { context: 'procedure-fertility', labels: { question: { en: 'Procedure performed' } } }
-    }
-  }), []);
-
-  function handlePlan46Submit (formData: Record<string, any>) {
-    const model = getModel();
-    const contexts: Record<string, string> = {};
-    const itemDefs: Array<{ key: string; itemDef: any }> = [];
-    for (const key of PLAN46_SECTION.itemKeys) {
-      const itemDef = model.itemsDefs.forKey(key);
-      if (!itemDef) continue;
-      itemDefs.push({ key, itemDef });
-      const ctx = (PLAN46_SECTION.itemCustomizations as any)[key]?.context;
-      if (ctx) contexts[key] = ctx;
-    }
-    const actions = formDataToActions(itemDefs, formData, {}, undefined, contexts);
-    setPlan46Actions(actions);
-    // For each create action, run forEvent walk-up against the resulting event
-    // and record which itemDef key it resolves to — proves D3 round-trip.
-    const resolved = actions
-      .filter(a => a.action === 'create')
-      .map(a => {
-        const event = { type: a.params.type, streamIds: a.params.streamIds };
-        const def = model.itemsDefs.forEvent(event, false);
-        return { key: a.key, resolvedKey: def ? def.key : null };
-      });
-    setPlan46Resolved(resolved);
   }
 
   function handleRecurringSubmit (data: Record<string, any>) {
@@ -187,23 +248,16 @@ export default function App () {
     setRecurringEntries(prev => prev.filter((_, i) => i !== index));
   }
 
-  function handleDrugSelect (value: any) {
-    setMedicationValue(value);
-    // Pre-fill intake fields from API response
-    if (value) {
-      setIntake(prev => ({
-        ...prev,
-        doseUnit: value.doseUnit || prev.doseUnit || '',
-        route: value.route || prev.route || ''
-      }));
-    } else {
-      setIntake({ doseValue: '', doseUnit: '', route: '', note: '' });
-    }
-  }
-
-  function updateIntake (field: keyof IntakeState, value: string) {
-    setIntake(prev => ({ ...prev, [field]: value }));
-  }
+  // Datasets tab: filter to items rendered as datasource-search (those that hit datasets-service)
+  const datasetItems = useMemo<ItemSearchPickerItem[]>(() => {
+    if (items.length === 0) return [];
+    const model = getModel();
+    return items
+      .filter(i => {
+        try { return model.itemsDefs.forKey(i.key)?.data?.type === 'datasource-search'; } catch { return false; }
+      })
+      .map(i => ({ key: i.key, label: i.label }));
+  }, [items]);
 
   // Pick first 5 non-recurring items (repeatable:'once') for permanent section demo
   const sectionKeys = useMemo(() => {
@@ -236,7 +290,7 @@ export default function App () {
   }
 
   return (
-    <div className={`mx-auto px-4 py-8 ${(tab === 'builder' || tab === 'fields' || tab === 'timeline') ? 'max-w-6xl' : 'max-w-3xl'}`}>
+    <div className='mx-auto max-w-6xl px-4 py-8'>
       <div className='mb-6 flex items-center gap-3'>
         <a href='https://docs.datasafe.dev' target='_blank' rel='noopener noreferrer'>
           <img src='https://style.datasafe.dev/images/logos/horizontal/hds-logo-hz-color.svg' alt='HDS' className='h-10' />
@@ -258,17 +312,14 @@ export default function App () {
         <button className={tabClass('recurring')} onClick={() => setTab('recurring')}>
           Section (recurring)
         </button>
-        <button className={tabClass('medication')} onClick={() => setTab('medication')}>
-          Medication
+        <button className={tabClass('datasets')} onClick={() => setTab('datasets')}>
+          Datasets
         </button>
         <button className={tabClass('builder')} onClick={() => setTab('builder')}>
           Builder
         </button>
         <button className={tabClass('timeline')} onClick={() => setTab('timeline')}>
           Timeline
-        </button>
-        <button className={tabClass('plan46')} onClick={() => setTab('plan46')}>
-          Plan 46 (D3)
         </button>
         <button className={tabClass('settings')} onClick={() => setTab('settings')}>
           Settings
@@ -278,38 +329,7 @@ export default function App () {
       <div className='rounded-b-lg border border-t-0 border-gray-200 bg-white p-6 dark:border-gray-600 dark:bg-gray-800'>
 
         {/* ── Single Field Tab ── */}
-        {tab === 'fields' && (
-          <div className='flex gap-4' style={{ minHeight: '400px' }}>
-            <div className='w-64 shrink-0'>
-              <ItemSearchPicker items={items} selectedKey={selectedKey} onSelect={setSelectedKey} />
-            </div>
-            <div className='min-w-0 flex-1 space-y-4'>
-              {selectedKey && (() => {
-                const model = getModel();
-                const itemDef = model.itemsDefs.forKey(selectedKey);
-                if (!itemDef) return <p className='text-red-500'>Item not found</p>;
-                return (
-                  <div className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
-                    <HDSFormField
-                      itemData={itemDef.data}
-                      itemKey={selectedKey}
-                      value={fieldValue}
-                      onChange={setFieldValue}
-                    />
-                  </div>
-                );
-              })()}
-              {!selectedKey && (
-                <p className='py-8 text-center text-sm text-gray-400'>Select an item from the list</p>
-              )}
-              <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-                <DebugPanel title='Field value' json={fieldValueJson} />
-                <DebugPanel title='JSON Schema' json={fieldSchemaJson} />
-                <DebugPanel title='Event data' json={eventDataJson} />
-              </div>
-            </div>
-          </div>
-        )}
+        {tab === 'fields' && <SingleFieldPanel items={items} />}
 
         {/* ── Section (permanent) Tab ── */}
         {tab === 'section' && (
@@ -370,141 +390,11 @@ export default function App () {
         {/* ── Builder Tab ── */}
         {tab === 'builder' && <FormBuilder />}
 
-        {/* ── Plan 46 (D3) Tab ── */}
-        {tab === 'plan46' && (
-          <div className='space-y-6'>
-            <div className='rounded-md bg-gray-50 p-4 text-sm dark:bg-gray-700/50'>
-              <p className='mb-2 font-semibold'>Plan 46 — context-via-substream demo</p>
-              <p className='text-gray-600 dark:text-gray-300'>
-                Section with two coded items (<code>treatment-coded</code>, <code>procedure-coded</code>),
-                each carrying a per-item <code>context</code> in <code>itemCustomizations</code>:
-                <code> treatment-fertility</code>, <code>procedure-fertility</code>.
-              </p>
-              <p className='mt-2 text-gray-600 dark:text-gray-300'>
-                On submit, <code>formDataToActions(..., contexts)</code> threads each context to
-                <code> eventTemplate(&#123; context &#125;)</code>. Resulting events should have <code>streamIds: [&lt;context&gt;]</code> (length-1).
-                Then <code>forEvent()</code> walks up <code>treatment-fertility → treatment</code> /
-                <code> procedure-fertility → procedure</code> and resolves back to the original itemDefs.
-              </p>
-            </div>
-            <HDSFormSection section={PLAN46_SECTION as any} onSubmit={handlePlan46Submit} />
-            {plan46Actions && (
-              <DebugPanel title='Resulting actions (formDataToActions)' json={JSON.stringify(plan46Actions, null, 2)} />
-            )}
-            {plan46Resolved && (
-              <DebugPanel title='Walk-up resolution (forEvent)' json={JSON.stringify(plan46Resolved, null, 2)} />
-            )}
-          </div>
-        )}
+        {/* ── Datasets Tab ── Same UI as Single Field, filtered to dataset-backed items */}
+        {tab === 'datasets' && <SingleFieldPanel items={datasetItems} emptyMessage='Select a dataset-backed item from the list' />}
 
         {/* ── Settings Tab ── */}
         {tab === 'settings' && <SettingsPanel />}
-
-        {/* ── Medication Tab ── */}
-        {tab === 'medication' && (() => {
-          const model = getModel();
-          const itemDef = model.itemsDefs.forKey('medication-intake-coded');
-          if (!itemDef) return <p className='text-red-500'>medication-intake-coded not found in model</p>;
-          const event = medicationValue ? buildMedicationEvent(medicationValue, intake) : null;
-          return (
-            <div className='space-y-6'>
-              <p className='text-sm text-gray-500 dark:text-gray-400'>
-                Full <code>medication/coded-v1</code> event builder: drug selection + intake fields
-              </p>
-
-              {/* Drug selection */}
-              <div>
-                <h3 className='mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300'>Drug</h3>
-                <div className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
-                  <HDSFormField
-                    itemData={itemDef.data}
-                    value={medicationValue}
-                    onChange={handleDrugSelect}
-                  />
-                </div>
-                {medicationValue && (
-                  <div className='mt-2 flex flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400'>
-                    {medicationValue.ingredient && <span className='rounded bg-gray-100 px-2 py-0.5 dark:bg-gray-700'>{medicationValue.ingredient}</span>}
-                    {medicationValue.strength && <span className='rounded bg-gray-100 px-2 py-0.5 dark:bg-gray-700'>{medicationValue.strength}</span>}
-                    {medicationValue.doseForm && <span className='rounded bg-gray-100 px-2 py-0.5 dark:bg-gray-700'>{medicationValue.doseForm}</span>}
-                    {medicationValue.codes?.map((c: any, i: number) => (
-                      <span key={i} className='rounded bg-primary-50 px-2 py-0.5 text-primary-700 dark:bg-primary-900 dark:text-primary-300'>
-                        {c.system}:{c.code}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Intake fields — shown after drug selection */}
-              {medicationValue && (
-                <div>
-                  <h3 className='mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300'>Intake</h3>
-                  <div className='space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
-                    <div className='flex items-end gap-3'>
-                      <div className='w-24 shrink-0'>
-                        <label className='mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300'>
-                          Dose value
-                        </label>
-                        <input
-                          type='number'
-                          min='0'
-                          step='any'
-                          value={intake.doseValue}
-                          onChange={e => updateIntake('doseValue', e.target.value)}
-                          placeholder='e.g. 2'
-                          disabled={!!medicationValue.doseValue}
-                          className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
-                        />
-                      </div>
-                      <div className='min-w-0 flex-1'>
-                        <label className='mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300'>
-                          Dose unit
-                        </label>
-                        <select
-                          value={intake.doseUnit}
-                          onChange={e => updateIntake('doseUnit', e.target.value)}
-                          disabled={!!medicationValue.doseUnit}
-                          className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
-                        >
-                          <option value=''>-- select --</option>
-                          {DOSE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                        </select>
-                      </div>
-                      <div className='min-w-0 flex-1'>
-                        <label className='mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300'>
-                          Route
-                        </label>
-                        <select
-                          value={intake.route}
-                          onChange={e => updateIntake('route', e.target.value)}
-                          disabled={!!medicationValue.route}
-                          className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
-                        >
-                          <option value=''>-- select --</option>
-                          {ROUTES.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className='mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300'>Note</label>
-                      <input
-                        type='text'
-                        value={intake.note}
-                        onChange={e => updateIntake('note', e.target.value)}
-                        placeholder='e.g. take with food'
-                        className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Debug: complete event */}
-              <DebugPanel title='medication/coded-v1 event' json={event ? JSON.stringify(event, null, 2) : 'null'} />
-            </div>
-          );
-        })()}
       </div>
     </div>
   );
