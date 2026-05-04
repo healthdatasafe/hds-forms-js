@@ -18,7 +18,20 @@ import { HDSFormField } from 'hds-forms';
 />
 ```
 
-Supported field types: `checkbox`, `date`, `text`, `number`, `select`, `composite`.
+Supported field types: `checkbox`, `date`, `text`, `number`, `select`, `composite`, `datasource-search`.
+
+#### Date / time / duration companions
+
+When an item declares a `dateTime` or `duration` block, `<HDSFormField>` renders the corresponding companion input next to the value field — the companions write to the surrounding Pryv event's `event.time` / `event.duration` (Pryv-native), not to the payload schema. Companions can be exposed individually:
+
+```tsx
+import { EventTimeInput, EventDurationInput } from 'hds-forms';
+
+<EventTimeInput value={time} onChange={setTime} mandatory={false} />
+<EventDurationInput value={duration} onChange={setDuration} maxSeconds={315360000} />
+```
+
+`EventDurationInput` has four modes — **No** (point-in-time), **Ongoing** (open-ended), **Length** (numeric + unit), **End time** (computed) — and respects `mandatory` / `allowNull` / `maxSeconds` from the item definition.
 
 ### `<HDSFormSection>`
 
@@ -62,6 +75,29 @@ Sections accept optional `customFieldKeys: string[]` + `customFields: CustomFiel
 ```
 
 For the submit / prefill round-trip, use `buildCustomFieldEntries(customFieldKeys, customFields)` to produce `{ key, itemDef }[]` entries that plug straight into `formDataToActions()` and `prefillFromEvents()` alongside canonical entries. See `hds-lib`'s [`CUSTOM-FIELDS-AND-SYSTEM.md`](https://github.com/healthdatasafe/hds-lib-js/blob/main/ts/appTemplates/CUSTOM-FIELDS-AND-SYSTEM.md) for the full design reference.
+
+#### Item context (Plan 46 — D3 mechanic)
+
+Sections can pin an item to a descendant stream via `itemCustomizations[itemKey].context`:
+
+```tsx
+<HDSFormSection
+  section={{
+    type: 'recurring',
+    itemKeys: ['procedure-coded'],
+    itemCustomizations: {
+      'procedure-coded': { context: 'procedure-fertility' }
+    }
+  }}
+  onSubmit={...}
+/>
+```
+
+The resulting event uses the descendant streamId (`procedure-fertility`) instead of the item's default parent (`procedure`). `forEvent()` walks back up to resolve the original itemDef. Cross-subtree contexts are rejected. See data-model `documentation/TREATMENT-PROCEDURE.md` for the design rationale.
+
+### `<DatasetSearch>`
+
+Renders a typeahead search field bound to a remote dataset endpoint (e.g. `datasets-service`'s `/medication`, `/treatment`, `/procedure`). On selection, populates the host item's payload (`drug` / `regimen` / `procedure`) and any companion fields (`intake.{doseValue, doseUnit, route}`, procedure `findings[]`, free-text `notes`). Companion fields render inline.
 
 ### `<EntryList>`
 

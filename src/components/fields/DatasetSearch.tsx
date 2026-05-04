@@ -457,7 +457,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
                       <option key={v} value={v}>{getEnumLabel(v)}</option>
                     ))}
                   </select>
-                )
+                  )
                 : (
                   <input
                     type='text'
@@ -466,7 +466,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
                     placeholder={schema?.description || keyToLabel(key)}
                     className={inputClass}
                   />
-                )
+                  )
             )}
           </div>
         );

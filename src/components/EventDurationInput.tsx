@@ -42,10 +42,10 @@ interface UnitOption { value: string; label: string; seconds: number }
 const UNIT_OPTIONS: UnitOption[] = [
   { value: 'seconds', label: 'seconds', seconds: 1 },
   { value: 'minutes', label: 'minutes', seconds: 60 },
-  { value: 'hours',   label: 'hours',   seconds: 3600 },
-  { value: 'days',    label: 'days',    seconds: 86400 },
-  { value: 'months',  label: 'months',  seconds: 2592000 },   // 30 days nominal
-  { value: 'years',   label: 'years',   seconds: 31557600 },  // 365.25 days nominal
+  { value: 'hours', label: 'hours', seconds: 3600 },
+  { value: 'days', label: 'days', seconds: 86400 },
+  { value: 'months', label: 'months', seconds: 2592000 },   // 30 days nominal
+  { value: 'years', label: 'years', seconds: 31557600 },  // 365.25 days nominal
 ];
 
 const inputClass = 'rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
