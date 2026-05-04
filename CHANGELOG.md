@@ -2,6 +2,24 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-05-04
+
+### Added — date/time + duration companions, generalized DatasetSearch (Plan 46)
+
+- **`<EventTimeInput>`** — date/time companion bound to the surrounding Pryv event's `event.time`. Honours `mandatory` / `allowNull` from the host item's `dateTime` block.
+- **`<EventDurationInput>`** — duration companion bound to `event.duration`. Four modes (No / Ongoing / Length / End time); honours `mandatory` / `allowNull` / `maxSeconds`. Drives the new `treatment-{basic,coded}` items' span without mutating event payload schemas (Pryv-native fields).
+- **`<DatasetSearch>`** generalised — handles `{drug}` / `{regimen}` / `{procedure}` payload shapes uniformly. Companion fields render inline alongside the search field. Pre-filled companions are read-only when bound to a coded selection.
+- **Item context (D3 mechanic)** — `HDSFormSection.itemCustomizations[itemKey].context` pins an itemDef to a descendant streamId (e.g. `procedure-fertility`). The walk-up resolution lives in `hds-lib`'s `forEvent()`; cross-subtree contexts are rejected.
+
+### Changed
+
+- Test app refactor (`src-test-app/`): unified Single Field / Datasets panels; removed bespoke Plan 46 (D3) and Medication tabs. Test app now exercises `EventTimeInput` / `EventDurationInput` via item-driven companion rendering.
+
+### Notes
+
+- Public API additions only; existing `<HDSFormField>` / `<HDSFormSection>` callers are unaffected.
+- All 61 unit tests pass.
+
 ## [0.9.0] - 2026-04-28
 
 ### Added — custom-field rendering & form-engine bridge (45-custom-fields-appTemplates Phase 4)
