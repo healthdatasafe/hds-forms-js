@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { getHDSModel, localizeText, HDSSettings } from 'hds-lib';
 import type { FieldProps } from '../../types';
 import { InfoIcon } from './FieldLabel';
+import { StampGridPicker, isRepresentationAvailable } from '../StampGridPicker';
 
 interface ConverterEngine {
   key: string;
@@ -163,7 +164,8 @@ export function Convertible ({ label, description, value, onChange, converterEng
           </p>
         )}
 
-      {/* Observation selector for the chosen method — dropdown per component */}
+      {/* Observation selector for the chosen method — visual stamp grid when
+          the method has a registered cycle representation; dropdown otherwise. */}
       {selectedMethod && selectedMethod !== '_raw' && components.length > 0 && (
         <div className='space-y-3'>
           {components.map((comp: any) => {
@@ -171,36 +173,56 @@ export function Convertible ({ label, description, value, onChange, converterEng
             const currentVal = isSingleComponent
               ? currentObservation
               : (typeof currentObservation === 'object' ? currentObservation?.[comp.field] : undefined);
+            // Stamp grid only for the mucus component of cervical-fluid representations.
+            const useStampGrid = isSingleComponent &&
+              comp.field === 'mucus' &&
+              isRepresentationAvailable(selectedMethod);
+
+            const setValue = (val: any) => {
+              if (isSingleComponent) {
+                handleObservationSelect(val);
+              } else {
+                const obs = typeof currentObservation === 'object' ? { ...currentObservation } : {};
+                obs[comp.field] = val;
+                handleObservationSelect(obs);
+              }
+            };
 
             return (
               <div key={comp.field}>
                 {!isSingleComponent && (
                   <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>{compLabel}</label>
                 )}
-                <select
-                  value={currentVal ?? ''}
-                  disabled={disabled}
-                  onChange={e => {
-                    const raw = e.target.value;
-                    // Parse back to original type (number or string)
-                    const opt = comp.options.find((o: any) => String(o.value) === raw);
-                    const val = opt ? opt.value : raw;
-                    if (isSingleComponent) {
-                      handleObservationSelect(val);
-                    } else {
-                      const obs = typeof currentObservation === 'object' ? { ...currentObservation } : {};
-                      obs[comp.field] = val;
-                      handleObservationSelect(obs);
-                    }
-                  }}
-                  className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
-                >
-                  <option value=''>--</option>
-                  {comp.options.map((opt: any) => {
-                    const optLabel = opt.label ? (localizeText(opt.label) || String(opt.value)) : String(opt.value);
-                    return <option key={String(opt.value)} value={String(opt.value)}>{optLabel}</option>;
-                  })}
-                </select>
+                {useStampGrid
+                  ? (
+                    <StampGridPicker
+                      representationId={selectedMethod}
+                      options={comp.options}
+                      value={currentVal}
+                      disabled={disabled}
+                      onChange={setValue}
+                    />
+                    )
+                  : (
+                    <select
+                      value={currentVal ?? ''}
+                      disabled={disabled}
+                      onChange={e => {
+                        const raw = e.target.value;
+                        // Parse back to original type (number or string)
+                        const opt = comp.options.find((o: any) => String(o.value) === raw);
+                        const val = opt ? opt.value : raw;
+                        setValue(val);
+                      }}
+                      className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                    >
+                      <option value=''>--</option>
+                      {comp.options.map((opt: any) => {
+                        const optLabel = opt.label ? (localizeText(opt.label) || String(opt.value)) : String(opt.value);
+                        return <option key={String(opt.value)} value={String(opt.value)}>{optLabel}</option>;
+                      })}
+                    </select>
+                    )}
               </div>
             );
           })}

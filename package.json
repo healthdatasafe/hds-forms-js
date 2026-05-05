@@ -78,6 +78,7 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
+    "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui",
     "hds-lib": "github:healthdatasafe/hds-lib-js"
   }
 }
