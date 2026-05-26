@@ -144,6 +144,9 @@ export function formDataToActions (
       // Update existing event (include type if variation override is set)
       const update: Record<string, any> = { content: value };
       if (formData[`${key}__eventType`]) update.type = eventType;
+      // Pass `time` through only when caller provided an explicit timestamp
+      // (date picker). Otherwise leave the original event time untouched.
+      if (time != null) update.time = time;
       actions.push({
         action: 'update',
         key,

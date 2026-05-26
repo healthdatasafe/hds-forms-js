@@ -212,6 +212,28 @@ describe('formDataToActions — variations', () => {
     expect(actions[0].params.update.type).toBeUndefined();
   });
 
+  it('includes time in update when caller passes an explicit timestamp', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    const formData = { weight: 70 };
+    const actions = formDataToActions(itemDefs, formData, { weight: 'e1' }, 1234);
+    expect(actions[0].action).toBe('update');
+    expect(actions[0].params.update.time).toBe(1234);
+  });
+
+  it('omits time in update when caller passes no timestamp (preserves original event time)', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    const formData = { weight: 70 };
+    const actions = formDataToActions(itemDefs, formData, { weight: 'e1' });
+    expect(actions[0].action).toBe('update');
+    expect(actions[0].params.update.time).toBeUndefined();
+  });
+
   // ─── Plan 46 D3 — context-via-substream ──────────────────────────
   describe('contexts (Plan 46 D3)', () => {
     function makeContextItemDef (canonicalStream: string, descendants: string[], evType: string): ItemDef {
