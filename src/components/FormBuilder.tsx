@@ -25,6 +25,10 @@ export interface FormBuilderLabels {
   preview: string;
   addSectionsToPreview: string;
   published: string;
+  coverageOk: string;
+  coverageMissing: string;
+  coverageUnknown: string;
+  coverageApply: string;
 }
 
 const DEFAULT_LABELS: FormBuilderLabels = {
@@ -42,7 +46,11 @@ const DEFAULT_LABELS: FormBuilderLabels = {
   repeatable: 'Repeatable',
   preview: 'Preview',
   addSectionsToPreview: 'Add sections to preview the form',
-  published: 'Published'
+  published: 'Published',
+  coverageOk: 'All question items are covered by the request\'s permissions.',
+  coverageMissing: 'permission(s) missing for this questionnaire',
+  coverageUnknown: 'unknown item(s)',
+  coverageApply: 'Add missing permissions to request'
 };
 
 // -- Component props --
@@ -565,23 +573,63 @@ export default function FormBuilder ({
                 </button>
               )}
             </div>
-            {questionnaireDrafts.map((draft, i) => (
-              <div key={i} className='relative'>
-                {!readOnly && (
-                  <button
-                    onClick={() => removeBundledQuestionnaire(i)}
-                    className='absolute right-2 top-2 z-10 rounded border border-red-300 bg-white px-2 py-0.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-gray-900 dark:text-red-300'
-                  >
-                    {lb.removeQuestionnaire}
-                  </button>
-                )}
-                <QuestionnaireBuilder
-                  questionnaire={draft}
-                  readOnly={readOnly}
-                  onDirty={handleQuestionnaireChange}
-                />
-              </div>
-            ))}
+            {questionnaireDrafts.map((draft, i) => {
+              // Plan 71 Phase G — coverage check against the parent CollectorRequest.
+              // Recomputed on every render via `version` bump from refresh().
+              let coverage: ReturnType<typeof request.checkQuestionnaireCoverage> | null = null;
+              try {
+                coverage = request.checkQuestionnaireCoverage(draft);
+              } catch { /* request lacks the helper (older hds-lib) — skip the badge silently */ }
+              const missingCount = coverage?.proposedPermissions?.length ?? 0;
+              const unknownCount = coverage?.unknownItems?.length ?? 0;
+              function applyCoverage () {
+                request.applyQuestionnaireCoverage(draft);
+                refresh();
+              }
+              return (
+                <div key={i} className='relative'>
+                  {!readOnly && (
+                    <button
+                      onClick={() => removeBundledQuestionnaire(i)}
+                      className='absolute right-2 top-2 z-10 rounded border border-red-300 bg-white px-2 py-0.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-gray-900 dark:text-red-300'
+                    >
+                      {lb.removeQuestionnaire}
+                    </button>
+                  )}
+                  <QuestionnaireBuilder
+                    questionnaire={draft}
+                    readOnly={readOnly}
+                    onDirty={handleQuestionnaireChange}
+                  />
+                  {coverage && (
+                    <div
+                      data-testid='qcoverage'
+                      className={
+                        'mt-2 flex items-center justify-between gap-2 rounded border p-2 text-xs ' +
+                        (missingCount > 0
+                          ? 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-200'
+                          : 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200')
+                      }
+                    >
+                      <div>
+                        {missingCount > 0
+                          ? <span>⚠ <strong>{missingCount}</strong> {lb.coverageMissing}{unknownCount > 0 ? ` · ${unknownCount} ${lb.coverageUnknown}` : ''}</span>
+                          : <span>✓ {lb.coverageOk}{unknownCount > 0 ? ` (${unknownCount} ${lb.coverageUnknown})` : ''}</span>
+                        }
+                      </div>
+                      {missingCount > 0 && !readOnly && (
+                        <button
+                          onClick={applyCoverage}
+                          className='rounded bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600'
+                        >
+                          {lb.coverageApply}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

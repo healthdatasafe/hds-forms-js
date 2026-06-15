@@ -12,8 +12,14 @@
 - **`buildAnswerBatch(opts)`** (`src/questionnaire/submit.ts`) — composes the Pryv `events.batch` (typed events first, answer event last). Validation + `clientData.related` mirror delegated to hds-lib's `Questionnaire.buildAnswerEvent`.
 - **`submitAnswerBatch(connection, result)`** — thin wrapper around Pryv `connection.api()` for the common case.
 
+### Added — Phase G post-verification polish
+- **`QuestionnaireBuilder` drug-code editor** — auto-renders when `itemRef` starts with `medication-`. Two inputs (system + code), writes `params.drug.codes: [{system, code}]`. Defaults system to `atc`. Empty code clears the params.
+- **`QuestionnaireBuilder` sub-field details editor** — auto-renders when sub-field type is set. Edits `subField.label`; for `select-segmented` also exposes an editable `options[].value/label` list with `+ option` / `×` buttons.
+- **`prefillQuestionnaire` — variations.eventType + defensive item lookup.** `resolveQuestionEventType` now reads `data.variations.eventType.options[].value` for items like `body-weight` (kg/lb) and returns the full list as `string[]`; `fetchCandidatesForQuestion` passes the array through to Pryv's `types` filter. `forKey(_, false)` makes unknown itemRefs skip the question instead of throwing the whole prefill (2 new prefill tests).
+- **`FormBuilder` coverage badge + Apply button** — every bundled questionnaire shows a live `request.checkQuestionnaireCoverage(draft)` summary. When permissions are missing, an amber banner offers "Add missing permissions to request" → calls `request.applyQuestionnaireCoverage(draft)` and re-renders. When everything's covered, an emerald "All question items are covered" banner appears. Unknown itemRefs are surfaced in both states. Four new labels: `coverageOk` / `coverageMissing` / `coverageUnknown` / `coverageApply`.
+
 ### Tests
-- 63 → 79 vitest passing (+16 new across `prefillQuestionnaire`, `scopeToQueryParams`, `fetchCandidatesForQuestion`, `buildAnswerBatch`).
+- 63 → 81 vitest passing (+18 new across `prefillQuestionnaire`, `scopeToQueryParams`, `fetchCandidatesForQuestion`, `buildAnswerBatch`, variations.eventType, defensive forKey).
 
 ### Bundle
 - Build bundle: 119 KB → 133.89 KB (gzip 25 → 28.16 KB). +14 KB for renderer + builder + helpers + index re-exports.
