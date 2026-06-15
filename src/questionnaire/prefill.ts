@@ -50,7 +50,7 @@ export interface QuestionMatchContext {
 
 export type MatchEventFn = (event: PryvEvent, question: QuestionDef) => boolean;
 
-export type ResolveEventTypeFn = (question: QuestionDef) => string | null;
+export type ResolveEventTypeFn = (question: QuestionDef) => string | string[] | null;
 
 export interface PrefillOptions {
   /** Pryv connection used for the lookup. */
@@ -81,13 +81,23 @@ export interface PrefillOptions {
 }
 
 /**
- * Resolve the eventType the prefill query should target for a given question.
+ * Resolve the eventType(s) the prefill query should target for a given question.
  * Returns null if the referenced item isn't found in the HDS model.
+ *
+ * Items with `variations.eventType` (e.g. `body-weight` → `mass/kg` | `mass/lb`)
+ * return the full list of option values so prefill matches any unit the patient
+ * happened to record in.
  */
-export function resolveQuestionEventType (question: QuestionDef): string | null {
-  const itemDef = getHDSModel().itemsDefs.forKey(question.itemRef);
+export function resolveQuestionEventType (question: QuestionDef): string | string[] | null {
+  const itemDef = getHDSModel().itemsDefs.forKey(question.itemRef, false);
   if (!itemDef) return null;
-  return itemDef.data?.eventType ?? null;
+  const data: any = itemDef.data;
+  if (data?.eventType) return data.eventType;
+  const options = data?.variations?.eventType?.options;
+  if (Array.isArray(options) && options.length > 0) {
+    return options.map((o: { value: string }) => o.value).filter(Boolean);
+  }
+  return null;
 }
 
 /**
@@ -125,9 +135,11 @@ export async function fetchCandidatesForQuestion (
 ): Promise<PryvEvent[]> {
   const eventType = resolveEventType(question);
   if (eventType == null) return [];
+  const types = Array.isArray(eventType) ? eventType : [eventType];
+  if (types.length === 0) return [];
   const scopeParams = scopeToQueryParams(question.scope, nowSeconds, maxCandidates);
   const params: Record<string, unknown> = {
-    types: [eventType],
+    types,
     ...scopeParams
   };
   if (baseStreams && baseStreams.length > 0) params.streams = baseStreams;

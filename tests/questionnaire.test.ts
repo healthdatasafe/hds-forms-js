@@ -104,6 +104,24 @@ describe('fetchCandidatesForQuestion', () => {
     expect(conn.calls[0].limit).toBe(1);
     expect(conn.calls[0].fromTime).toBe(NOW - 7 * 86400);
   });
+
+  it('resolveEventType may return an array — types is passed through as-is', async () => {
+    const conn = mockConnection([[{ id: 'evt-kg', type: 'mass/kg' }]]);
+    await fetchCandidatesForQuestion(
+      conn, weightQuestion, undefined, NOW, 100,
+      () => ['mass/kg', 'mass/lb']
+    );
+    expect(conn.calls[0].types).toEqual(['mass/kg', 'mass/lb']);
+  });
+
+  it('returns [] when resolveEventType returns an empty array', async () => {
+    const conn = mockConnection([]);
+    const out = await fetchCandidatesForQuestion(
+      conn, weightQuestion, undefined, NOW, 100, () => []
+    );
+    expect(out).toEqual([]);
+    expect(conn.calls).toHaveLength(0);
+  });
 });
 
 describe('prefillQuestionnaire', () => {
