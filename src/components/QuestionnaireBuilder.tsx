@@ -44,6 +44,15 @@ export interface QuestionnaireBuilderLabels {
   withinDays: string;
   subField: string;
   noSubField: string;
+  subFieldLabel: string;
+  subFieldOptions: string;
+  addOption: string;
+  optionValue: string;
+  optionLabel: string;
+  drugSystem: string;
+  drugCode: string;
+  drugFilter: string;
+  drugFilterHint: string;
   remove: string;
   invalidKey: string;
   invalidItemRef: string;
@@ -61,10 +70,25 @@ const DEFAULT_LABELS: QuestionnaireBuilderLabels = {
   withinDays: 'Within days',
   subField: 'Sub-field',
   noSubField: '(none)',
+  subFieldLabel: 'Sub-field label',
+  subFieldOptions: 'Options',
+  addOption: '+ option',
+  optionValue: 'Value',
+  optionLabel: 'Label',
+  drugSystem: 'Code system',
+  drugCode: 'Code',
+  drugFilter: 'Drug filter',
+  drugFilterHint: 'Restrict prefill matching to events whose drug.codes[] contains this code.',
   remove: 'Remove',
   invalidKey: 'Key must match [a-zA-Z0-9_-]+',
   invalidItemRef: 'Pick an item from the list'
 };
+
+const MEDICATION_ITEM_PREFIX = 'medication-';
+
+function isMedicationItem (itemRef: string): boolean {
+  return itemRef.startsWith(MEDICATION_ITEM_PREFIX);
+}
 
 export interface QuestionnaireBuilderProps {
   /** The Questionnaire instance to edit (mutated in place). */
@@ -357,6 +381,9 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
           )}
         </div>
       </div>
+      {isMedicationItem(question.itemRef) && (
+        <DrugCodeEditor question={question} onChange={onChange} labels={labels} readOnly={readOnly} />
+      )}
       <div>
         <label className='mb-0.5 block text-xs font-medium text-gray-700 dark:text-gray-300'>{labels.subField}</label>
         <select
@@ -364,7 +391,8 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
           onChange={(e) => onChange((q) => {
             const v = e.target.value;
             if (v === '') delete q.subField;
-            else q.subField = { type: v as QuestionSubField['type'] };
+            else if (v === 'select-segmented') q.subField = { type: 'select-segmented', options: [] };
+            else q.subField = { type: v as 'text' | 'number' };
           })}
           disabled={readOnly}
           className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
@@ -373,6 +401,169 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
           {SUB_FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
       </div>
+      {question.subField && (
+        <SubFieldDetails question={question} onChange={onChange} labels={labels} readOnly={readOnly} />
+      )}
+    </div>
+  );
+}
+
+interface SubEditorProps {
+  question: QuestionDef;
+  onChange: (mutator: (q: QuestionDef) => void) => void;
+  labels: QuestionnaireBuilderLabels;
+  readOnly?: boolean;
+}
+
+function DrugCodeEditor ({ question, onChange, labels, readOnly }: SubEditorProps) {
+  const codes = (question.params?.drug as { codes?: Array<{ system?: string, code?: string }> })?.codes;
+  const first = (codes && codes[0]) || { system: 'atc', code: '' };
+
+  function updateCode (next: { system: string, code: string }) {
+    onChange((q) => {
+      const trimmedCode = (next.code || '').trim();
+      if (!trimmedCode) {
+        if (q.params?.drug) {
+          delete (q.params as Record<string, unknown>).drug;
+          if (Object.keys(q.params).length === 0) delete q.params;
+        }
+        return;
+      }
+      if (!q.params) q.params = {};
+      q.params.drug = { codes: [{ system: next.system || 'atc', code: trimmedCode }] };
+    });
+  }
+
+  return (
+    <div className='rounded border border-amber-200 bg-amber-50 p-2 dark:border-amber-800 dark:bg-amber-900/20'>
+      <div className='mb-1 text-xs font-medium text-amber-900 dark:text-amber-200'>{labels.drugFilter}</div>
+      <div className='grid grid-cols-[1fr_2fr] gap-2'>
+        <div>
+          <label className='mb-0.5 block text-xs text-gray-700 dark:text-gray-300'>{labels.drugSystem}</label>
+          <input
+            type='text'
+            value={first.system || 'atc'}
+            onChange={(e) => updateCode({ system: e.target.value, code: first.code || '' })}
+            disabled={readOnly}
+            className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+          />
+        </div>
+        <div>
+          <label className='mb-0.5 block text-xs text-gray-700 dark:text-gray-300'>{labels.drugCode}</label>
+          <input
+            type='text'
+            value={first.code || ''}
+            placeholder='e.g. G03DA04'
+            onChange={(e) => updateCode({ system: first.system || 'atc', code: e.target.value })}
+            disabled={readOnly}
+            className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm font-mono dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+          />
+        </div>
+      </div>
+      <div className='mt-1 text-[10px] text-amber-800 dark:text-amber-300'>{labels.drugFilterHint}</div>
+    </div>
+  );
+}
+
+function SubFieldDetails ({ question, onChange, labels, readOnly }: SubEditorProps) {
+  const sub = question.subField;
+  if (!sub) return null;
+
+  const subLabel = (sub.label ? l(sub.label) : '') || '';
+
+  function updateLabel (value: string) {
+    onChange((q) => {
+      if (!q.subField) return;
+      if (value) q.subField.label = { en: value };
+      else delete q.subField.label;
+    });
+  }
+
+  function updateOption (i: number, patch: { value?: string, label?: string }) {
+    onChange((q) => {
+      if (!q.subField || q.subField.type !== 'select-segmented') return;
+      const next = [...(q.subField.options || [])];
+      const cur = next[i] || { value: '', label: { en: '' } };
+      next[i] = {
+        value: patch.value !== undefined ? patch.value : cur.value,
+        label: patch.label !== undefined ? { en: patch.label } : cur.label
+      };
+      q.subField.options = next;
+    });
+  }
+
+  function addOption () {
+    onChange((q) => {
+      if (!q.subField || q.subField.type !== 'select-segmented') return;
+      q.subField.options = [...(q.subField.options || []), { value: '', label: { en: '' } }];
+    });
+  }
+
+  function removeOption (i: number) {
+    onChange((q) => {
+      if (!q.subField || q.subField.type !== 'select-segmented') return;
+      const next = [...(q.subField.options || [])];
+      next.splice(i, 1);
+      q.subField.options = next;
+    });
+  }
+
+  return (
+    <div className='rounded border border-blue-200 bg-blue-50 p-2 dark:border-blue-800 dark:bg-blue-900/20'>
+      <div>
+        <label className='mb-0.5 block text-xs text-gray-700 dark:text-gray-300'>{labels.subFieldLabel}</label>
+        <input
+          type='text'
+          value={subLabel}
+          placeholder='e.g. Trimester'
+          onChange={(e) => updateLabel(e.target.value)}
+          disabled={readOnly}
+          className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+        />
+      </div>
+      {sub.type === 'select-segmented' && (
+        <div className='mt-2'>
+          <div className='mb-1 text-xs font-medium text-gray-700 dark:text-gray-300'>{labels.subFieldOptions}</div>
+          <div className='space-y-1'>
+            {(sub.options || []).map((opt, i) => (
+              <div key={i} className='flex items-center gap-1'>
+                <input
+                  type='text'
+                  value={String(opt.value)}
+                  placeholder={labels.optionValue}
+                  onChange={(e) => updateOption(i, { value: e.target.value })}
+                  disabled={readOnly}
+                  className='w-24 rounded border border-gray-300 bg-white px-2 py-1 text-sm font-mono dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                />
+                <input
+                  type='text'
+                  value={(opt.label ? l(opt.label) : '') || ''}
+                  placeholder={labels.optionLabel}
+                  onChange={(e) => updateOption(i, { label: e.target.value })}
+                  disabled={readOnly}
+                  className='flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                />
+                <button
+                  type='button'
+                  onClick={() => removeOption(i)}
+                  disabled={readOnly}
+                  className='rounded border border-red-300 px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30'
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type='button'
+            onClick={addOption}
+            disabled={readOnly}
+            className='mt-1 rounded border border-gray-300 px-2 py-0.5 text-xs hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700'
+          >
+            {labels.addOption}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
