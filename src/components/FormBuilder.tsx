@@ -1,16 +1,22 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { getHDSModel, l } from 'hds-lib';
+import { getHDSModel, l, appTemplates } from 'hds-lib';
 import { HDSFormSection } from './HDSFormSection';
 import { ReminderEditor } from './ReminderEditor';
 import type { ReminderEditorConfig } from './ReminderEditor';
+import { QuestionnaireBuilder } from './QuestionnaireBuilder';
 import { REPEATABLE_OPTIONS, repeatableLabel, getItemGroup } from '../formBuilderUtils';
+
+const { Questionnaire } = appTemplates;
 
 export interface FormBuilderLabels {
   searchItems: string;
   selectSectionToAdd: string;
   addPermanentSection: string;
   addRecurringSection: string;
+  bundledQuestionnaires: string;
+  addQuestionnaire: string;
+  removeQuestionnaire: string;
   sectionName: string;
   clickToAdd: string;
   noItems: string;
@@ -26,6 +32,9 @@ const DEFAULT_LABELS: FormBuilderLabels = {
   selectSectionToAdd: 'Select a section to add items',
   addPermanentSection: 'Permanent section',
   addRecurringSection: 'Recurring section',
+  bundledQuestionnaires: 'Bundled questionnaires',
+  addQuestionnaire: 'Add questionnaire',
+  removeQuestionnaire: 'Remove',
   sectionName: 'Section name',
   clickToAdd: 'Click items in the browser to add them',
   noItems: 'No items — click to select this section',
@@ -89,6 +98,51 @@ export default function FormBuilder ({
   const [previewMode, setPreviewMode] = useState<PreviewMode | null>(defaultPreviewMode);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [editingItemKey, setEditingItemKey] = useState<string | null>(null);
+
+  // Plan 71 D2 — bundled questionnaires (Option B). Drafts live in component
+  // state because Questionnaire mutations don't write back to the
+  // CollectorRequest's stored content (which is a snapshot). Each draft with
+  // ≥1 question is mirrored into request.questionnaires on every change.
+  const [questionnaireDrafts, setQuestionnaireDrafts] = useState<InstanceType<typeof Questionnaire>[]>(() =>
+    request.questionnaires.map((c: any) => new Questionnaire(c))
+  );
+
+  const syncQuestionnairesToRequest = useCallback((drafts: InstanceType<typeof Questionnaire>[]) => {
+    while (request.questionnaires.length > 0) request.removeQuestionnaire(0);
+    for (const d of drafts) {
+      if (d.questionKeys.length > 0) request.addQuestionnaire(d);
+    }
+  }, [request]);
+
+  function addBundledQuestionnaire () {
+    const q = new Questionnaire({ title: { en: 'New questionnaire' } });
+    const firstItem = allItemDefs[0];
+    if (firstItem) {
+      // Stub one question so the draft is immediately valid + persistable.
+      q.addQuestion('q1', {
+        label: { en: 'New question' },
+        itemRef: firstItem.key,
+        scope: { type: 'ever' }
+      });
+    }
+    const next = [...questionnaireDrafts, q];
+    setQuestionnaireDrafts(next);
+    syncQuestionnairesToRequest(next);
+    refresh();
+  }
+
+  function removeBundledQuestionnaire (index: number) {
+    const next = questionnaireDrafts.filter((_, i) => i !== index);
+    setQuestionnaireDrafts(next);
+    syncQuestionnairesToRequest(next);
+    refresh();
+  }
+
+  function handleQuestionnaireChange () {
+    // Drafts are mutated in place by QuestionnaireBuilder; re-sync to request.
+    syncQuestionnairesToRequest(questionnaireDrafts);
+    refresh();
+  }
 
   const sections = request.sections;
   const _version = version; // trigger re-render
@@ -494,6 +548,42 @@ export default function FormBuilder ({
             </div>
           )}
         </div>
+
+        {/* Plan 71 — bundled questionnaires panel */}
+        {(questionnaireDrafts.length > 0 || !readOnly) && (
+          <div className='space-y-2 rounded-lg border border-purple-200 bg-purple-50 p-3 dark:border-purple-700 dark:bg-purple-900/20'>
+            <div className='flex items-center justify-between'>
+              <h3 className='text-sm font-semibold text-purple-900 dark:text-purple-200'>
+                {lb.bundledQuestionnaires}
+              </h3>
+              {!readOnly && (
+                <button
+                  onClick={addBundledQuestionnaire}
+                  className='rounded bg-purple-600 px-3 py-1 text-xs font-medium text-white hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600'
+                >
+                  + {lb.addQuestionnaire}
+                </button>
+              )}
+            </div>
+            {questionnaireDrafts.map((draft, i) => (
+              <div key={i} className='relative'>
+                {!readOnly && (
+                  <button
+                    onClick={() => removeBundledQuestionnaire(i)}
+                    className='absolute right-2 top-2 z-10 rounded border border-red-300 bg-white px-2 py-0.5 text-xs text-red-700 hover:bg-red-50 dark:border-red-700 dark:bg-gray-900 dark:text-red-300'
+                  >
+                    {lb.removeQuestionnaire}
+                  </button>
+                )}
+                <QuestionnaireBuilder
+                  questionnaire={draft}
+                  readOnly={readOnly}
+                  onDirty={handleQuestionnaireChange}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         {actionSlot}
 
