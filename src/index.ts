@@ -3,6 +3,7 @@ export { HDSFormField } from './components/HDSFormField';
 export type { FieldLabelOverrides } from './components/HDSFormField';
 export { HDSFormSection } from './components/HDSFormSection';
 export type { ItemCustomization } from './components/HDSFormSection';
+export { HDSQuestionnaireForm } from './components/HDSQuestionnaireForm';
 export { EntryList } from './components/EntryList';
 export { ReminderEditor } from './components/ReminderEditor';
 export type { ReminderEditorConfig } from './components/ReminderEditor';
