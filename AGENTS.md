@@ -122,6 +122,21 @@ Type aliases re-export from hds-lib (`appTemplates.ItemLabels`, `appTemplates.It
 `hds-forms-js` lives between the data-model and consumer apps:
 
 - **[hds-lib-js](https://github.com/healthdatasafe/hds-lib-js)** — runtime data-model loader and types. `HDSModel.itemsDefs.forKey(itemKey)` is how this lib resolves items at render time. `appTemplates.{ItemLabels, ItemLabelsWithSource, ItemCustomization, collectItemLabels}` are re-exported here as form-renderer aliases.
+
+## Plan 71 — questionnaire UX (v0.x)
+
+Two layers ship in this lib for the Plan 71 questionnaire request/answer event pair:
+
+- **Patient-side renderer** — `HDSQuestionnaireForm` ([`src/components/HDSQuestionnaireForm.tsx`](src/components/HDSQuestionnaireForm.tsx)) takes a `questionnaire/request-v1` content payload, renders one card per question with the 4-state status selector (`answered` / `no` / `unknown` / `declined`) + conditional UI (sub-field qualifier when `answered`, free-text reason when `declined`). Reference-collection for `answered` is delegated to a parent-supplied `renderAnsweredBody` callback so the consumer wires the underlying item's renderer.
+- **Doctor-side builder** — `QuestionnaireBuilder` ([`src/components/QuestionnaireBuilder.tsx`](src/components/QuestionnaireBuilder.tsx)) edits ONE `Questionnaire` instance (title + description + per-question card with itemRef + scope + subField editor + key-grammar-validated add). Wired into [`FormBuilder.tsx`](src/components/FormBuilder.tsx) as a "Bundled questionnaires" panel between sections and the action slot — doctor builds a `CollectorRequest` that packs questionnaires alongside canonical-item sections (Option B, locked 2026-06-15).
+
+Helpers (`src/questionnaire/`):
+
+- `prefillQuestionnaire({ connection, request, baseStreams, matchEvent?, resolveEventType? })` fans out a parallel `events.get` per question, scoped by the item's eventType + the question's temporal scope (`ever` / `window` / `latest` with `withinDays`). Returns the prefilled `AnswerEntry` map seed for `HDSQuestionnaireForm.initialAnswers`. The injectable `resolveEventType` keeps tests from booting the HDS model.
+- `buildAnswerBatch({ requestEventId, answers, answerStreamIds, newTypedEvents?, knownQuestionKeys? })` composes the Pryv `events.batch` (typed events first, answer last). Validation + `clientData.related` mirror delegated to hds-lib's `Questionnaire.buildAnswerEvent`.
+- `submitAnswerBatch(connection, result)` thin wrapper around Pryv `connection.api()` for the common case.
+
+**Do not invent new per-domain assertion eventTypes** to carry "explicitly no" / "I don't know" answers — that conversation was resolved in Plan 71 D8 (2026-06-15) in favor of the questionnaire layer. The questionnaire's answer event IS the explicit-no record; consumers exporting to FHIR derive `MedicationStatement.status=not-taken`, `Condition.verificationStatus=refuted`, etc. at the consumer.
 - **[data-model](https://github.com/healthdatasafe/data-model)** — the YAML source for every item / field shape this lib renders. When you add a new field type here, the data-model item-schema needs the matching `type:` enum value first ([`src/schemas/items.js`](https://github.com/healthdatasafe/data-model/blob/main/src/schemas/items.js)).
 
 When a public type changes here, type-check both consumer repos before merging.
