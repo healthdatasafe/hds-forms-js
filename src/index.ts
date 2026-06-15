@@ -4,6 +4,27 @@ export type { FieldLabelOverrides } from './components/HDSFormField';
 export { HDSFormSection } from './components/HDSFormSection';
 export type { ItemCustomization } from './components/HDSFormSection';
 export { HDSQuestionnaireForm } from './components/HDSQuestionnaireForm';
+export {
+  prefillQuestionnaire,
+  fetchCandidatesForQuestion,
+  resolveQuestionEventType,
+  scopeToQueryParams
+} from './questionnaire/prefill';
+export type {
+  PrefillOptions,
+  PryvConnectionLike,
+  PryvEvent,
+  MatchEventFn,
+  ResolveEventTypeFn
+} from './questionnaire/prefill';
+export { buildAnswerBatch, submitAnswerBatch } from './questionnaire/submit';
+export type {
+  NewTypedEvent,
+  AnswerEventToWrite,
+  BuildAnswerBatchOptions,
+  AnswerBatchResult,
+  BatchSubmitConnection
+} from './questionnaire/submit';
 export { EntryList } from './components/EntryList';
 export { ReminderEditor } from './components/ReminderEditor';
 export type { ReminderEditorConfig } from './components/ReminderEditor';
