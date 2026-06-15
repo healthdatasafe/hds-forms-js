@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+> **Plan 71 (questionnaire request/answer event pair) — held until cross-repo merge round** (data-model v1.10.0 + hds-lib-js Plan-71 features land first; this repo carries the renderer + helpers).
+
+### Added — questionnaire renderer + builder + helpers (Plan 71 C2/C3/C4/D1/D2)
+- **`HDSQuestionnaireForm`** (`src/components/HDSQuestionnaireForm.tsx`) — patient-side renderer. Takes a `questionnaire/request-v1` content payload, renders one card per question with the 4-state status selector (`answered` / `no` / `unknown` / `declined`) + conditional UI per status. Sub-field qualifier supported in three shapes (`select-segmented` / `text` / `number`). Reference-collection for `answered` rows delegated to a parent-supplied `renderAnsweredBody` callback.
+- **`QuestionnaireBuilder`** (`src/components/QuestionnaireBuilder.tsx`) — doctor-side editor for ONE `Questionnaire` instance (title + description + per-question card with itemRef / scope / subField editor + key-grammar-validated add). Mutates the instance in place via its public API.
+- **`FormBuilder` integration** — new "Bundled questionnaires" panel between sections and the action slot. Drafts live in parallel React state, mirror-synced to `CollectorRequest.questionnaires` on every change; drafts with 0 questions don't persist. Three new labels: `bundledQuestionnaires` / `addQuestionnaire` / `removeQuestionnaire`.
+- **`prefillQuestionnaire(opts)`** (`src/questionnaire/prefill.ts`) — fans out a parallel `events.get` per question, scoped by the item's eventType + the question's temporal scope (`ever` / `window` / `latest` with `withinDays`). Returns prefilled `AnswerEntry` map. Optional `matchEvent` callback for client-side content-shape filtering when storage shape can't be server-filtered.
+- **`buildAnswerBatch(opts)`** (`src/questionnaire/submit.ts`) — composes the Pryv `events.batch` (typed events first, answer event last). Validation + `clientData.related` mirror delegated to hds-lib's `Questionnaire.buildAnswerEvent`.
+- **`submitAnswerBatch(connection, result)`** — thin wrapper around Pryv `connection.api()` for the common case.
+
+### Tests
+- 63 → 79 vitest passing (+16 new across `prefillQuestionnaire`, `scopeToQueryParams`, `fetchCandidatesForQuestion`, `buildAnswerBatch`).
+
+### Bundle
+- Build bundle: 119 KB → 133.89 KB (gzip 25 → 28.16 KB). +14 KB for renderer + builder + helpers + index re-exports.
+
 ## [0.10.0] - 2026-05-04
 
 ### Added — date/time + duration companions, generalized DatasetSearch (Plan 46)
