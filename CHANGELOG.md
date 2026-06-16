@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [0.11.0] - 2026-06-16
 
-> **Plan 71 (questionnaire request/answer event pair) — held until cross-repo merge round** (data-model v1.10.0 + hds-lib-js Plan-71 features land first; this repo carries the renderer + helpers).
+> **Plan 71 (questionnaire request/answer event pair) — renderer + builder + helpers + FormBuilder coverage banner.** Released alongside data-model v1.10.0 and hds-lib-js v1.2.0.
 
 ### Added — questionnaire renderer + builder + helpers (Plan 71 C2/C3/C4/D1/D2)
 - **`HDSQuestionnaireForm`** (`src/components/HDSQuestionnaireForm.tsx`) — patient-side renderer. Takes a `questionnaire/request-v1` content payload, renders one card per question with the 4-state status selector (`answered` / `no` / `unknown` / `declined`) + conditional UI per status. Sub-field qualifier supported in three shapes (`select-segmented` / `text` / `number`). Reference-collection for `answered` rows delegated to a parent-supplied `renderAnsweredBody` callback.
