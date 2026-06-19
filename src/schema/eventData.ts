@@ -17,6 +17,39 @@ function getEventTypes (itemDef: ItemDef): string[] {
 }
 
 /**
+ * Shape a scalar form value into canonical event content when the item's event
+ * type expects an object. Currently covers `select` + `ratio/generic`, mirroring
+ * `_jsonFormForItemDef`'s `processData`: `{ value, relativeTo }` with
+ * `relativeTo = max(option values)`. All other items pass through unchanged.
+ *
+ * Without this, `<HDSFormSection>` (whose `Select` emits a scalar) feeds a scalar
+ * to `events.create`, which the store rejects for object-content types
+ * (`invalid-parameters-format: must be object`).
+ */
+function toEventContent (itemDef: ItemDef, eventType: string, value: any): any {
+  if (
+    value != null && typeof value !== 'object' &&
+    itemDef.data.type === 'select' && eventType === 'ratio/generic'
+  ) {
+    const options = (itemDef.data as any).options || [];
+    const relativeTo = Math.max(...options.map((o: any) => Number(o.value)));
+    return { value: Number(value), relativeTo };
+  }
+  return value;
+}
+
+/** Inverse of {@link toEventContent} for prefilling: unwrap `{ value, relativeTo }` back to the select scalar. */
+function fromEventContent (itemDef: ItemDef, content: any): any {
+  if (
+    content != null && typeof content === 'object' && 'value' in content &&
+    itemDef.data.type === 'select' && itemDef.data.eventType === 'ratio/generic'
+  ) {
+    return content.value;
+  }
+  return content;
+}
+
+/**
  * Prefill form values from existing Pryv events.
  * Maps events back to form field values using itemDef keys.
  */
@@ -66,7 +99,7 @@ export function matchEventsToItemDefs (
       if (event.type === 'activity/plain') {
         values[key] = true;
       } else {
-        values[key] = event.content;
+        values[key] = fromEventContent(itemDef, event.content);
       }
       if (event.id) {
         eventIds[key] = event.id;
@@ -142,7 +175,7 @@ export function formDataToActions (
     // Has value
     if (existingId) {
       // Update existing event (include type if variation override is set)
-      const update: Record<string, any> = { content: value };
+      const update: Record<string, any> = { content: toEventContent(itemDef, eventType, value) };
       if (formData[`${key}__eventType`]) update.type = eventType;
       // Pass `time` through only when caller provided an explicit timestamp
       // (date picker). Otherwise leave the original event time untouched.
@@ -160,7 +193,7 @@ export function formDataToActions (
         params: {
           streamIds: template.streamIds as string[],
           type: eventType,
-          content: value,
+          content: toEventContent(itemDef, eventType, value),
           time: eventTime
         }
       });
@@ -207,7 +240,7 @@ export function formDataToEventBatch (
     events.push({
       streamIds: template.streamIds as string[],
       type: eventType,
-      content: value,
+      content: toEventContent(itemDef, eventType, value),
       time: eventTime
     });
   }

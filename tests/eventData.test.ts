@@ -295,4 +295,56 @@ describe('formDataToActions — variations', () => {
       expect(events[0].streamIds).toEqual(['procedure-fertility']);
     });
   });
+
+  // ─── object-content shaping (select + ratio/generic) ─────────────
+  describe('object-content shaping (select + ratio/generic)', () => {
+    // A `select` item whose eventType is `ratio/generic` — the Select field emits a
+    // scalar option value, but the event content must be `{ value, relativeTo }`.
+    function makeRatioSelect (): ItemDef {
+      return {
+        data: {
+          type: 'select',
+          label: { en: 'Intention' },
+          streamId: 'fertility-ttc-tta',
+          eventType: 'ratio/generic',
+          options: [
+            { value: 0, label: { en: 'a' } },
+            { value: 5, label: { en: 'b' } },
+            { value: 10, label: { en: 'c' } }
+          ]
+        } as any,
+        eventTemplate: () => ({ streamIds: ['fertility-ttc-tta'], type: 'ratio/generic' })
+      };
+    }
+
+    it('formDataToActions wraps a scalar into { value, relativeTo: max(options) }', () => {
+      const actions = formDataToActions([{ key: 'ttc', itemDef: makeRatioSelect() }], { ttc: 8 }, {}, 1000);
+      expect(actions).toHaveLength(1);
+      expect(actions[0].action).toBe('create');
+      expect(actions[0].params.content).toEqual({ value: 8, relativeTo: 10 });
+    });
+
+    it('formDataToActions shapes update content too', () => {
+      const actions = formDataToActions([{ key: 'ttc', itemDef: makeRatioSelect() }], { ttc: '5' }, { ttc: 'evt-1' }, 1000);
+      expect(actions[0].action).toBe('update');
+      expect(actions[0].params.update.content).toEqual({ value: 5, relativeTo: 10 });
+    });
+
+    it('formDataToEventBatch wraps the scalar', () => {
+      const events = formDataToEventBatch([{ key: 'ttc', itemDef: makeRatioSelect() }], { ttc: 0 }, 1000);
+      expect(events[0].content).toEqual({ value: 0, relativeTo: 10 });
+    });
+
+    it('prefillFromEvents unwraps the object back to the select scalar', () => {
+      const events = [
+        { type: 'ratio/generic', streamIds: ['fertility-ttc-tta'], content: { value: 8, relativeTo: 10 }, time: 100 }
+      ];
+      expect(prefillFromEvents([{ key: 'ttc', itemDef: makeRatioSelect() }], events).ttc).toBe(8);
+    });
+
+    it('leaves scalar-content items untouched', () => {
+      const itemDefs = [{ key: 'w', itemDef: makeItemDef({ type: 'number', eventType: 'mass/kg', streamId: 'body-weight' }) }];
+      expect(formDataToActions(itemDefs, { w: 65 }, {}, 1000)[0].params.content).toBe(65);
+    });
+  });
 });
