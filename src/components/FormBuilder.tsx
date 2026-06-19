@@ -614,8 +614,7 @@ export default function FormBuilder ({
                       <div>
                         {missingCount > 0
                           ? <span>⚠ <strong>{missingCount}</strong> {lb.coverageMissing}{unknownCount > 0 ? ` · ${unknownCount} ${lb.coverageUnknown}` : ''}</span>
-                          : <span>✓ {lb.coverageOk}{unknownCount > 0 ? ` (${unknownCount} ${lb.coverageUnknown})` : ''}</span>
-                        }
+                          : <span>✓ {lb.coverageOk}{unknownCount > 0 ? ` (${unknownCount} ${lb.coverageUnknown})` : ''}</span>}
                       </div>
                       {missingCount > 0 && !readOnly && (
                         <button

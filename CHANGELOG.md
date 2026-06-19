@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.1] - 2026-06-19
+
+### Changed — dependency refresh: hds-lib 1.2.1 (pryv ecosystem 3.7.1)
+
+Re-pinned `hds-lib` to 1.2.1, which carries the pryv ecosystem bump to 3.7.1
+(matches the open-pryv.io 2.0.0-rc.4 prod cores — Plan 78). Also auto-fixed a
+pre-existing `@stylistic/jsx-curly-newline` lint error in `FormBuilder.tsx`.
+No API changes.
+
 ## [0.11.0] - 2026-06-16
 
 > **Plan 71 (questionnaire request/answer event pair) — renderer + builder + helpers + FormBuilder coverage banner.** Released alongside data-model v1.10.0 and hds-lib-js v1.2.0.
