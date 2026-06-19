@@ -17,6 +17,35 @@ function getEventTypes (itemDef: ItemDef): string[] {
 }
 
 /**
+ * Some HDS event types require **object** content even though the form field
+ * produces a scalar. The canonical case is a `select` whose `eventType` is
+ * `ratio/generic`: the JSON-schema path (`_jsonFormForItemDef`) wraps the chosen
+ * option value as `{ value, relativeTo: max(option values) }`. The action/batch
+ * path must emit the same shape (or the store rejects it with
+ * `INVALID_TYPE "must be object"`), and prefill must unwrap it back to the
+ * scalar so the round-trip is symmetric. See hds-forms-js#6.
+ */
+function isSelectRatioGeneric (itemDef: ItemDef, eventType: string): boolean {
+  return itemDef.data.type === 'select' && eventType === 'ratio/generic';
+}
+
+/** Write side: wrap a scalar select value into canonical object content. */
+function toEventContent (itemDef: ItemDef, value: any, eventType: string): any {
+  if (!isSelectRatioGeneric(itemDef, eventType)) return value;
+  // Already shaped (e.g. prefilled object) — leave untouched.
+  if (value == null || typeof value === 'object') return value;
+  const relativeTo = Math.max(...(itemDef.data.options || []).map((o) => Number(o.value)));
+  return { value: Number(value), relativeTo };
+}
+
+/** Read side: unwrap canonical object content back to the select's scalar. */
+function fromEventContent (itemDef: ItemDef, content: any, eventType: string): any {
+  if (!isSelectRatioGeneric(itemDef, eventType)) return content;
+  if (content != null && typeof content === 'object' && 'value' in content) return content.value;
+  return content;
+}
+
+/**
  * Prefill form values from existing Pryv events.
  * Maps events back to form field values using itemDef keys.
  */
@@ -66,7 +95,7 @@ export function matchEventsToItemDefs (
       if (event.type === 'activity/plain') {
         values[key] = true;
       } else {
-        values[key] = event.content;
+        values[key] = fromEventContent(itemDef, event.content, event.type);
       }
       if (event.id) {
         eventIds[key] = event.id;
@@ -139,10 +168,11 @@ export function formDataToActions (
       continue;
     }
 
-    // Has value
+    // Has value — wrap into canonical object content for object-content types.
+    const content = toEventContent(itemDef, value, eventType);
     if (existingId) {
       // Update existing event (include type if variation override is set)
-      const update: Record<string, any> = { content: value };
+      const update: Record<string, any> = { content };
       if (formData[`${key}__eventType`]) update.type = eventType;
       // Pass `time` through only when caller provided an explicit timestamp
       // (date picker). Otherwise leave the original event time untouched.
@@ -160,7 +190,7 @@ export function formDataToActions (
         params: {
           streamIds: template.streamIds as string[],
           type: eventType,
-          content: value,
+          content,
           time: eventTime
         }
       });
@@ -207,7 +237,7 @@ export function formDataToEventBatch (
     events.push({
       streamIds: template.streamIds as string[],
       type: eventType,
-      content: value,
+      content: toEventContent(itemDef, value, eventType),
       time: eventTime
     });
   }

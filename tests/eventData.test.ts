@@ -161,6 +161,66 @@ describe('matchEventsToItemDefs — variations', () => {
   });
 });
 
+// Helper for a select whose eventType is ratio/generic (object content). #6
+function makeRatioGenericSelect (streamId: string, options: Array<{ value: number; label: any }>): ItemDef {
+  return {
+    data: {
+      type: 'select',
+      label: { en: 'TTC/TTA' },
+      eventType: 'ratio/generic',
+      streamId,
+      options
+    } as any,
+    eventTemplate: () => ({ streamIds: [streamId], type: 'ratio/generic' })
+  };
+}
+
+describe('ratio/generic select object content (#6)', () => {
+  const options = [
+    { value: 0, label: { en: 'none' } },
+    { value: 4, label: { en: 'some' } },
+    { value: 8, label: { en: 'max' } }
+  ];
+
+  it('formDataToActions wraps scalar select value as { value, relativeTo } on create', () => {
+    const itemDefs = [{ key: 'ttc', itemDef: makeRatioGenericSelect('fert', options) }];
+    const actions = formDataToActions(itemDefs, { ttc: 8 }, {}, 1000);
+    expect(actions).toHaveLength(1);
+    expect(actions[0].action).toBe('create');
+    expect(actions[0].params.type).toBe('ratio/generic');
+    expect(actions[0].params.content).toEqual({ value: 8, relativeTo: 8 });
+  });
+
+  it('formDataToActions wraps scalar value on update', () => {
+    const itemDefs = [{ key: 'ttc', itemDef: makeRatioGenericSelect('fert', options) }];
+    const actions = formDataToActions(itemDefs, { ttc: 4 }, { ttc: 'e1' }, 1000);
+    expect(actions[0].action).toBe('update');
+    expect(actions[0].params.update.content).toEqual({ value: 4, relativeTo: 8 });
+  });
+
+  it('formDataToEventBatch wraps scalar select value', () => {
+    const itemDefs = [{ key: 'ttc', itemDef: makeRatioGenericSelect('fert', options) }];
+    const events = formDataToEventBatch(itemDefs, { ttc: 4 }, 1000);
+    expect(events[0].content).toEqual({ value: 4, relativeTo: 8 });
+  });
+
+  it('does not double-wrap an already-object value', () => {
+    const itemDefs = [{ key: 'ttc', itemDef: makeRatioGenericSelect('fert', options) }];
+    const actions = formDataToActions(itemDefs, { ttc: { value: 8, relativeTo: 8 } }, {}, 1000);
+    expect(actions[0].params.content).toEqual({ value: 8, relativeTo: 8 });
+  });
+
+  it('prefill unwraps object content back to the select scalar (round-trip)', () => {
+    const itemDefs = [{ key: 'ttc', itemDef: makeRatioGenericSelect('fert', options) }];
+    const events = [
+      { id: 'e1', type: 'ratio/generic', streamIds: ['fert'], content: { value: 8, relativeTo: 8 }, time: 100 }
+    ];
+    const result = matchEventsToItemDefs(itemDefs, events);
+    expect(result.values.ttc).toBe(8);
+    expect(result.eventIds.ttc).toBe('e1');
+  });
+});
+
 describe('formDataToActions — variations', () => {
   it('uses __eventType override for create', () => {
     const itemDef = makeVariationItemDef('body', [

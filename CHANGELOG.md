@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.2] - 2026-06-19
+
+### Fixed — object-content event types now write/read correctly via `eventData` (#6)
+
+`HDSFormSection` → `formDataToActions` / `formDataToEventBatch` wrote a **scalar**
+event `content` for items whose HDS event type requires an **object**, so the
+store rejected the event (`INVALID_TYPE "must be object"`). This broke `select`
+items whose `eventType` is `ratio/generic` (e.g. the STORMM `fertility-ttc-tta`
+item) — the action/batch path disagreed with the JSON-schema path
+(`_jsonFormForItemDef`), which already wrapped the value as
+`{ value, relativeTo: max(option values) }`.
+
+- `formDataToActions` / `formDataToEventBatch` now emit canonical object content
+  (`{ value, relativeTo }`) for `select` + `ratio/generic`, mirroring
+  `_jsonFormForItemDef`. Already-object values are passed through unchanged.
+- `matchEventsToItemDefs` / `prefillFromEvents` unwrap the object back to the
+  select's scalar, so the round-trip is symmetric.
+
 ## [0.11.1] - 2026-06-19
 
 ### Changed — dependency refresh: hds-lib 1.2.1 (pryv ecosystem 3.7.1)
