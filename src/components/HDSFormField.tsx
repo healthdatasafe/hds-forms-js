@@ -141,7 +141,7 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
         const first = variations.options[0];
         if (first?.label) unit = l(first.label) || undefined;
       }
-      return <NumberInput {...baseProps} unit={unit} />;
+      return <NumberInput {...baseProps} unit={unit} display={(itemData as any).number?.display} />;
     }
     case 'select': {
       const optionOverrides = labelOverridesForOptions?.options;

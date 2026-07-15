@@ -1,5 +1,35 @@
 # Changelog
 
+## [Unreleased]
+
+### Added — `display.multiplier` on `number` items (storage stays raw)
+
+`number` items accept an optional `number.display` block (`multiplier` / `precision` /
+`suffix`), mirroring the `slider.display` block that already existed. Storage is
+unchanged — always the raw value in the item's eventType — but the user now sees the
+value in its conventional reporting scale.
+
+The driving case is lab percentages in the serum blood-chemistry domain: HbA1c,
+hematocrit, RDW, transferrin saturation and the WBC differential are genuine fractions,
+so they store `0..1` on `ratio/proportion` and render as `42%` via `multiplier: 100`.
+Without this, a clinician-facing value would sit at rest in an alien scale.
+
+- `ValueDisplay` replaces `SliderDisplay` as the shared type name; `SliderDisplay`
+  remains an alias, so existing imports are unaffected.
+- Scaling is **bidirectional** on a number input — unlike a slider, whose control works
+  in the raw scale and only scales its readout, the user *types* the displayed value, so
+  what's typed is divided by the multiplier before storage.
+- The field is text-backed while focused: round-tripping each keystroke through raw
+  storage would destroy in-progress input (`"5."` parses to `5`, so a decimal could
+  never be typed).
+- `precision` has **no default** on number inputs, unlike sliders (which default to 0
+  when multiplier ≥ 10). That default would render HbA1c 5.4% as "5".
+- Float noise is stripped on both sides: `0.29 * 100` is `28.999999999999996` when
+  displayed, and `5.4 / 100` is `0.054000000000000006` when stored — neither reaches the
+  user or the database.
+- Logic extracted to `src/schema/valueDisplay.ts` (`toDisplayText` / `toRawValue`) and
+  covered by `tests/valueDisplay.test.ts`.
+
 ## [0.11.2] - 2026-06-19
 
 ### Fixed — object-content event types now write/read correctly via `eventData` (#6)
