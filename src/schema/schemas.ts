@@ -39,6 +39,15 @@ interface TextData extends BaseItemData {
 
 interface NumberData extends BaseItemData {
   type: 'number';
+  /** Lower bound in the raw (stored) scale. */
+  min?: number;
+  /** Upper bound in the raw scale. */
+  max?: number;
+  /** Step increment in the raw scale. */
+  step?: number;
+  number?: {
+    display?: ValueDisplay;
+  };
 }
 
 interface SelectData extends BaseItemData {
@@ -67,15 +76,30 @@ export interface SliderLabel {
   description?: localizableText;
 }
 
-/** Display-layer knobs on a slider — affect how the raw value is shown to the user only. */
-export interface SliderDisplay {
+/**
+ * Display-layer knobs on a numeric value — affect how the raw (stored) value is
+ * shown to the user only. Storage is always the raw value in the item's eventType.
+ *
+ * Used by both `slider` and `number` items. On a slider the control itself works in
+ * the raw scale and only the readout is scaled; on a number input the user types the
+ * *displayed* value, so the multiplier is applied bidirectionally (typed ÷ multiplier
+ * is what gets stored).
+ */
+export interface ValueDisplay {
   /** Multiplier applied to the raw value for display. Default 1. E.g. 100 for a 0..1 raw → 0..100 displayed. */
   multiplier?: number;
-  /** Decimal places shown. Default: 0 if multiplier >= 10, else 2. */
+  /**
+   * Decimal places shown. On a slider, defaults to 0 when multiplier >= 10, else inferred from step.
+   * On a number input there is no default — the scaled value is shown as typed/stored, so that
+   * fractional lab values (HbA1c 5.4%) are not truncated. Set it only to force fixed formatting.
+   */
   precision?: number;
   /** Appended to the displayed value (e.g. '%'). */
   suffix?: localizableText;
 }
+
+/** @deprecated Use {@link ValueDisplay} — kept as an alias so existing imports keep working. */
+export type SliderDisplay = ValueDisplay;
 
 interface SliderData extends BaseItemData {
   type: 'slider';
@@ -88,7 +112,7 @@ interface SliderData extends BaseItemData {
   slider?: {
     orientation?: 'horizontal' | 'vertical';
     labels?: Record<string | number, SliderLabel>;
-    display?: SliderDisplay;
+    display?: ValueDisplay;
   };
 }
 
