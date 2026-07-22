@@ -31,6 +31,18 @@ the same `--hds-primary`, so an active HDS palette keeps driving the colors.
 
 No component source changed — this is packaging and documentation only.
 
+### Changed — test app: scoped demo access
+
+The test app's hardcoded `sample-mira` apiEndpoint used an access with `read` on `*`.
+It was revoked and replaced with a dedicated access scoped to `read` on `mira-demo`
+only. The test app ships to gh-pages, so this token is **public by construction** —
+the mitigation is minimal scope on a throwaway demo account, not secrecy.
+
+The test app keeps its `hds-react-timeline` dependency (a private repo) for the
+Timeline demo. That public→private reference is deliberate, and also pulls
+`style-package` into `src-test-app`'s lockfile transitively. Neither affects the
+published library, which depends on neither: `files` ships only `js`, `src` and `css`.
+
 ## [Unreleased]
 
 ### Added — `display.multiplier` on `number` items (storage stays raw)
