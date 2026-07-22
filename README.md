@@ -2,6 +2,30 @@
 
 React component library for rendering forms from HDS item definitions. Converts HDS ItemDefs to form fields using Tailwind CSS styling, and handles bidirectional data conversion between form values and Pryv events.
 
+## Theming
+
+hds-forms is theme-agnostic — it depends on no design-system package. It needs exactly two things from the host app, both provided by a single import:
+
+```css
+@import "tailwindcss";
+@import "hds-forms-js/css/tokens.css";
+```
+
+| What | Why |
+|------|-----|
+| A `primary` color scale (`--color-primary-50` … `--color-primary-950`) | components render buttons, focus rings and active states with `bg-primary-500`, `text-primary-700`, … |
+| A **class-based** `dark` variant | components emit `dark:` utilities throughout; Tailwind v4 otherwise defaults to `prefers-color-scheme`, so toggling `.dark` on `<html>` would silently do nothing |
+
+`tokens.css` is self-defaulting, so importing it is enough. **Rebrand the entire library with one variable:**
+
+```css
+:root { --hds-primary: #7C3AED; }
+```
+
+The full scale is derived from it via `color-mix()`. Override individual steps (`--color-primary-600`, …) if you need exact control. Everything else the components use is stock Tailwind (`gray-*`, spacing, typography) — no other tokens required.
+
+> Using the HDS design system? Import `hds-style/css/theme.css` as usual; it defines the same scale from the same `--hds-primary`, so the active HDS palette keeps driving the colors and `tokens.css` becomes redundant (harmless if both are imported).
+
 ## Components
 
 ### `<HDSFormField>`

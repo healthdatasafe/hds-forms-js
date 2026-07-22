@@ -12,11 +12,8 @@ import { schemaFor } from 'hds-forms/schema/schemas';
 import { jsonFormForItemDef } from 'hds-forms/schema/itemDefToSchema';
 import type { SectionEntry } from 'hds-forms/types';
 import FormBuilder from './FormBuilder';
-import { Timeline } from 'hds-react-timeline';
 
-type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'timeline' | 'settings';
-
-const SAMPLE_MIRA_ENDPOINT = 'https://cmn4ajjwg44xzdjpfcdnqgouv@demo.datasafe.dev/sample-mira/';
+type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'settings';
 
 interface SingleFieldPanelProps {
   items: ItemSearchPickerItem[];
@@ -318,9 +315,6 @@ export default function App () {
         <button className={tabClass('builder')} onClick={() => setTab('builder')}>
           Builder
         </button>
-        <button className={tabClass('timeline')} onClick={() => setTab('timeline')}>
-          Timeline
-        </button>
         <button className={tabClass('settings')} onClick={() => setTab('settings')}>
           Settings
         </button>
@@ -374,16 +368,6 @@ export default function App () {
               />
             )}
             {recurringData && <DebugPanel title='Last submitted' json={recurringDataJson} />}
-          </div>
-        )}
-
-        {/* ── Timeline Tab ── */}
-        {tab === 'timeline' && (
-          <div style={{ height: '600px' }}>
-            <p className='mb-4 text-sm text-gray-500 dark:text-gray-400'>
-              Timeline connected to <code>sample-mira</code> account (read-only).
-            </p>
-            <Timeline apiEndpoint={SAMPLE_MIRA_ENDPOINT} initialScale='month' />
           </div>
         )}
 

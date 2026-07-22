@@ -1,0 +1,45 @@
+/*
+ * hds-forms — theming contract
+ *
+ * Import this in your app's main CSS file AFTER @import "tailwindcss":
+ *   @import "tailwindcss";
+ *   @import "hds-forms-js/css/tokens.css";
+ *
+ * This file declares the ONLY two things hds-forms components need from the
+ * host application. It is self-defaulting: import it and nothing else, and the
+ * components render correctly out of the box.
+ *
+ * 1. A `primary` color scale (bg-primary-500, text-primary-700, …).
+ *    Customize the whole library by setting a single variable:
+ *
+ *      :root { --hds-primary: #7C3AED; }
+ *
+ *    …or override individual steps (--color-primary-500, …) for full control.
+ *
+ * 2. A CLASS-based `dark` variant. hds-forms emits `dark:` utilities
+ *    throughout; without this line Tailwind v4 falls back to
+ *    `prefers-color-scheme`, so toggling a `.dark` class on <html> would
+ *    silently do nothing.
+ *
+ * Apps already importing `hds-style/css/theme.css` get an identical result —
+ * both derive the scale from the same `--hds-primary`, so an active HDS
+ * palette keeps driving the colors.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Primary scale derived from --hds-primary via color-mix().
+   * Fallback is the HDS "patient" teal; override --hds-primary to rebrand. */
+  --color-primary-50: color-mix(in oklch, var(--hds-primary, #0D9488) 5%, white);
+  --color-primary-100: color-mix(in oklch, var(--hds-primary, #0D9488) 10%, white);
+  --color-primary-200: color-mix(in oklch, var(--hds-primary, #0D9488) 25%, white);
+  --color-primary-300: color-mix(in oklch, var(--hds-primary, #0D9488) 40%, white);
+  --color-primary-400: color-mix(in oklch, var(--hds-primary, #0D9488) 60%, white);
+  --color-primary-500: var(--hds-primary, #0D9488);
+  --color-primary-600: color-mix(in oklch, var(--hds-primary, #0D9488) 85%, black);
+  --color-primary-700: color-mix(in oklch, var(--hds-primary, #0D9488) 70%, black);
+  --color-primary-800: color-mix(in oklch, var(--hds-primary, #0D9488) 50%, black);
+  --color-primary-900: color-mix(in oklch, var(--hds-primary, #0D9488) 35%, black);
+  --color-primary-950: color-mix(in oklch, var(--hds-primary, #0D9488) 20%, black);
+}

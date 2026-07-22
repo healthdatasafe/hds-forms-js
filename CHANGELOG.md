@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.12.0]
+
+### Changed — no design-system dependency; theming is now a documented two-token contract
+
+hds-forms-js is public, `style-package` (`hds-style`) is private. The optional
+`hds-style` peer dependency put a private-repo git URL in this repo's `package.json`
+and lockfile, and left the actual styling contract undocumented — a consumer had no
+supported way to re-theme the library.
+
+The library never used the design system's semantic tokens (`--hds-background`,
+`--hds-card`, the palettes, the chart colors, Flowbite, `prose`). Of `hds-style`'s
+211 lines it consumed exactly two things, now cherry-picked into `css/tokens.css`:
+
+- the `--color-primary-50…950` scale backing the 82 `primary-*` utilities across 16
+  components — now derived from `var(--hds-primary, #0D9488)`, so a consumer rebrands
+  the whole library by setting **one** variable;
+- the class-based `dark` variant backing 364 `dark:` utilities. This was a silent
+  failure mode: without it Tailwind v4 falls back to `prefers-color-scheme`, so a
+  consumer's `.dark` toggle did nothing and the cause was undiscoverable.
+
+`css/tokens.css` is self-defaulting — importing it is the whole setup. Apps that
+already import `hds-style/css/theme.css` are unaffected: both derive the scale from
+the same `--hds-primary`, so an active HDS palette keeps driving the colors.
+
+- **Removed:** `hds-style` from `peerDependencies` / `peerDependenciesMeta`, and from
+  `src-test-app` (which now imports the local `css/tokens.css`).
+- **Added:** `css/tokens.css`, exported as `hds-forms-js/css/*` and shipped via `files`.
+- **Added:** README "Theming" section documenting the contract.
+
+No component source changed — this is packaging and documentation only.
+
 ## [Unreleased]
 
 ### Added — `display.multiplier` on `number` items (storage stays raw)

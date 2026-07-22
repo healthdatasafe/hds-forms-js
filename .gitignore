@@ -8,3 +8,4 @@ coverage/
 .env.local
 src-test-app/public/pack.json
 localConfig.yml
+*.tsbuildinfo
