@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.13.0] - 2026-08-07
+
+### Added — `multi-select` field type
+Renders items whose content is an **array** of chosen option values, for the case where several options
+are simultaneously true (data-model 3.0.0, [site-agents#9](https://github.com/healthdatasafe/site-agents/issues/9)
+/ [#10](https://github.com/healthdatasafe/site-agents/issues/10)). Until now the library had no
+multi-value control at all — `Select` renders a single `<select>` and emits a scalar.
+
+- **`MultiSelect`** component (exported): a **checkbox group**, not `<select multiple>` — the source
+  questionnaires print these as checkbox lists and multi-select dropdowns are poor on touch. Empty
+  selection is `null` rather than `[]`, matching the other fields' "no answer" representation, and the
+  stored array follows the item's declared option order regardless of tick order.
+- **`HDSFormField`** routes `multi-select` to it, reusing `select`'s option-label override logic.
+- **`schemaFor`** emits `{ type: 'array', uniqueItems: true, items: { type: 'string', oneOf: [...] } }`.
+  Note the allowed values live under `items.oneOf`, not the root `oneOf` a `select` produces.
+
 ## [0.12.0]
 
 ### Changed — no design-system dependency; theming is now a documented two-token contract

@@ -31,6 +31,7 @@ export { EntryList } from './components/EntryList';
 export { ReminderEditor } from './components/ReminderEditor';
 export type { ReminderEditorConfig } from './components/ReminderEditor';
 export { DatasetSearch } from './components/fields/DatasetSearch';
+export { MultiSelect } from './components/fields/MultiSelect';
 export { ItemSearchPicker } from './components/ItemSearchPicker';
 export type { ItemSearchPickerProps } from './components/ItemSearchPicker';
 export { EventTimeInput } from './components/EventTimeInput';

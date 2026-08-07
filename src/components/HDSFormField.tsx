@@ -5,6 +5,7 @@ import { DateInput } from './fields/DateInput';
 import { TextInput } from './fields/TextInput';
 import { NumberInput } from './fields/NumberInput';
 import { Select } from './fields/Select';
+import { MultiSelect } from './fields/MultiSelect';
 import { Composite } from './fields/Composite';
 import { DatasetSearch } from './fields/DatasetSearch';
 import { Convertible } from './fields/Convertible';
@@ -143,7 +144,8 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
       }
       return <NumberInput {...baseProps} unit={unit} display={(itemData as any).number?.display} />;
     }
-    case 'select': {
+    case 'select':
+    case 'multi-select': {
       const optionOverrides = labelOverridesForOptions?.options;
       const options = (itemData as any).options.map((opt: any) => {
         const override = optionOverrides?.[opt.value];
@@ -152,7 +154,9 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
           label: (override ? l(override) : l(opt.label)) || ''
         };
       });
-      return <Select {...baseProps} options={options} />;
+      return itemData.type === 'multi-select'
+        ? <MultiSelect {...baseProps} options={options} />
+        : <Select {...baseProps} options={options} />;
     }
     case 'composite': {
       const composite = (itemData as any).composite;

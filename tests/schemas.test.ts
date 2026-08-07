@@ -68,6 +68,31 @@ describe('schemaFor', () => {
     ]);
   });
 
+  it('multi-select → array of enum values, uniqueItems (site-agents#9/#10)', () => {
+    const data: ItemData = {
+      type: 'multi-select',
+      label: { en: 'Ethnicity' },
+      options: [
+        { value: 'white', label: { en: 'White' } },
+        { value: 'asian', label: { en: 'Asian' } }
+      ]
+    };
+    const schema = schemaFor(data);
+    expect(schema.type).toBe('array');
+    expect(schema.uniqueItems).toBe(true);
+    expect(schema.items).toEqual({
+      title: '',
+      type: 'string',
+      oneOf: [
+        { const: 'white', title: 'White' },
+        { const: 'asian', title: 'Asian' }
+      ]
+    });
+    // The chosen values live in `items.oneOf`, not at the root — a consumer reading
+    // schema.oneOf for a multi-select would silently get nothing.
+    expect(schema.oneOf).toBeUndefined();
+  });
+
   it('select with numeric options → number + oneOf', () => {
     const data: ItemData = {
       type: 'select',

@@ -16,7 +16,7 @@ interface ConverterEngine {
 }
 
 interface BaseItemData {
-  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'composite' | 'datasource-search' | 'convertible' | 'slider';
+  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'multi-select' | 'composite' | 'datasource-search' | 'convertible' | 'slider';
   label: localizableText;
   description?: localizableText;
   canBeNull?: boolean;
@@ -52,6 +52,12 @@ interface NumberData extends BaseItemData {
 
 interface SelectData extends BaseItemData {
   type: 'select';
+  options: SelectOption[];
+}
+
+/** `select`'s multi-valued twin — content is an array of chosen option values. */
+interface MultiSelectData extends BaseItemData {
+  type: 'multi-select';
   options: SelectOption[];
 }
 
@@ -116,25 +122,29 @@ interface SliderData extends BaseItemData {
   };
 }
 
-export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | CompositeData | DatasourceSearchData | ConvertibleData | SliderData;
+export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | MultiSelectData | CompositeData | DatasourceSearchData | ConvertibleData | SliderData;
 
 export interface JSONSchema {
   title: string;
   description?: string;
-  type?: 'boolean' | 'string' | 'number' | 'object';
+  type?: 'boolean' | 'string' | 'number' | 'object' | 'array';
   format?: string;
   dateSaveFormat?: string;
   minLength?: number;
   oneOf?: Array<{ const: string | number; title: string }>;
   properties?: Record<string, JSONSchema>;
   required?: string[];
+  /** `multi-select` only — the per-element schema carrying the allowed values. */
+  items?: JSONSchema;
+  /** `multi-select` only — the same option may not be chosen twice. */
+  uniqueItems?: boolean;
 }
 
 const l = localizeText;
 
 type SchemaAction = (schema: JSONSchema, v: ItemData) => void;
 
-const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, composite, 'datasource-search': datasourceSearch, convertible, slider };
+const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, 'multi-select': multiSelect, composite, 'datasource-search': datasourceSearch, convertible, slider };
 
 export function schemaFor (v: ItemData): JSONSchema {
   const schema: JSONSchema = {
@@ -178,6 +188,17 @@ function select (schema: JSONSchema, v: ItemData): void {
   const options = selectData.options.map((option) => ({ const: option.value, title: l(option.label) || '' }));
   schema.type = foundNaN ? 'string' : 'number';
   schema.oneOf = options;
+}
+
+function multiSelect (schema: JSONSchema, v: ItemData): void {
+  const data = v as MultiSelectData;
+  schema.type = 'array';
+  schema.uniqueItems = true;
+  schema.items = {
+    title: '',
+    type: 'string',
+    oneOf: data.options.map((option) => ({ const: option.value, title: l(option.label) || '' }))
+  };
 }
 
 function datasourceSearch (schema: JSONSchema, _v: ItemData): void {
