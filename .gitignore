@@ -9,3 +9,6 @@ coverage/
 src-test-app/public/pack.json
 localConfig.yml
 *.tsbuildinfo
+
+# The backloop.dev secret is never committed (plan 95).
+backloop.dev.json
