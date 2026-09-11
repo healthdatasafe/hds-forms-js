@@ -118,7 +118,7 @@ export function QuestionnaireBuilder ({
   }, [onDirty]);
 
   // Force re-render on `version` even though we read from `questionnaire`.
-  const _v = version;
+  void version;
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [newKeyDraft, setNewKeyDraft] = useState('');

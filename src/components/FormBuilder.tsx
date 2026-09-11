@@ -153,7 +153,7 @@ export default function FormBuilder ({
   }
 
   const sections = request.sections;
-  const _version = version; // trigger re-render
+  void version; // read in render so a version bump re-renders
 
   // Group and filter items for the browser
   // When a section is selected, filter items by section type:
