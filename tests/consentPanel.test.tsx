@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { ConsentPanel, DEFAULT_CONSENT_LABELS } from '../src/components/ConsentPanel';
+import { ConsentPanel } from '../src/components/ConsentPanel';
+import { DEFAULT_CONSENT_LABELS } from '../src/components/consentLabels';
 
 const noop = (): void => {};
 const perms = [

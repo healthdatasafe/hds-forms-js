@@ -28,7 +28,8 @@ export type {
   BatchSubmitConnection
 } from './questionnaire/submit';
 export { EntryList } from './components/EntryList';
-export { ConsentPanel, DEFAULT_CONSENT_LABELS } from './components/ConsentPanel';
+export { ConsentPanel } from './components/ConsentPanel';
+export { DEFAULT_CONSENT_LABELS } from './components/consentLabels';
 export type { ConsentPanelProps, ConsentPanelLabels, ConsentPermission, ConsentPermissionLevel } from './components/ConsentPanel';
 export { ReminderEditor } from './components/ReminderEditor';
 export type { ReminderEditorConfig } from './components/ReminderEditor';

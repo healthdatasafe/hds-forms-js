@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import { DEFAULT_CONSENT_LABELS } from './consentLabels';
 
-export { DEFAULT_CONSENT_LABELS };
-
 /**
  * ConsentPanel — the one "this app wants these permissions, allow?" body that
  * every HDS consent surface renders.
