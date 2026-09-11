@@ -134,6 +134,7 @@ import { ConsentPanel } from 'hds-forms-js';
 
 <ConsentPanel
   app={{ name: app.name, icon: <img src={app.iconUrl} alt='' className='h-8 w-8 rounded-md' /> }}
+  title={`${app.name} would like to connect`}   // optional: defaults to app.name; `{app}` labels keep the plain name
   consentText={app.consentMessage?.en}
   permissions={[{ streamId: 'body-weight', level: 'read', name: 'Weight' }, { streamId: '*', level: 'manage' }]}
   expireAfterSeconds={3600}          // optional: renders the expiry notice

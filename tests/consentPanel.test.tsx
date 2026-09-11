@@ -57,6 +57,15 @@ describe('ConsentPanel', () => {
     expect((html.match(/disabled=""/g) ?? []).length).toBe(2);
   });
 
+  it('shows a custom title while `{app}` labels still use the plain name', () => {
+    const html = renderToStaticMarkup(
+      <ConsentPanel app={{ name: 'Mira' }} title='Mira would like to connect' permissions={perms} onAccept={noop} onRefuse={noop} />
+    );
+    expect(html).toContain('Mira would like to connect');
+    expect(html).toContain('Mira is requesting permission to:');
+    expect(html).not.toContain('would like to connect is requesting');
+  });
+
   it('renders a custom mismatch text and children above the buttons', () => {
     const html = renderToStaticMarkup(
       <ConsentPanel app={{ name: 'X' }} permissions={perms} mismatchWarning='Custom warning' onAccept={noop} onRefuse={noop}>

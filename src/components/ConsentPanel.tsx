@@ -52,8 +52,10 @@ export interface ConsentPanelLabels {
 
 
 export interface ConsentPanelProps {
-  /** Requesting app: name shown in the title, optional icon node before it. */
+  /** Requesting app: `name` is substituted into `{app}` labels and shown as the title unless `title` is given; optional icon node before it. */
   app: { name: string; icon?: ReactNode };
+  /** Title line, e.g. "Mira would like to connect". Defaults to `app.name`. */
+  title?: ReactNode;
   /** Optional consent text the requester wrote (rendered pre-line, not markdown). */
   consentText?: string | null;
   permissions: ConsentPermission[];
@@ -77,7 +79,7 @@ function fill (template: string, vars: Record<string, string | number>): string 
 }
 
 export function ConsentPanel ({
-  app, consentText, permissions, expireAfterSeconds, mismatchWarning, busy,
+  app, title, consentText, permissions, expireAfterSeconds, mismatchWarning, busy,
   children, onAccept, onRefuse, labels, className = ''
 }: ConsentPanelProps) {
   const lb: ConsentPanelLabels = { ...DEFAULT_CONSENT_LABELS, ...labels };
@@ -93,7 +95,7 @@ export function ConsentPanel ({
         )}
         <h2 className='mt-1 flex items-center gap-3 text-lg font-semibold tracking-tight'>
           {app.icon != null && <span className='shrink-0' aria-hidden>{app.icon}</span>}
-          <span>{app.name}</span>
+          <span>{title ?? app.name}</span>
         </h2>
       </header>
 
