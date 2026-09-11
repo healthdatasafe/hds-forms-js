@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.14.0] - 2026-09-11
 
 ### BREAKING — the variation choice is now passed into `eventTemplate()`
 

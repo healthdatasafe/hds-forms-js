@@ -111,14 +111,11 @@ export function QuestionnaireBuilder ({
   const model = getHDSModel();
   const allItemDefs = useMemo(() => model.itemsDefs.getAllActive(), [model]);
 
-  const [version, setVersion] = useState(0);
+  const [, setVersion] = useState(0);
   const refresh = useCallback(() => {
     setVersion((v) => v + 1);
     onDirty?.();
   }, [onDirty]);
-
-  // Force re-render on `version` even though we read from `questionnaire`.
-  void version;
 
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [newKeyDraft, setNewKeyDraft] = useState('');

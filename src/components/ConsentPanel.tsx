@@ -50,7 +50,6 @@ export interface ConsentPanelLabels {
   refusing: string;
 }
 
-
 export interface ConsentPanelProps {
   /** Requesting app: `name` is substituted into `{app}` labels and shown as the title unless `title` is given; optional icon node before it. */
   app: { name: string; icon?: ReactNode };
