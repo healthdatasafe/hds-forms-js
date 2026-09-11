@@ -40,7 +40,7 @@ export interface ItemDef {
    * streamId of the itemDef's canonical home — must be `streamId` or
    * descendant; throws otherwise.
    */
-  eventTemplate: (opts?: { context?: string }) => Record<string, unknown>;
+  eventTemplate: (opts?: { context?: string; eventType?: string }) => Record<string, unknown>;
   /**
    * Plan 46 D3 — D3-aware event matching. Returns true if the event resolves
    * to this itemDef via the parent walk-up resolution rule.
@@ -64,7 +64,11 @@ export interface JsonFormForItemDefResult {
 
 // --- Functions ---
 
-export function jsonFormForItemDef (itemDef: ItemDef, opts: { context?: string } = {}): JsonFormForItemDefResult {
+/**
+ * @param opts.eventType — required for an itemDef declaring `variations.eventType`
+ *   (hds-lib 2.0.0: `eventTemplate()` refuses to guess which variation is meant).
+ */
+export function jsonFormForItemDef (itemDef: ItemDef, opts: { context?: string; eventType?: string } = {}): JsonFormForItemDefResult {
   const jsonFrom = _jsonFormForItemDef(itemDef);
 
   function eventDataForFormData (formData: Record<string, unknown>): Record<string, unknown> | null {
@@ -73,7 +77,10 @@ export function jsonFormForItemDef (itemDef: ItemDef, opts: { context?: string }
       const status = jsonFrom.processData(copyFormData);
       if (status.createEvent === false) return null;
     }
-    const eventData = itemDef.eventTemplate(opts.context ? { context: opts.context } : undefined);
+    const eventData = itemDef.eventTemplate({
+      ...(opts.context ? { context: opts.context } : {}),
+      ...(opts.eventType ? { eventType: opts.eventType } : {})
+    });
     Object.assign(eventData, copyFormData);
     return eventData;
   }

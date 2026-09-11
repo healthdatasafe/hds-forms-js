@@ -2,6 +2,32 @@
 
 ## [Unreleased]
 
+### BREAKING — the variation choice is now passed into `eventTemplate()`
+
+Requires **hds-lib 2.0.0**, where `eventTemplate()` throws rather than silently returning
+`eventTypes[0]` for an item declaring `variations.eventType`
+([hds-lib-js#13](https://github.com/healthdatasafe/hds-lib-js/issues/13)). For those items the
+option **is** the stored unit, so a weight entered in pounds was written as kilograms with nothing
+failing.
+
+- **`formDataToActions` and `formDataToEventBatch` now agree.** Both read
+  `formData['<key>__eventType']` and pass it *into* `eventTemplate()`. `formDataToActions`
+  previously overrode `template.type` afterwards, and `formDataToEventBatch` ignored the choice
+  entirely, so the two produced different event types from identical input. That divergence was the
+  third item in the issue.
+- **`jsonFormForItemDef` accepts `opts.eventType`** and forwards it.
+- **A variation item with no choice now throws** instead of quietly writing the first declared
+  option. Callers that build form data themselves must supply `<key>__eventType`.
+
+### Fixed — the unit selector no longer renders blank
+
+`HDSFormSection` never initialised `<key>__eventType`, so the variation `<Select>` rendered with
+`value={undefined}` until the user touched it, and submitting without touching it stored the first
+declared option. It is now seeded from `getPreferredInput(key).eventType`, which is the user's
+resolved preference (per-item setting, then `unitSystem`, then the first option). This is also what
+keeps the throw above off the UI path: the form knows the preference, so it states the choice
+explicitly rather than leaving the primitive to guess.
+
 ### Changed
 
 - **`backloop.dev` now installs from GitHub instead of npm** (2026-09-07). The service stopped

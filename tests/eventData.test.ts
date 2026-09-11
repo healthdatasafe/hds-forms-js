@@ -122,10 +122,21 @@ function makeVariationItemDef (streamId: string, options: Array<{ value: string;
         }
       }
     } as any,
-    eventTemplate: () => ({
-      streamIds: [streamId],
-      type: options[0].value // default to first option
-    })
+    // Mirrors the real hds-lib 2.0.0 contract: a variation item refuses to guess.
+    // This mock used to hardcode options[0], which is exactly the bug in issue #13,
+    // so a test asserting the override passed even when the override was ignored.
+    eventTemplate: (opts: { context?: string; eventType?: string } = {}) => {
+      const values = options.map((o: any) => o.value);
+      if (opts.eventType == null) {
+        throw new Error(
+          `eventTemplate: item declares variations.eventType and requires an explicit choice. Pass one of: ${values.join(', ')}.`
+        );
+      }
+      if (!values.includes(opts.eventType)) {
+        throw new Error(`eventTemplate: "${opts.eventType}" is not a declared variation.`);
+      }
+      return { streamIds: [streamId], type: opts.eventType };
+    }
   };
 }
 
@@ -222,6 +233,18 @@ describe('ratio/generic select object content (#6)', () => {
 });
 
 describe('formDataToActions — variations', () => {
+  // Issue #13: without a choice the old code silently wrote the first declared
+  // option, so a weight entered in pounds was stored as kilograms.
+  it('throws rather than guessing when no __eventType is supplied', () => {
+    const itemDef = makeVariationItemDef('body', [
+      { value: 'mass/kg', label: { en: 'kg' } },
+      { value: 'mass/lb', label: { en: 'lb' } }
+    ]);
+    const itemDefs = [{ key: 'weight', itemDef }];
+    expect(() => formDataToActions(itemDefs, { weight: 155 }, {}, 1000))
+      .toThrow(/requires an explicit choice/);
+  });
+
   it('uses __eventType override for create', () => {
     const itemDef = makeVariationItemDef('body', [
       { value: 'mass/kg', label: { en: 'kg' } },
@@ -250,22 +273,11 @@ describe('formDataToActions — variations', () => {
     expect(actions[0].params.update.type).toBe('mass/kg');
   });
 
-  it('defaults to template type when no __eventType', () => {
-    const itemDef = makeVariationItemDef('body', [
-      { value: 'mass/kg', label: { en: 'kg' } },
-      { value: 'mass/lb', label: { en: 'lb' } }
-    ]);
-    const itemDefs = [{ key: 'weight', itemDef }];
-    const formData = { weight: 70 };
-    const actions = formDataToActions(itemDefs, formData, {}, 1000);
-    expect(actions[0].params.type).toBe('mass/kg'); // first option = template default
-  });
-
+  // Was written against a variation item, which can no longer reach this state:
+  // a variation item with no choice throws. The assertion is about update
+  // semantics (type is set only when explicitly chosen), so it moves to a plain item.
   it('does not include type in update when no __eventType', () => {
-    const itemDef = makeVariationItemDef('body', [
-      { value: 'mass/kg', label: { en: 'kg' } },
-      { value: 'mass/lb', label: { en: 'lb' } }
-    ]);
+    const itemDef = makeItemDef({ eventType: 'mass/kg', streamId: 'body' });
     const itemDefs = [{ key: 'weight', itemDef }];
     const formData = { weight: 70 };
     const actions = formDataToActions(itemDefs, formData, { weight: 'e1' }, 1000);
@@ -277,7 +289,7 @@ describe('formDataToActions — variations', () => {
       { value: 'mass/kg', label: { en: 'kg' } }
     ]);
     const itemDefs = [{ key: 'weight', itemDef }];
-    const formData = { weight: 70 };
+    const formData = { weight: 70, weight__eventType: 'mass/kg' };
     const actions = formDataToActions(itemDefs, formData, { weight: 'e1' }, 1234);
     expect(actions[0].action).toBe('update');
     expect(actions[0].params.update.time).toBe(1234);
@@ -288,7 +300,7 @@ describe('formDataToActions — variations', () => {
       { value: 'mass/kg', label: { en: 'kg' } }
     ]);
     const itemDefs = [{ key: 'weight', itemDef }];
-    const formData = { weight: 70 };
+    const formData = { weight: 70, weight__eventType: 'mass/kg' };
     const actions = formDataToActions(itemDefs, formData, { weight: 'e1' });
     expect(actions[0].action).toBe('update');
     expect(actions[0].params.update.time).toBeUndefined();

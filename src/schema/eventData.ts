@@ -131,9 +131,16 @@ export function formDataToActions (
     const value = formData[key];
     const existingId = existingEventIds[key];
     const ctx = contexts?.[key];
-    const template = itemDef.eventTemplate(ctx ? { context: ctx } : undefined);
-    // Use variation override from formData if present, otherwise default template type
-    const eventType = formData[`${key}__eventType`] || template.type as string;
+    // The variation choice goes INTO eventTemplate, not over its result: since
+    // hds-lib 2.0.0 a bare call on a variation item throws rather than silently
+    // returning eventTypes[0] (issue #13). HDSFormSection seeds
+    // `<key>__eventType` from the user's preference, so it is present on the UI path.
+    const chosen = formData[`${key}__eventType`];
+    const template = itemDef.eventTemplate({
+      ...(ctx ? { context: ctx } : {}),
+      ...(chosen ? { eventType: chosen as string } : {})
+    });
+    const eventType = template.type as string;
 
     // activity/plain: checkbox true = create/keep, false/undefined = delete if exists
     if (eventType === 'activity/plain') {
@@ -219,7 +226,14 @@ export function formDataToEventBatch (
     if (value === undefined || value === null) continue;
 
     const ctx = contexts?.[key];
-    const template = itemDef.eventTemplate(ctx ? { context: ctx } : undefined);
+    // Honours the same `<key>__eventType` override as formDataToActions. The two
+    // disagreeing on the same input was the third item in issue #13: this path
+    // ignored the choice and wrote the first declared option.
+    const chosen = formData[`${key}__eventType`];
+    const template = itemDef.eventTemplate({
+      ...(ctx ? { context: ctx } : {}),
+      ...(chosen ? { eventType: chosen as string } : {})
+    });
     const eventType = template.type as string;
 
     // activity/plain expects null content; checkbox true = create event, false = skip

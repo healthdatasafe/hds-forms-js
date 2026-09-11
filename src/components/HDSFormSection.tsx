@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getHDSModel, localizeText, appTemplates } from 'hds-lib';
+import { getHDSModel, localizeText, appTemplates, getPreferredInput } from 'hds-lib';
 import { HDSFormField } from './HDSFormField';
 import { Select } from './fields/Select';
 import { EntryList } from './EntryList';
@@ -47,15 +47,44 @@ function todayString (): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * Seed `<key>__eventType` for every variation item that has no choice yet.
+ *
+ * hds-lib 2.0.0 makes `eventTemplate()` throw rather than silently return
+ * `eventTypes[0]` for a variation item (issue #13: a weight entered in pounds was
+ * stored as kilograms). The form is the layer that knows the user's preference, so
+ * it states the choice explicitly instead of leaving the primitive to guess.
+ *
+ * This also fixes the selector rendering blank: `__eventType` was never
+ * initialised, so the unit `<Select>` had `value={undefined}` until the user
+ * touched it, and submitting without touching it silently stored the first
+ * declared option.
+ *
+ * Module-level so the effect below can depend on it without re-seeding every render.
+ */
+function seedVariations (base: Record<string, any>, itemKeys: string[], model: any): Record<string, any> {
+  const seeded = { ...base };
+  for (const key of itemKeys) {
+    if (seeded[`${key}__eventType`] != null) continue;
+    const itemDef = model.itemsDefs.forKey(key, false);
+    if (!itemDef?.data?.variations?.eventType) continue;
+    const preferred = getPreferredInput(key)?.eventType;
+    seeded[`${key}__eventType`] = preferred ?? itemDef.data.variations.eventType.options?.[0]?.value;
+  }
+  return seeded;
+}
+
 export function HDSFormSection ({ section, values: initialValues, onSubmit, onDateChange, disabled, submitLabel, entries, onEditEntry, onDeleteEntry }: HDSFormSectionProps) {
-  const [formValues, setFormValues] = useState<Record<string, any>>(initialValues || {});
+  const model = getHDSModel();
+  const [formValues, setFormValues] = useState<Record<string, any>>(
+    () => seedVariations(initialValues || {}, section.itemKeys, model)
+  );
   const [entryDate, setEntryDate] = useState<string>(todayString());
 
   // Sync form values when initialValues prop changes (e.g. date change triggers new prefill)
   useEffect(() => {
-    setFormValues(initialValues || {});
-  }, [initialValues]);
-  const model = getHDSModel();
+    setFormValues(seedVariations(initialValues || {}, section.itemKeys, model));
+  }, [initialValues, section.itemKeys, model]);
   const isRecurring = section.type === 'recurring';
 
   function handleFieldChange (key: string, value: any) {
