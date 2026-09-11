@@ -123,6 +123,34 @@ The resulting event uses the descendant streamId (`procedure-fertility`) instead
 
 Renders a typeahead search field bound to a remote dataset endpoint (e.g. `datasets-service`'s `/medication`, `/treatment`, `/procedure`). On selection, populates the host item's payload (`drug` / `regimen` / `procedure`) and any companion fields (`intake.{doseValue, doseUnit, route}`, procedure `findings[]`, free-text `notes`). Companion fields render inline.
 
+### `<ConsentPanel>`
+
+The one consent body for "this app wants these permissions, allow?". Pure presentational: no
+fetch, no router, no global state. Wrap it in your own frame (a modal, a card in an auth flow) and
+wire the side effects on `onAccept` / `onRefuse`.
+
+```tsx
+import { ConsentPanel } from 'hds-forms-js';
+
+<ConsentPanel
+  app={{ name: app.name, icon: <img src={app.iconUrl} alt='' className='h-8 w-8 rounded-md' /> }}
+  consentText={app.consentMessage?.en}
+  permissions={[{ streamId: 'body-weight', level: 'read', name: 'Weight' }, { streamId: '*', level: 'manage' }]}
+  expireAfterSeconds={3600}          // optional: renders the expiry notice
+  mismatchWarning                    // optional: `true` for the default text, or a string
+  busy={submitting && 'accepting'}   // disables both buttons, swaps the label
+  onAccept={accept}
+  onRefuse={refuse}
+  labels={{ requesting: t('consent.requesting'), accept: t('common.accept'), refuse: t('common.reject') }}
+>
+  {error && <p className='text-red-600'>{error}</p>}   {/* optional content above the buttons */}
+</ConsentPanel>
+```
+
+Permissions follow Pryv's shape (`streamId`, `level`, optional `name` / `defaultName`); the wildcard
+`'*'` renders as `labels.streamAll`. Every label has an English default (`DEFAULT_CONSENT_LABELS`);
+`{app}` and `{seconds}` placeholders are substituted. Set `eyebrow` or `footnote` to `''` to hide them.
+
 ### `<EntryList>`
 
 Displays a compact table of recurring entries. Used internally by `HDSFormSection` but also exported for custom layouts.

@@ -28,6 +28,15 @@ resolved preference (per-item setting, then `unitSystem`, then the first option)
 keeps the throw above off the UI path: the form knows the preference, so it states the choice
 explicitly rather than leaving the primitive to guess.
 
+### Added
+
+- **`<ConsentPanel>`** — the shared "this app wants these permissions, allow?" body used by every
+  HDS consent surface (bridge connections in hds-webapp, access requests in the account app).
+  Pure presentational: app identity, optional consent text, permission rows with level icons,
+  expiry notice, mismatch warning, Refuse / Allow. Consumers supply the frame (modal, card) and
+  the side effects; every label is overridable through `labels` for i18n. Styled with stock
+  Tailwind plus the `primary` scale from `css/tokens.css`, so it renders the same in both apps.
+
 ### Changed
 
 - **`backloop.dev` now installs from GitHub instead of npm** (2026-09-07). The service stopped
