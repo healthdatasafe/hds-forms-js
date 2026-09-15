@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.15.0] - 2026-09-15
+
+### Changed
+- **`ConsentPanel`'s `consentText` accepts a `ReactNode`, not just a `string`.**
+
+  It is the only part of the panel the requesting app writes, and the only place
+  a user learns in their own words what an app will do with their data — the rest
+  of the screen is an app id and canonical stream names. It is markdown by
+  convention, so a `string`-only prop forced consumers to either show the raw
+  source or drop the message.
+
+  A string still renders pre-line exactly as before; a node renders as given, and
+  the `whitespace-pre-line` class is applied only for strings so a node's own
+  block structure is not double-spaced. Rendering stays the consumer's job
+  deliberately: this text is untrusted, so the panel must never be handed raw
+  HTML to inject.
+
+  Widened while fixing `B-2026-09-15-3`, where a consent screen had stopped
+  passing the message at all. Backward compatible — `string` is a `ReactNode`,
+  and the one existing consumer passing a plain string is unaffected.
+
+  Adds four tests, including that the message renders **before** the permission
+  list. Reading order is the requirement, not merely presence: what the app says
+  it will do, then the technical breakdown it introduces.
+
 ## [0.14.0] - 2026-09-11
 
 ### BREAKING — the variation choice is now passed into `eventTemplate()`

@@ -55,8 +55,18 @@ export interface ConsentPanelProps {
   app: { name: string; icon?: ReactNode };
   /** Title line, e.g. "Mira would like to connect". Defaults to `app.name`. */
   title?: ReactNode;
-  /** Optional consent text the requester wrote (rendered pre-line, not markdown). */
-  consentText?: string | null;
+  /**
+   * Optional consent text the requester wrote — the app's own explanation of
+   * what it will do with the data, and the only part of this panel not written
+   * by HDS.
+   *
+   * A **string** renders pre-line, as before. A **node** renders as given, so a
+   * consumer that already parses the message (markdown, say) can pass elements
+   * instead of losing the formatting. Rendering is left to the consumer on
+   * purpose: this text is supplied by the requesting app and is therefore
+   * untrusted, so the panel must never be handed raw HTML to inject.
+   */
+  consentText?: ReactNode;
   permissions: ConsentPermission[];
   /** Renders the expiry notice when set. */
   expireAfterSeconds?: number | null;
@@ -99,7 +109,13 @@ export function ConsentPanel ({
       </header>
 
       {consentText != null && consentText !== '' && (
-        <div className='mb-4 whitespace-pre-line rounded-lg bg-gray-100 p-4 dark:bg-gray-800'>{consentText}</div>
+        <div
+          className={`mb-4 rounded-lg bg-gray-100 p-4 dark:bg-gray-800${
+            typeof consentText === 'string' ? ' whitespace-pre-line' : ''
+          }`}
+        >
+          {consentText}
+        </div>
       )}
 
       <p className='font-medium'>{fill(lb.requesting, { app: app.name })}</p>
