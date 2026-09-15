@@ -119,6 +119,39 @@ Sections can pin an item to a descendant stream via `itemCustomizations[itemKey]
 
 The resulting event uses the descendant streamId (`procedure-fertility`) instead of the item's default parent (`procedure`). `forEvent()` walks back up to resolve the original itemDef. Cross-subtree contexts are rejected. See data-model `documentation/TREATMENT-PROCEDURE.md` for the design rationale.
 
+#### Pinned datasource concepts
+
+A `datasource-search` item normally asks the respondent to find the concept themselves. For an intake question the concept is already known and only the companion fields are being asked for — "how many IVF cycles have you had?" is one number, not a search. `itemCustomizations[itemKey].pin` fixes the concept:
+
+```tsx
+<HDSFormSection
+  section={{
+    type: 'permanent',
+    itemKeys: ['treatment-coded'],
+    itemCustomizations: {
+      'treatment-coded': {
+        context: 'treatment-fertility',
+        pin: {
+          datasource: 'treatment',
+          value: {            // the datasource's valueFields, as a selection would have produced
+            label: { en: 'In vitro fertilization' },
+            codes: [{ system: 'SNOMED', code: '63487001' }],
+            hdsId: 'hds:treatment:ivf'
+          }
+        }
+      }
+    }
+  }}
+  onSubmit={...}
+/>
+```
+
+The search box is replaced by the concept as static text, companion fields render as usual, and any companion sub-key the concept pre-fills is locked — the respondent did not choose it. A pinned field emits its value on mount, so an untouched question still submits the concept.
+
+`pin.datasource` must equal the item's own datasource; a mismatch renders a visible error rather than falling back to the search box, since a silent fallback is indistinguishable from a missing pin.
+
+The pin stores the resolved concept rather than an id because datasets-service has no lookup-by-id route, and because storing it makes a pinned answer byte-identical to a searched-for one. The concept id travels inside the snapshot (`hdsId` is a `valueField` on every datasource). See `src/schema/itemPin.ts`.
+
 ### `<DatasetSearch>`
 
 Renders a typeahead search field bound to a remote dataset endpoint (e.g. `datasets-service`'s `/medication`, `/treatment`, `/procedure`). On selection, populates the host item's payload (`drug` / `regimen` / `procedure`) and any companion fields (`intake.{doseValue, doseUnit, route}`, procedure `findings[]`, free-text `notes`). Companion fields render inline.

@@ -8,6 +8,7 @@ import { Select } from './fields/Select';
 import { MultiSelect } from './fields/MultiSelect';
 import { Composite } from './fields/Composite';
 import { DatasetSearch } from './fields/DatasetSearch';
+import type { ItemPin } from '../schema/itemPin';
 import { Convertible } from './fields/Convertible';
 import { Slider } from './fields/Slider';
 
@@ -38,6 +39,11 @@ interface HDSFormFieldProps {
    *   with its source. The single shared input is bound to all of them.
    */
   labelOverrides?: FieldLabelOverrides | FieldLabelOverridesWithSource[];
+  /**
+   * Optional pinned datasource concept (`itemCustomizations[itemKey].pin`).
+   * Only `datasource-search` items read it; ignored for every other type.
+   */
+  pin?: ItemPin;
 }
 
 function sourceCaption (source?: appTemplates.ItemLabelSource): string {
@@ -51,7 +57,7 @@ function sourceCaption (source?: appTemplates.ItemLabelSource): string {
   return parts.join(' · ');
 }
 
-export function HDSFormField ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides }: HDSFormFieldProps) {
+export function HDSFormField ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin }: HDSFormFieldProps) {
   const overrideArray: FieldLabelOverridesWithSource[] | undefined = Array.isArray(labelOverrides)
     ? labelOverrides
     : undefined;
@@ -80,6 +86,7 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
                 required={required}
                 disabled={disabled}
                 labelOverrides={{ question: ov.question, description: ov.description, options: ov.options }}
+                pin={pin}
               />
             </div>
           );
@@ -165,7 +172,7 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
     case 'datasource-search': {
       const dsKey = (itemData as any).datasource;
       const eventType = (itemData as any).eventType;
-      return <DatasetSearch {...baseProps} datasource={dsKey} eventType={eventType} />;
+      return <DatasetSearch {...baseProps} datasource={dsKey} eventType={eventType} pin={pin} />;
     }
     case 'convertible': {
       const converterEngine = (itemData as any)['converter-engine'];
