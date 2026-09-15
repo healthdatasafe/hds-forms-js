@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.16.0] - 2026-09-15
+
+### Added
+- **`itemCustomizations[itemKey].pin` — fix a `datasource-search` item's concept so an intake question renders a field instead of a search box.**
+
+  An intake form asking "how many IVF cycles have you had?" wants one numeric
+  field. The model's answer is `treatment-coded` at context `treatment-fertility`
+  with the regimen pinned to IVF and `count: N` — but the form engine could not
+  express the pin, so the respondent was shown a concept search box and had to
+  find "In vitro fertilization" themselves before the count field appeared.
+
+  A pinned field renders the concept as static text, shows the companion fields,
+  and locks whichever companion sub-keys the concept pre-fills. It emits its
+  value on mount, so a question nobody touches still submits the concept.
+
+  The pin carries the resolved concept, not just an id: datasets-service exposes
+  only `?search=` and `/sources`, with no lookup-by-id route, so an id-only pin
+  would need a new endpoint and a deploy before any form could use it. Storing
+  the concept also makes a pinned answer byte-identical to a searched-for one,
+  and the id still travels inside it (`hdsId` is a `valueField` on every
+  datasource). The tradeoff is that a pin does not follow an upstream
+  relabelling — the same staleness every already-submitted event carries.
+
+  A `pin.datasource` that disagrees with the item's own datasource renders a
+  visible error instead of falling back to the search box: a silent fallback
+  looks exactly like "the author forgot to pin", so the mistake would ship as a
+  working-but-wrong form.
+
+  New: `ItemPin`, `asItemPin()`, `pinDisplayLabel()`, `buildPinnedValue()`.
+  Backward compatible — no pin means the previous behaviour, unchanged. Adds 15
+  tests. Closes the `hds-forms-js` entry in `_plans/TODO-ASAP.md`.
+
 ## [0.15.0] - 2026-09-15
 
 ### Changed

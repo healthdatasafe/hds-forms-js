@@ -4,6 +4,7 @@ import { HDSFormField } from './HDSFormField';
 import { Select } from './fields/Select';
 import { EntryList } from './EntryList';
 import type { SectionEntry } from '../types';
+import { asItemPin } from '../schema/itemPin';
 
 const l = localizeText;
 
@@ -142,6 +143,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
 
         const variations = itemDef.data?.variations?.eventType;
         const labelOverrides = section.itemCustomizations?.[key]?.labels;
+        const pin = asItemPin(section.itemCustomizations?.[key]?.pin);
 
         return (
           <div key={key} className='space-y-2'>
@@ -152,6 +154,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
               onChange={(v) => handleFieldChange(key, v)}
               disabled={disabled}
               labelOverrides={labelOverrides}
+              pin={pin}
             />
             {variations && (
               <Select

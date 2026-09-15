@@ -63,8 +63,12 @@ export {
 // Companion field utilities (datasource-search)
 export { getCompanionSchema, extractCompanionDefaults, getEnumLabel, keyToLabel } from './schema/companionFields';
 
+// Pinned datasource concepts (itemCustomizations[itemKey].pin)
+export { asItemPin, pinDisplayLabel, buildPinnedValue } from './schema/itemPin';
+
 // Types
 export type { ItemData, JSONSchema } from './schema/schemas';
 export type { ItemDef, ItemDefData, JsonFormForItemDefResult } from './schema/itemDefToSchema';
 export type { FieldProps, SectionEntry } from './types';
 export type { CompanionSchema, CompanionProperty } from './schema/companionFields';
+export type { ItemPin } from './schema/itemPin';

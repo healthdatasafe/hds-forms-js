@@ -1,6 +1,6 @@
 {
   "name": "hds-forms-js",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "HDS Form Components \u2014 React field renderers for HDS item definitions",
   "type": "module",
   "main": "js/hds-forms.js",

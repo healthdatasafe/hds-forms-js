@@ -2,12 +2,20 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { getHDSModel, localizeText } from 'hds-lib';
 import type { FieldProps } from '../../types';
 import { getCompanionSchema, extractCompanionDefaults, getEnumLabel, keyToLabel } from '../../schema/companionFields';
+import { buildPinnedValue, pinDisplayLabel } from '../../schema/itemPin';
+import type { ItemPin } from '../../schema/itemPin';
 
 const l = localizeText;
 
 interface DatasetSearchProps extends FieldProps {
   datasource: string;
   eventType?: string;
+  /**
+   * Concept fixed by the form author. When set, the search box is replaced by
+   * the concept rendered as a static label and only the companion fields are
+   * asked for. See `schema/itemPin.ts`.
+   */
+  pin?: ItemPin;
 }
 
 /** Resolve a display field name — handles both plain string and LocalizableText */
@@ -107,10 +115,17 @@ function CompanionFields ({ schema, value, onChange, readonlyKeys }: { schema: a
   );
 }
 
-export function DatasetSearch ({ label, description, value, onChange, required, disabled, datasource, eventType }: DatasetSearchProps) {
+export function DatasetSearch ({ label, description, value, onChange, required, disabled, datasource, eventType, pin }: DatasetSearchProps) {
   const config = getHDSModel().datasources.forKey(datasource)!;
   const minQueryLength = config.minQueryLength || 3;
   const companionSchema = useMemo(() => getCompanionSchema(eventType), [eventType]);
+
+  // A pin naming a different datasource than the item is a form-authoring
+  // error. Render it, rather than falling back to the search box: a silent
+  // fallback looks exactly like "the author forgot to pin", so the mistake
+  // would ship as a working-but-wrong form.
+  const pinMismatch = pin != null && pin.datasource !== datasource;
+  const activePin = pin != null && !pinMismatch ? pin : undefined;
 
   // Extract drug selection and companion data from value
   // Handle both new format {drug: {...}, intake: {...}} and legacy flat format {label, codes, route, ...}
@@ -128,6 +143,13 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
   const initialDrugRef = useRef<any>(drugValue);
   const isEditMode = initialDrugRef.current != null;
 
+  // Pinned mode: the concept is fixed by the form author. It renders like edit
+  // mode (static label, companion fields only), but unlike edit mode there may
+  // be no value yet — the effect below seeds it so an untouched field still
+  // submits the concept.
+  const pinnedDrug = activePin?.value;
+  const effectiveDrug = drugValue ?? pinnedDrug;
+
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -137,9 +159,12 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
   // Track which companion sub-keys were pre-filled from datasource (readonly)
   // In edit mode, derive from the drug object itself
   const [prefilledKeys, setPrefilledKeys] = useState<Record<string, Set<string>>>(() => {
-    if (!isEditMode || !companionSchema || !initialDrugRef.current) return {};
+    // Both edit mode and pinned mode start from a concept the respondent did
+    // not pick, so whatever that concept pre-fills is locked either way.
+    const source = isEditMode ? initialDrugRef.current : pinnedDrug;
+    if (!source || !companionSchema) return {};
     const locked: Record<string, Set<string>> = {};
-    const prefilled = extractCompanionDefaults(companionSchema, initialDrugRef.current);
+    const prefilled = extractCompanionDefaults(companionSchema, source);
     for (const [companionKey, obj] of Object.entries(prefilled)) {
       if (obj && typeof obj === 'object') {
         locked[companionKey] = new Set(Object.keys(obj));
@@ -173,6 +198,24 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Seed a pinned field that has no value yet.
+  //
+  // Without this a respondent who fills in only the companion fields — or who
+  // submits a pin-only question untouched — would store nothing, because the
+  // concept was never "selected". The pin IS the selection, so it is emitted
+  // as soon as the field mounts. Runs once: the guard is the value itself, so
+  // a later clear by other means does not re-seed behind the user.
+  const pinSeededRef = useRef(false);
+  useEffect(() => {
+    if (!activePin || pinSeededRef.current) return;
+    if (drugValue != null) {
+      pinSeededRef.current = true;
+      return;
+    }
+    pinSeededRef.current = true;
+    onChange(buildPinnedValue(activePin, eventType));
+  }, [activePin, drugValue, eventType, onChange]);
 
   const doSearch = useCallback(async (text: string) => {
     if (text.length < minQueryLength) {
@@ -284,7 +327,10 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
   function handleCompanionChange (companionKey: string, companionValue: any) {
     const newCompanions = { ...companionValues, [companionKey]: companionValue };
     if (companionValue === undefined) delete newCompanions[companionKey];
-    emitValue(drugValue, newCompanions);
+    // effectiveDrug, not drugValue: on a pinned field the respondent may edit a
+    // companion before the seeding effect has landed, and emitting drugValue
+    // there would write the companion with no concept attached.
+    emitValue(effectiveDrug, newCompanions);
   }
 
   const labelField = resolveFieldName(config.displayFields.label);
@@ -298,6 +344,12 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
     return typeof drugLabel === 'object' ? (l(drugLabel) || '') : String(drugLabel || '');
   }, [isEditMode, drugValue, config.displayFields.label]);
 
+  // Pinned and edit mode both render the concept as static text. Edit mode
+  // reads it off the stored value; a pin reads it off the pin, which is what
+  // makes it work before anything has been stored.
+  const staticLabel = activePin ? pinDisplayLabel(activePin) : editDrugLabel;
+  const showStaticConcept = activePin != null || isEditMode;
+
   return (
     <div ref={containerRef} className='relative'>
       <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
@@ -305,11 +357,17 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
       </label>
       {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
 
-      {isEditMode
+      {pinMismatch && (
+        <div className='rounded-lg border border-red-300 bg-red-50 p-2.5 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300'>
+          Pinned concept belongs to datasource &quot;{pin?.datasource}&quot;, but this field searches &quot;{datasource}&quot;. Fix the form&apos;s itemCustomizations.
+        </div>
+      )}
+
+      {!pinMismatch && (showStaticConcept
         ? (
-          /* Edit mode: show drug name as static text, no search */
+          /* Pinned or edit mode: show the concept as static text, no search */
           <div className='block w-full rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'>
-            {editDrugLabel}
+            {staticLabel}
           </div>
           )
         : (
@@ -396,9 +454,9 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
               </ul>
             )}
           </>
-          )}
+          ))}
 
-      {drugValue && companionSchema && companionSchema.companions.map(({ key, schema }) => {
+      {effectiveDrug && companionSchema && companionSchema.companions.map(({ key, schema }) => {
         if (schema?.type === 'object') {
           return (
             <div key={key} className='mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700'>
