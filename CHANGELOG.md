@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.16.1] - 2026-09-18
+
+### Changed
+
+- **`hds-lib` 2.0.0 → 2.5.0.** Part of the 2026-09-18 workspace-wide sweep: `hds-lib` had drifted
+  across the workspace from 0.6.0 to 2.5.0, and the lockfile was the only thing pinning it here.
+
+  hds-lib **2.0.0**'s single breaking change narrowed `HDSItemDef.eventTemplate()` to refuse
+  guessing which declared variation the caller meant, and it reaches only the four items that
+  declare variations (`body-weight`, `body-height`, `body-blood-serum-glucose-fasting`,
+  `profile-avatar`). This package has no `eventTemplate()` call site, so it is not affected.
+  Everything else across 1.x → 2.x is additive.
+
+  Gate: tsc clean, eslint clean, 123 tests passing.
+
 ## [0.16.0] - 2026-09-15
 
 ### Added
