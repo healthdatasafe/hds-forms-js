@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { DEFAULT_CONSENT_LABELS } from './consentLabels';
 
@@ -43,11 +44,33 @@ export interface ConsentPanelLabels {
   expiresAfter: string;
   /** Warning shown when `mismatchWarning` is true and no custom text is given. */
   mismatchWarning: string;
+  /** Suffix marking a permission the user cannot leave out. */
+  required: string;
   accept: string;
   refuse: string;
   /** Button labels while `busy`. */
   accepting: string;
   refusing: string;
+}
+
+/**
+ * Per-permission consent annotations, as `pryv` 3.12.0's `authRequest.consent` sidecar
+ * carries them. Ids are a stream permission's `streamId` or a feature permission's `feature`.
+ *
+ * Absent (the default) keeps the all-or-nothing behaviour every existing caller relies on.
+ */
+export interface ConsentAnnotations {
+  /** false (default): accept the whole set or deny. true: the user may choose. */
+  allowUserChoice?: boolean;
+  /** Ids the user cannot leave out; rendered checked and locked. */
+  mandatory?: string[];
+  /** Ids offered NOT pre-selected, so the user has to opt in. */
+  optIn?: string[];
+}
+
+/** The id an annotation refers to: a stream permission's streamId, or a feature's name. */
+export function permissionId (p: ConsentPermission): string {
+  return (p as { feature?: string }).feature ?? p.streamId;
 }
 
 export interface ConsentPanelProps {
@@ -76,8 +99,17 @@ export interface ConsentPanelProps {
   busy?: boolean | 'accepting' | 'refusing';
   /** Optional error / extra content rendered above the buttons. */
   children?: ReactNode;
-  onAccept: () => void;
+  /**
+   * Accept. With a selectable list the granted subset is passed; without one it is called with
+   * no argument, so existing callers are unaffected.
+   */
+  onAccept: (granted?: ConsentPermission[]) => void;
   onRefuse: () => void;
+  /**
+   * Consent-form annotations. When `allowUserChoice` is true the list becomes selectable and
+   * `onAccept` receives the granted subset; otherwise the panel behaves exactly as before.
+   */
+  consent?: ConsentAnnotations | null;
   /** Override any default English label (for i18n). */
   labels?: Partial<ConsentPanelLabels>;
   className?: string;
@@ -89,8 +121,26 @@ function fill (template: string, vars: Record<string, string | number>): string 
 
 export function ConsentPanel ({
   app, title, consentText, permissions, expireAfterSeconds, mismatchWarning, busy,
-  children, onAccept, onRefuse, labels, className = ''
+  children, onAccept, onRefuse, consent, labels, className = ''
 }: ConsentPanelProps) {
+  const selectable = consent?.allowUserChoice === true;
+  const mandatory = useMemo(() => new Set(consent?.mandatory ?? []), [consent?.mandatory]);
+  const optIn = useMemo(() => new Set(consent?.optIn ?? []), [consent?.optIn]);
+  // Initial selection: mandatory and plain entries in, opt-in entries out.
+  const [granted, setGranted] = useState<Set<string>>(
+    () => new Set(permissions.map(permissionId).filter((id) => !optIn.has(id) || mandatory.has(id)))
+  );
+  const toggle = (id: string): void => {
+    if (mandatory.has(id)) return;
+    setGranted((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const acceptSelection = (): void => {
+    onAccept(selectable ? permissions.filter((p) => granted.has(permissionId(p))) : undefined);
+  };
   const lb: ConsentPanelLabels = { ...DEFAULT_CONSENT_LABELS, ...labels };
   const isBusy = !!busy;
   const levelLabel = (level: ConsentPermissionLevel): string =>
@@ -125,12 +175,25 @@ export function ConsentPanel ({
           <ul className='mt-3 space-y-2'>
             {permissions.map((p, i) => (
               <li key={`${p.streamId}-${i}`} className='flex items-start gap-3 rounded-lg border border-gray-200 px-3 py-2.5 dark:border-gray-700'>
+                {selectable && (
+                  <input
+                    type='checkbox'
+                    className='mt-0.5'
+                    checked={granted.has(permissionId(p))}
+                    disabled={isBusy || mandatory.has(permissionId(p))}
+                    aria-label={p.name ?? p.defaultName ?? p.streamId}
+                    onChange={() => toggle(permissionId(p))}
+                  />
+                )}
                 <LevelIcon level={p.level} />
                 <div className='flex-1 leading-snug'>
                   <span className='text-gray-500 dark:text-gray-400'>{levelLabel(p.level)}</span>{' '}
                   <span className='break-all font-semibold'>
                     {p.streamId === '*' ? lb.streamAll : (p.name ?? p.defaultName ?? p.streamId)}
                   </span>
+                  {selectable && mandatory.has(permissionId(p)) && (
+                    <span className='ml-2 text-xs text-gray-500 dark:text-gray-400'>{lb.required}</span>
+                  )}
                 </div>
               </li>
             ))}
@@ -162,8 +225,8 @@ export function ConsentPanel ({
         </button>
         <button
           type='button'
-          onClick={onAccept}
-          disabled={isBusy}
+          onClick={acceptSelection}
+          disabled={isBusy || (selectable && granted.size === 0)}
           className='inline-flex min-h-11 items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-50'
         >
           {busy === true || busy === 'accepting' ? lb.accepting : lb.accept}

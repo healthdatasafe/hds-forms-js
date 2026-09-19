@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.17.0] - 2026-09-19
+
+### Added
+
+- **`ConsentPanel` can render a selectable permission list.** New optional `consent` prop taking
+  the annotations `pryv` 3.12.0 carries in `authRequest.consent`:
+  - `allowUserChoice` — false (the default) keeps today's accept-all-or-deny behaviour;
+  - `mandatory` — ids the user cannot leave out, rendered checked and disabled with a
+    "required" marker;
+  - `optIn` — ids offered NOT pre-selected, so the user has to choose them.
+
+  Ids are a stream permission's `streamId` or a feature permission's `feature`; the new exported
+  `permissionId()` resolves which.
+
+- `onAccept` now receives the granted subset **when the list is selectable**, and is still called
+  with no argument otherwise. **Backwards compatible:** a caller that passes no `consent` sees no
+  checkboxes and no change in the callback, so `hds-webapp`'s `BridgeConsentDialog` and every
+  other existing consumer are unaffected.
+
+- Accept is disabled while a selectable list has nothing granted — an empty grant is not a
+  consent, and the platform would refuse it anyway.
+
+- New label `required`.
+
+### Notes
+
+Tests follow this repo's existing static-markup style rather than introducing jsdom and
+testing-library for one feature; they assert the rendering contract (which boxes appear, which
+are checked, which are locked), and the toggle behaviour is exercised end to end in
+app-web-user-account's browser verification. 131 tests passing.
+
 ## [0.16.1] - 2026-09-18
 
 ### Changed

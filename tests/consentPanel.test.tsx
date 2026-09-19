@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { ConsentPanel } from '../src/components/ConsentPanel';
+import { ConsentPanel, permissionId } from '../src/components/ConsentPanel';
 import { DEFAULT_CONSENT_LABELS } from '../src/components/consentLabels';
 
 const noop = (): void => {};
@@ -142,5 +142,69 @@ describe('ConsentPanel consentText (B-2026-09-15-3)', () => {
       // appears on the permission rows.
       expect(html).not.toContain('rounded-lg bg-gray-100 p-4');
     }
+  });
+});
+
+/**
+ * This suite renders to static markup, like the rest of this file — the repo has no jsdom or
+ * testing-library and adding one for this would be scope creep into a shared lib. So these
+ * assert the RENDERING contract (which boxes appear, which are checked, which are locked),
+ * which is what the consent sidecar actually specifies. The toggle behaviour is exercised for
+ * real in app-web-user-account's browser verification.
+ */
+describe('[CPG] granular consent (pryv authRequest.consent)', () => {
+  const three = [
+    { streamId: 'diary', level: 'read' as const, defaultName: 'Diary' },
+    { streamId: 'location', level: 'read' as const, defaultName: 'Location' },
+    { streamId: 'health', level: 'read' as const, defaultName: 'Health' }
+  ];
+  const html = (consent?: object): string =>
+    renderToStaticMarkup(
+      <ConsentPanel app={{ name: 'App' }} permissions={three} consent={consent as never} onAccept={noop} onRefuse={noop} />
+    );
+
+  it('[CPG1] no consent sidecar: no checkboxes, exactly as before', () => {
+    expect(html()).not.toContain('type="checkbox"');
+  });
+
+  it('[CPG2] allowUserChoice false is still all-or-nothing', () => {
+    expect(html({ allowUserChoice: false })).not.toContain('type="checkbox"');
+  });
+
+  it('[CPG3] allowUserChoice renders one checkbox per permission', () => {
+    expect(html({ allowUserChoice: true }).match(/type="checkbox"/g)).toHaveLength(3);
+  });
+
+  it('[CPG4] an opt-in entry renders UNCHECKED; the others are checked', () => {
+    const out = html({ allowUserChoice: true, optIn: ['location'] });
+    const boxes = out.split('type="checkbox"').slice(1);
+    expect(boxes).toHaveLength(3);
+    // React omits `checked` markup when false, so an unchecked box is the one without it.
+    const checked = boxes.map((b) => b.slice(0, b.indexOf('/>')).includes('checked'));
+    expect(checked).toEqual([true, false, true]);
+  });
+
+  it('[CPG5] a mandatory entry is checked AND disabled, and marked required', () => {
+    const out = html({ allowUserChoice: true, mandatory: ['diary'] });
+    const first = out.split('type="checkbox"')[1];
+    const attrs = first.slice(0, first.indexOf('/>'));
+    expect(attrs).toContain('checked');
+    expect(attrs).toContain('disabled');
+    expect(out).toContain(DEFAULT_CONSENT_LABELS.required);
+  });
+
+  it('[CPG6] a mandatory entry that is also opt-in stays selected — mandatory wins', () => {
+    const out = html({ allowUserChoice: true, mandatory: ['location'], optIn: ['location'] });
+    const second = out.split('type="checkbox"')[2];
+    expect(second.slice(0, second.indexOf('/>'))).toContain('checked');
+  });
+});
+
+describe('[CPI] permissionId', () => {
+  it('[CPI1] is the streamId for a stream permission', () => {
+    expect(permissionId({ streamId: 'diary', level: 'read' })).toBe('diary');
+  });
+  it('[CPI2] is the feature name for a feature permission', () => {
+    expect(permissionId({ streamId: '', level: 'read', feature: 'selfRevoke' } as never)).toBe('selfRevoke');
   });
 });

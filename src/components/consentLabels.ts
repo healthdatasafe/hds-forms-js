@@ -2,6 +2,7 @@ import type { ConsentPanelLabels } from './ConsentPanel';
 
 /** English defaults for every ConsentPanel label; override any of them through the `labels` prop. */
 export const DEFAULT_CONSENT_LABELS: ConsentPanelLabels = {
+  required: 'required',
   eyebrow: 'Permission request',
   requesting: '{app} is requesting permission to:',
   noPermissions: 'No specific permissions declared by this app.',
