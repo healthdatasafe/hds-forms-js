@@ -1,5 +1,6 @@
 import { localizeText } from 'hds-lib';
 import { schemaFor, type ItemData, type JSONSchema } from './schemas';
+import { ratioGenericRelativeTo } from './ratioGeneric';
 
 type localizableText = { en: string; fr?: string; es?: string };
 
@@ -104,7 +105,7 @@ function _jsonFormForItemDef (itemDef: ItemDef): JsonFormResult {
   }
 
   if (type === 'select' && itemDef.data.eventType === 'ratio/generic') {
-    const relativeTo = Math.max(...(itemDef.data.options || []).map(o => Number(o.value)));
+    const relativeTo = ratioGenericRelativeTo(itemDef);
     return {
       schema: {
         title: '',

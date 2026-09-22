@@ -1,4 +1,5 @@
 import type { ItemDef } from './itemDefToSchema';
+import { isSelectRatioGeneric, ratioGenericRelativeTo } from './ratioGeneric';
 
 /**
  * Get the possible event types for an item def.
@@ -25,17 +26,13 @@ function getEventTypes (itemDef: ItemDef): string[] {
  * `INVALID_TYPE "must be object"`), and prefill must unwrap it back to the
  * scalar so the round-trip is symmetric. See hds-forms-js#6.
  */
-function isSelectRatioGeneric (itemDef: ItemDef, eventType: string): boolean {
-  return itemDef.data.type === 'select' && eventType === 'ratio/generic';
-}
 
 /** Write side: wrap a scalar select value into canonical object content. */
 function toEventContent (itemDef: ItemDef, value: any, eventType: string): any {
   if (!isSelectRatioGeneric(itemDef, eventType)) return value;
   // Already shaped (e.g. prefilled object) — leave untouched.
   if (value == null || typeof value === 'object') return value;
-  const relativeTo = Math.max(...(itemDef.data.options || []).map((o) => Number(o.value)));
-  return { value: Number(value), relativeTo };
+  return { value: Number(value), relativeTo: ratioGenericRelativeTo(itemDef) };
 }
 
 /** Read side: unwrap canonical object content back to the select's scalar. */

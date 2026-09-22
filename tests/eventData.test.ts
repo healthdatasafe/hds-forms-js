@@ -368,3 +368,36 @@ describe('formDataToActions — variations', () => {
     });
   });
 });
+
+// data-model plan 100, finding F1. The `max(option values)` rule used to live only in
+// this library, computed inline in two places, while other consumers hardcoded a
+// constant. data-model 3.9.0 makes the model own it and publishes `ratioRelativeTo`.
+describe('[F1] ratio/generic denominator comes from the published model', () => {
+  const options = [
+    { value: 0, label: { en: 'none' } },
+    { value: 4, label: { en: 'some' } },
+    { value: 8, label: { en: 'max' } }
+  ];
+
+  it('prefers the published ratioRelativeTo over deriving from the options', () => {
+    // Published 10 while the options top out at 8: if the library still derived, it
+    // would write 8. It must write what the model published.
+    const itemDef = makeRatioGenericSelect('fert', options);
+    (itemDef.data as any).ratioRelativeTo = 10;
+    const actions = formDataToActions([{ key: 'ttc', itemDef }], { ttc: 8 }, {}, 1000);
+    expect(actions[0].params.content).toEqual({ value: 8, relativeTo: 10 });
+  });
+
+  it('falls back to deriving when the pack predates 3.9.0', () => {
+    const itemDef = makeRatioGenericSelect('fert', options);
+    const actions = formDataToActions([{ key: 'ttc', itemDef }], { ttc: 4 }, {}, 1000);
+    expect(actions[0].params.content).toEqual({ value: 4, relativeTo: 8 });
+  });
+
+  it('ignores a non-positive published value and derives instead', () => {
+    const itemDef = makeRatioGenericSelect('fert', options);
+    (itemDef.data as any).ratioRelativeTo = 0;
+    const actions = formDataToActions([{ key: 'ttc', itemDef }], { ttc: 4 }, {}, 1000);
+    expect(actions[0].params.content).toEqual({ value: 4, relativeTo: 8 });
+  });
+});

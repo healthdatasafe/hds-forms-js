@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.18.0] - 2026-09-22
+
+### Changed
+
+- **The `ratio/generic` denominator is read from the data model instead of being derived here.**
+  That legacy Pryv eventType stores an object `{ value, relativeTo }`, both required, so a `select`
+  item on it lists numerators and the denominator is `max(option values)`. This library computed that
+  inline **in two places** (`src/schema/eventData.ts` and `src/schema/itemDefToSchema.ts`), and it was
+  the only place the rule was written down. Other consumers hardcoded a constant instead:
+  `bridge-chartneo` carried `2`, `bridge-cycles-files` carried `10`. All were correct, because all
+  equalled the max, so nothing was broken. The hazard was the next edit: add an option to an item and
+  this library would start writing the new maximum while a hardcoding consumer kept writing the old,
+  so one item would carry **two different denominators** and `value / relativeTo` would stop being
+  comparable across writers, with nothing erroring.
+
+  data-model **3.9.0** now derives, validates and publishes the value as the item's `ratioRelativeTo`.
+  Both call sites now go through one helper, `src/schema/ratioGeneric.ts`, which prefers the published
+  field. Found by the data-model plan 100 coherence review, finding F1.
+
+  **Backwards compatible.** On a pack older than 3.9.0 the field is absent, and since no consumer can
+  read it there, deriving remains the correct legacy behaviour rather than a competing source of truth.
+  The helper falls back to deriving and warns once, so a stale pack is visible rather than silent. A
+  published value that is not a positive number is ignored in favour of deriving.
+
+  Also consolidates `isSelectRatioGeneric`, which was duplicated in `eventData.ts`, into the same
+  helper module.
+
 ## [0.17.0] - 2026-09-19
 
 ### Added
