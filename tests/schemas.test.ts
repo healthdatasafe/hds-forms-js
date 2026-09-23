@@ -51,6 +51,51 @@ describe('schemaFor', () => {
     });
   });
 
+  // B-2026-09-23-2: data-model publishes min/max/step as item-level properties on the
+  // `type: number` and `type: slider` branches, and this builder used to drop them — so a
+  // bound the model stated was advisory and an out-of-range value validated. The driving
+  // case is `lifestyle-alcohol-typical-quantity` (grams of ethanol, `min: 0`), where a
+  // negative passed both the item schema and the eventType schema.
+  it('number → carries min/max/step through as minimum/maximum/multipleOf', () => {
+    const data: ItemData = { type: 'number', label: { en: 'Ethanol' }, min: 0, max: 500, step: 0.5 } as ItemData;
+    const schema = schemaFor(data);
+    expect(schema).toEqual({
+      title: 'Ethanol',
+      type: 'number',
+      minimum: 0,
+      maximum: 500,
+      multipleOf: 0.5
+    });
+  });
+
+  it('number → omits bounds that are not declared', () => {
+    const data: ItemData = { type: 'number', label: { en: 'Weight' }, min: 0 } as ItemData;
+    const schema = schemaFor(data);
+    expect(schema.minimum).toBe(0);
+    expect(schema.maximum).toBeUndefined();
+    expect(schema.multipleOf).toBeUndefined();
+  });
+
+  it('number → min: 0 survives, rather than being dropped as falsy', () => {
+    // The bound that matters most is exactly the one a truthiness check would lose.
+    const data: ItemData = { type: 'number', label: { en: 'Ethanol' }, min: 0 } as ItemData;
+    expect(schemaFor(data).minimum).toBe(0);
+  });
+
+  it('number → a zero step is not emitted, since multipleOf: 0 matches nothing', () => {
+    const data: ItemData = { type: 'number', label: { en: 'X' }, step: 0 } as ItemData;
+    expect(schemaFor(data).multipleOf).toBeUndefined();
+  });
+
+  it('slider → carries its mandatory bounds through', () => {
+    const data: ItemData = { type: 'slider', label: { en: 'Health' }, min: 0, max: 1, step: 0.01 } as ItemData;
+    const schema = schemaFor(data);
+    expect(schema.type).toBe('number');
+    expect(schema.minimum).toBe(0);
+    expect(schema.maximum).toBe(1);
+    expect(schema.multipleOf).toBe(0.01);
+  });
+
   it('select with string options → string + oneOf', () => {
     const data: ItemData = {
       type: 'select',
@@ -175,9 +220,15 @@ describe('schemaFor', () => {
       }
     };
     const schema = schemaFor(data);
+    // The slider's UI configuration stays out of the schema — display, orientation and tick
+    // labels are presentation. Its BOUNDS do not: they constrain the stored value, and until
+    // 0.19.0 this assertion pinned them as absent, which is the bug it now guards against.
     expect(schema).toEqual({
       title: 'Self-rated health',
-      type: 'number'
+      type: 'number',
+      minimum: 0,
+      maximum: 1,
+      multipleOf: 0.01
     });
   });
 

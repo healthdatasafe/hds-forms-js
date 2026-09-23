@@ -149,7 +149,16 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
         const first = variations.options[0];
         if (first?.label) unit = l(first.label) || undefined;
       }
-      return <NumberInput {...baseProps} unit={unit} display={(itemData as any).number?.display} />;
+      return (
+        <NumberInput
+          {...baseProps}
+          unit={unit}
+          display={(itemData as any).number?.display}
+          min={(itemData as any).min}
+          max={(itemData as any).max}
+          step={(itemData as any).step}
+        />
+      );
     }
     case 'select':
     case 'multi-select': {
@@ -161,9 +170,20 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
           label: (override ? l(override) : l(opt.label)) || ''
         };
       });
-      return itemData.type === 'multi-select'
-        ? <MultiSelect {...baseProps} options={options} />
-        : <Select {...baseProps} options={options} />;
+      if (itemData.type === 'multi-select') return <MultiSelect {...baseProps} options={options} />;
+      // A stored value that matches no option gets an option of its own, so the control can
+      // show it. Without this a controlled <select> whose value matches nothing renders BLANK,
+      // and under native form validation a `required` field then forces the user to overwrite
+      // a real reading just to submit.
+      //
+      // This is not hypothetical: an item may be a `select` over a continuous eventType, where
+      // the options are the human-entry surface and a device bridge writes values in between.
+      // `fertility-test-opk` sits on `test-result/scale` (-1..1) with three options, and
+      // hds-webapp's HealthKit bridge maps an "estrogen surge" to 0.5.
+      const value = baseProps.value;
+      const unmatched = value != null && !options.some((o: any) => o.value === value);
+      const shownOptions = unmatched ? [...options, { value, label: String(value) }] : options;
+      return <Select {...baseProps} options={shownOptions} />;
     }
     case 'composite': {
       const composite = (itemData as any).composite;

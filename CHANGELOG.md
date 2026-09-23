@@ -1,5 +1,59 @@
 # Changelog
 
+## [0.19.0] - 2026-09-23
+
+### Fixed
+
+- **A `min` / `max` / `step` published by the data model now reaches both the schema and the input.**
+  data-model declares these as item-level properties on the `type: number` and `type: slider`
+  branches (`src/schemas/items.js`), and this library dropped them on both paths: `schemaFor`
+  emitted only `type: 'number'`, and `NumberInput` rendered a bare `<input type="number">`.
+  `BUGS.md` `B-2026-09-23-2`.
+
+  The driving case is `lifestyle-alcohol-typical-quantity`, added in data-model **3.10.0**: grams of
+  ethanol with `min: 0`. `NumberData` already *declared* `min` in its TypeScript type, so the field
+  round-tripped and looked supported; nothing read it.
+
+  **Be precise about what this enforces.** `schemaFor` now carries `minimum` / `maximum` /
+  `multipleOf` for any validator that consumes its output — there is none in HDS today, so that half
+  is forward-looking. `NumberInput` puts the bounds on the element, which the browser enforces
+  wherever the host runs native constraint validation: inside `HDSFormSection` and
+  `HDSQuestionnaireForm`, which submit a real `<form>`. A host that renders `HDSFormField` outside a
+  form (hds-webapp's `ItemInputDialog` does) still gets no enforcement, only the spinner affordances.
+
+  Two details worth knowing:
+
+  - **Bounds are converted into the display scale before reaching the DOM.** They are authored in the
+    raw stored scale, and the input is display-scaled, so an item storing `0..1` on
+    `ratio/proportion` and rendering as a percentage via `multiplier: 100` needs `max="100"`, not
+    `max="1"` — otherwise the browser would reject every valid entry. New helper
+    `toDisplayNumber(raw, display)` in `src/schema/valueDisplay.ts`, beside `toDisplayText`. The
+    JSON Schema keeps the **raw** values, since that is the scale it validates.
+  - **`min: 0` and `step: 0` are handled explicitly.** Zero is the most common bound in the model and
+    a truthiness check would silently drop it, so the guard is `typeof === 'number'`. A zero *step*
+    is deliberately not emitted, because `multipleOf: 0` matches nothing.
+
+  One existing test asserted the slider schema was exactly `{ title, type }` — it pinned the missing
+  bounds as correct. It now asserts they are present.
+
+- **`NumberInput` emits `step="any"` when the item declares no step.** Per the HTML spec an
+  `<input type="number">` without a `step` has step **1**, so a weight of 72.5 kg or an HbA1c of
+  5.4% is a `stepMismatch` and blocks submission under native form validation. Exactly one item in
+  the model declares a step today, so this affected nearly every numeric field. Adding `min` makes
+  it worse rather than better, since `min` becomes the step base — which is why it is fixed in the
+  same release that introduces `min`.
+
+- **A `select` value that matches no option is no longer lost.** A controlled `<select>` whose value
+  matches none of its options renders **blank**; under native form validation a `required` field
+  then forces the user to overwrite a real reading just to submit. `HDSFormField` now appends a
+  read-back option carrying the stored value.
+
+  This matters because a `select` item may sit on a **continuous** eventType, where the options are
+  the human-entry surface and a device bridge writes values in between. data-model **3.12.0** makes
+  `fertility-test-opk` a select on `test-result/scale` (-1..1) with three options, while
+  hds-webapp's HealthKit bridge maps an "estrogen surge" to `0.5` (`OVULATION_TO_SCALE[4]`). Without
+  this, every such reading would have been silently overwritten on the next edit.
+
 ## [0.18.0] - 2026-09-22
 
 ### Changed

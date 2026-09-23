@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { localizeText } from 'hds-lib';
 import type { FieldProps } from '../../types';
 import type { ValueDisplay } from '../../schema/schemas';
-import { toDisplayText, toRawValue } from '../../schema/valueDisplay';
+import { toDisplayText, toDisplayNumber, toRawValue } from '../../schema/valueDisplay';
 
 const l = localizeText;
 
@@ -11,9 +11,15 @@ interface NumberInputProps extends FieldProps {
   unit?: string;
   /** UI-only display scaling of the raw value. `display.suffix` overrides `unit` when set. */
   display?: ValueDisplay;
+  /** Lower bound in the RAW (stored) scale, from the item definition. */
+  min?: number;
+  /** Upper bound in the raw scale. */
+  max?: number;
+  /** Step increment in the raw scale. */
+  step?: number;
 }
 
-export function NumberInput ({ label, description, value, onChange, required, disabled, unit, display }: NumberInputProps) {
+export function NumberInput ({ label, description, value, onChange, required, disabled, unit, display, min, max, step }: NumberInputProps) {
   // The input is text-backed rather than driven straight off `value`: with a multiplier,
   // round-tripping every keystroke through raw storage destroys in-progress input — "5."
   // parses to 5 and the trailing dot vanishes, so a decimal can never be typed.
@@ -38,6 +44,13 @@ export function NumberInput ({ label, description, value, onChange, required, di
   const suffix = display?.suffix ? (l(display.suffix) || undefined) : undefined;
   const shownUnit = suffix ?? unit;
 
+  // Bounds arrive in the raw stored scale and the input is display-scaled, so they must be
+  // converted before reaching the DOM: an item storing 0..1 and rendering as a percentage
+  // needs max="100", not max="1". `undefined` makes React omit the attribute.
+  const displayMin = toDisplayNumber(min, display);
+  const displayMax = toDisplayNumber(max, display);
+  const displayStep = toDisplayNumber(step, display);
+
   return (
     <div>
       <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
@@ -56,6 +69,12 @@ export function NumberInput ({ label, description, value, onChange, required, di
           onChange={(e) => handleChange(e.target.value)}
           required={required}
           disabled={disabled}
+          min={displayMin}
+          max={displayMax}
+          // Without a step, `<input type="number">` defaults to 1 per the HTML spec, so 72.5 kg
+          // or an HbA1c of 5.4% would be a stepMismatch and block submission. Only one item in
+          // the model declares a step today, so `any` is what almost every numeric field needs.
+          step={displayStep ?? 'any'}
           className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
         />
         {shownUnit && (

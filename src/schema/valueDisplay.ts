@@ -32,6 +32,24 @@ export function toDisplayText (raw: number | null | undefined, display?: ValueDi
 }
 
 /**
+ * Scale a raw bound (`min` / `max` / `step`) into the display scale, as a number.
+ *
+ * The `<input type="number">` attributes must be in the same scale as the text the
+ * user sees, so a raw bound cannot be handed to the DOM unconverted: an item storing
+ * 0..1 on `ratio/proportion` and rendering as a percentage via `multiplier: 100` needs
+ * `max="100"`, not `max="1"`, or the browser rejects every valid entry.
+ *
+ * Returns `undefined` for a missing bound, so a caller can spread it into JSX and have
+ * React omit the attribute entirely.
+ */
+export function toDisplayNumber (raw: number | null | undefined, display?: ValueDisplay): number | undefined {
+  if (raw == null || Number.isNaN(raw)) return undefined;
+  const multiplier = display?.multiplier ?? 1;
+  if (multiplier === 1) return raw;
+  return Number((raw * multiplier).toPrecision(FLOAT_NOISE_PRECISION));
+}
+
+/**
  * Convert a user-typed display value back to the raw value to store.
  *
  * Returns `null` for empty input and `undefined` for transient, not-yet-numeric text

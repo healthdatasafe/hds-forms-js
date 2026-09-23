@@ -138,6 +138,12 @@ export interface JSONSchema {
   items?: JSONSchema;
   /** `multi-select` only — the same option may not be chosen twice. */
   uniqueItems?: boolean;
+  /** `number` / `slider` — lower bound in the RAW (stored) scale, from the item's `min`. */
+  minimum?: number;
+  /** `number` / `slider` — upper bound in the raw scale, from the item's `max`. */
+  maximum?: number;
+  /** `number` / `slider` — step increment in the raw scale, from the item's `step`. */
+  multipleOf?: number;
 }
 
 const l = localizeText;
@@ -178,8 +184,25 @@ function text (schema: JSONSchema, v: ItemData): void {
   if (v.canBeNull !== true) schema.minLength = 1;
 }
 
-function number (schema: JSONSchema, _v: ItemData): void {
+function number (schema: JSONSchema, v: ItemData): void {
   schema.type = 'number';
+  applyBounds(schema, v as NumberData);
+}
+
+/**
+ * Carry `min` / `max` / `step` from the item definition into the JSON Schema.
+ *
+ * data-model publishes these as item-level properties on the `type: number` and
+ * `type: slider` branches (`src/schemas/items.js`), and until 0.19.0 this builder
+ * dropped them: a bound the model stated was advisory, and an out-of-range value
+ * validated. The values are in the RAW stored scale, which is what the schema
+ * validates, so no display scaling applies here — see `NumberInput` for the
+ * display-side conversion.
+ */
+function applyBounds (schema: JSONSchema, v: { min?: number; max?: number; step?: number }): void {
+  if (typeof v.min === 'number') schema.minimum = v.min;
+  if (typeof v.max === 'number') schema.maximum = v.max;
+  if (typeof v.step === 'number' && v.step > 0) schema.multipleOf = v.step;
 }
 
 function select (schema: JSONSchema, v: ItemData): void {
@@ -220,7 +243,9 @@ function convertible (schema: JSONSchema, _v: ItemData): void {
   schema.type = 'object';
 }
 
-function slider (schema: JSONSchema, _v: ItemData): void {
+function slider (schema: JSONSchema, v: ItemData): void {
   // Slider is just a numeric input at the storage layer — display is UI-only.
+  // Its min/max are mandatory in the item definition, so the schema always gets them.
   schema.type = 'number';
+  applyBounds(schema, v as SliderData);
 }

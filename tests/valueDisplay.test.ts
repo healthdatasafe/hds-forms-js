@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toDisplayText, toRawValue } from '../src/schema/valueDisplay';
+import { toDisplayText, toDisplayNumber, toRawValue } from '../src/schema/valueDisplay';
 
 // Lab percentages (Plan 83 / D2): stored as 0..1 fractions on ratio/proportion,
 // rendered as percentages via multiplier: 100.
@@ -78,5 +78,40 @@ describe('round-trip', () => {
       const stored = toRawValue(typed, PCT) as number;
       expect(toDisplayText(stored, PCT)).toBe(typed);
     }
+  });
+});
+
+// B-2026-09-23-2: the DOM min/max/step attributes must be in the same scale as the text
+// the user sees, so a raw bound cannot reach the input unconverted.
+describe('toDisplayNumber', () => {
+  it('scales a raw bound into the display scale', () => {
+    // An item storing 0..1 and rendering as a percentage needs max="100", not max="1" —
+    // otherwise the browser rejects every valid entry.
+    expect(toDisplayNumber(0, PCT)).toBe(0);
+    expect(toDisplayNumber(1, PCT)).toBe(100);
+    expect(toDisplayNumber(0.05, PCT)).toBe(5);
+  });
+
+  it('strips the float noise scaling introduces', () => {
+    expect(0.29 * 100).not.toBe(29);
+    expect(toDisplayNumber(0.29, PCT)).toBe(29);
+  });
+
+  it('returns the raw value unchanged when there is no multiplier', () => {
+    expect(toDisplayNumber(0)).toBe(0);
+    expect(toDisplayNumber(42)).toBe(42);
+    expect(toDisplayNumber(42, { suffix: { en: 'g' } })).toBe(42);
+  });
+
+  it('returns undefined for an absent bound, so React omits the attribute', () => {
+    expect(toDisplayNumber(undefined, PCT)).toBeUndefined();
+    expect(toDisplayNumber(null, PCT)).toBeUndefined();
+    expect(toDisplayNumber(NaN, PCT)).toBeUndefined();
+  });
+
+  it('keeps 0 rather than treating it as absent', () => {
+    // min: 0 is the single most common bound in the model; a falsy check would drop it.
+    expect(toDisplayNumber(0, PCT)).toBe(0);
+    expect(toDisplayNumber(0)).toBe(0);
   });
 });
