@@ -212,6 +212,9 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
         />
       );
     }
+    case 'system':
+      // State written by software (e.g. `sync-status`), never a user-entered field.
+      return null;
     default:
       return <div className='text-sm text-red-500'>Unknown field type: {(itemData as any).type}</div>;
   }

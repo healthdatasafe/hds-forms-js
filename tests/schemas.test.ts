@@ -232,6 +232,13 @@ describe('schemaFor', () => {
     });
   });
 
+  // data-model 3.13.0 `type: system` (e.g. `sync-status`): described, not thrown on, so a
+  // caller walking every item of a newer pack does not crash. Renderers skip it.
+  it('system → object (no throw)', () => {
+    const data: ItemData = { type: 'system', label: { en: 'Connected services status' } };
+    expect(schemaFor(data)).toEqual({ title: 'Connected services status', type: 'object' });
+  });
+
   it('throws for unknown type', () => {
     const data = { type: 'unknown', label: { en: 'Bad' } } as any;
     expect(() => schemaFor(data)).toThrow('Cannot find schema for type: "unknown"');

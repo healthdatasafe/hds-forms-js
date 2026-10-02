@@ -16,7 +16,7 @@ interface ConverterEngine {
 }
 
 interface BaseItemData {
-  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'multi-select' | 'composite' | 'datasource-search' | 'convertible' | 'slider';
+  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'multi-select' | 'composite' | 'datasource-search' | 'convertible' | 'slider' | 'system';
   label: localizableText;
   description?: localizableText;
   canBeNull?: boolean;
@@ -122,7 +122,16 @@ interface SliderData extends BaseItemData {
   };
 }
 
-export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | MultiSelectData | CompositeData | DatasourceSearchData | ConvertibleData | SliderData;
+/**
+ * A system item (data-model 3.13.0, e.g. `sync-status`): state written by
+ * software, not data a user enters. It is never a form field — `HDSFormField`
+ * renders nothing for it and `HDSFormSection` / `ItemSearchPicker` skip it.
+ */
+interface SystemData extends BaseItemData {
+  type: 'system';
+}
+
+export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | MultiSelectData | CompositeData | DatasourceSearchData | ConvertibleData | SliderData | SystemData;
 
 export interface JSONSchema {
   title: string;
@@ -150,7 +159,7 @@ const l = localizeText;
 
 type SchemaAction = (schema: JSONSchema, v: ItemData) => void;
 
-const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, 'multi-select': multiSelect, composite, 'datasource-search': datasourceSearch, convertible, slider };
+const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, 'multi-select': multiSelect, composite, 'datasource-search': datasourceSearch, convertible, slider, system };
 
 export function schemaFor (v: ItemData): JSONSchema {
   const schema: JSONSchema = {
@@ -240,6 +249,16 @@ function composite (schema: JSONSchema, v: ItemData): void {
 }
 
 function convertible (schema: JSONSchema, _v: ItemData): void {
+  schema.type = 'object';
+}
+
+/**
+ * System items carry an object written by software (e.g. a connector status),
+ * so the schema only states the shape; the eventType schema owns its fields.
+ * Described rather than thrown on, so a caller iterating every item of a newer
+ * pack does not crash on one — but it is not a form field, and the renderers skip it.
+ */
+function system (schema: JSONSchema, _v: ItemData): void {
   schema.type = 'object';
 }
 

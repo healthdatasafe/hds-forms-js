@@ -55,7 +55,10 @@ export function ItemSearchPicker ({
     if (externalItems) return externalItems;
     try {
       const model = getHDSModel();
-      const defs = includeDeprecated ? model.itemsDefs.getAll() : model.itemsDefs.getAllActive();
+      // getAllActive() already drops system items; the deprecated-inclusive path must too.
+      const defs = includeDeprecated
+        ? model.itemsDefs.getAll().filter((d: any) => !d.isSystem)
+        : model.itemsDefs.getAllActive();
       return defs.map((d: any) => ({
         key: d.key,
         label: typeof d.label === 'object' ? (localizeText(d.label) || d.key) : (d.label || d.key),

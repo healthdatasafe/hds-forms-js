@@ -87,6 +87,9 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
     setFormValues(seedVariations(initialValues || {}, section.itemKeys, model));
   }, [initialValues, section.itemKeys, model]);
   const isRecurring = section.type === 'recurring';
+  // System items (e.g. `sync-status`) are state written by software, never form
+  // fields: a section naming one renders, labels and lists everything else.
+  const fieldKeys = section.itemKeys.filter((key) => model.itemsDefs.forKey(key, false)?.isSystem !== true);
 
   function handleFieldChange (key: string, value: any) {
     setFormValues(prev => ({ ...prev, [key]: value }));
@@ -108,7 +111,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
 
   // Build field labels map for EntryList (honours per-section label overrides)
   const fieldLabels: Record<string, string> = {};
-  for (const key of section.itemKeys) {
+  for (const key of fieldKeys) {
     const itemDef = model.itemsDefs.forKey(key);
     if (itemDef) {
       const override = section.itemCustomizations?.[key]?.labels?.question;
@@ -137,7 +140,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
         </div>
       )}
 
-      {section.itemKeys.map((key) => {
+      {fieldKeys.map((key) => {
         const itemDef = model.itemsDefs.forKey(key);
         if (!itemDef) return null;
 
@@ -203,7 +206,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
       {isRecurring && entries && onEditEntry && onDeleteEntry && (
         <EntryList
           entries={entries}
-          itemKeys={section.itemKeys}
+          itemKeys={fieldKeys}
           fieldLabels={fieldLabels}
           onEdit={onEditEntry}
           onDelete={onDeleteEntry}

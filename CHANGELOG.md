@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.20.0] - 2026-10-02
+
+### Changed
+
+- **`type: system` items are never form fields** (data-model 3.13.0, hds-lib 2.7.0). `schemaFor` maps
+  `system` to an object schema instead of throwing; `HDSFormField` renders nothing for it;
+  `HDSFormSection` drops system keys from its fields and entry list; `ItemSearchPicker` leaves them out,
+  including with `includeDeprecated`.
+
 ## [0.19.0] - 2026-09-23
 
 ### Fixed
