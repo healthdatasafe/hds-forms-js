@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { localizeText } from 'hds-lib';
 import type { FieldProps } from '../../types';
 import type { ValueDisplay } from '../../schema/schemas';
-import { toDisplayText, toDisplayNumber, toRawValue } from '../../schema/valueDisplay';
+import { toDisplayText, toDisplayNumber, toRawValue, numberInputStep } from '../../schema/valueDisplay';
 
 const l = localizeText;
 
@@ -17,9 +17,17 @@ interface NumberInputProps extends FieldProps {
   max?: number;
   /** Step increment in the raw scale. */
   step?: number;
+  /**
+   * Least decimals the field steps by when no `step` is declared, in the display scale
+   * (e.g. 2 for a basal temperature: the arrows move 36.50 → 36.51). Defaults to
+   * `display.precision`. Only the step: the value is not reformatted.
+   */
+  precision?: number;
 }
 
-export function NumberInput ({ label, description, value, onChange, required, disabled, unit, display, min, max, step }: NumberInputProps) {
+export function NumberInput ({ label, description, value, onChange, required, disabled, unit, display, min, max, step, precision }: NumberInputProps) {
+  const id = useId();
+  const descriptionId = `${id}-description`;
   // The input is text-backed rather than driven straight off `value`: with a multiplier,
   // round-tripping every keystroke through raw storage destroys in-progress input — "5."
   // parses to 5 and the trailing dot vanishes, so a decimal can never be typed.
@@ -49,17 +57,21 @@ export function NumberInput ({ label, description, value, onChange, required, di
   // needs max="100", not max="1". `undefined` makes React omit the attribute.
   const displayMin = toDisplayNumber(min, display);
   const displayMax = toDisplayNumber(max, display);
-  const displayStep = toDisplayNumber(step, display);
+  // Steps by the decimals the value is written with (36.52 → 0.01), so the arrows move the
+  // digits most likely to change from one day to the next; `any` when nothing is declared or typed.
+  const displayStep = numberInputStep({ step, precision: precision ?? display?.precision, display, text, displayMin });
 
   return (
     <div>
-      <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+      <label htmlFor={id} className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
         {label}{required && <span className='text-red-500'> *</span>}
       </label>
-      {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
+      {description && <p id={descriptionId} className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
       <div className='flex items-center gap-2'>
         <input
+          id={id}
           type='number'
+          aria-describedby={description ? descriptionId : undefined}
           value={text}
           onFocus={() => { focused.current = true; }}
           onBlur={() => {
@@ -73,8 +85,9 @@ export function NumberInput ({ label, description, value, onChange, required, di
           max={displayMax}
           // Without a step, `<input type="number">` defaults to 1 per the HTML spec, so 72.5 kg
           // or an HbA1c of 5.4% would be a stepMismatch and block submission. Only one item in
-          // the model declares a step today, so `any` is what almost every numeric field needs.
-          step={displayStep ?? 'any'}
+          // the model declares a step today; `numberInputStep` never returns a step a typed
+          // value would mismatch (see there).
+          step={displayStep}
           className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
         />
         {shownUnit && (

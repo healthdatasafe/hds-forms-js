@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, useId } from 'react';
 import { getHDSModel, localizeText } from 'hds-lib';
 import type { FieldProps } from '../../types';
 import { getCompanionSchema, extractCompanionDefaults, getEnumLabel, keyToLabel } from '../../schema/companionFields';
@@ -16,13 +16,52 @@ interface DatasetSearchProps extends FieldProps {
    * asked for. See `schema/itemPin.ts`.
    */
   pin?: ItemPin;
+  /**
+   * The person's own recent entries of this item, newest first, as stored (`{ drug, intake }`
+   * or the flat legacy shape). Their concepts are offered first: on focus before anything is
+   * typed, then those matching the query above the datasource's results. Picking one selects
+   * its concept only; companion values (dose…) are not copied.
+   */
+  recentEntries?: any[];
+  /**
+   * Free-text fallback. When set and a search finds nothing, the list offers
+   * "Use “<text>”", which calls this with the typed text. The field's value is NOT changed:
+   * a typed name is not a coded concept, so the host decides where it goes (e.g. the item's
+   * `-basic` twin). Without it, the list just says nothing was found.
+   */
+  onFreeText?: (text: string) => void;
 }
+
+const MAX_RECENT_EMPTY = 8;
+const MAX_RECENT_MATCHING = 6;
+const T = {
+  yours: { en: 'Your entries', fr: 'Vos saisies' },
+  results: { en: 'Search results', fr: 'Résultats' },
+  noMatch: { en: 'Nothing found', fr: 'Aucun résultat' },
+  useTyped: { en: 'Use “{text}”', fr: 'Utiliser « {text} »' }
+};
 
 /** Resolve a display field name — handles both plain string and LocalizableText */
 function resolveFieldName (field: unknown): string {
   if (typeof field === 'string') return field;
   if (typeof field === 'object' && field !== null) return l(field as any) || '';
   return '';
+}
+
+/** Text of a concept's display label (localized when it is an object). */
+function conceptLabel (concept: any, labelField: string): string {
+  const v = concept?.[labelField];
+  if (v != null && typeof v === 'object') return l(v) || v.en || '';
+  return v == null ? '' : String(v);
+}
+
+/** Identity of a concept, to dedupe the person's entries against search results. */
+function conceptKey (concept: any, labelField: string): string {
+  if (concept?.hdsId) return `id:${concept.hdsId}`;
+  const code = Array.isArray(concept?.codes) ? concept.codes.find((c: any) => c?.code) : undefined;
+  if (code) return `code:${String(code.system || '').toLowerCase()}:${String(code.code).toLowerCase()}`;
+  const label = conceptLabel(concept, labelField).trim().toLowerCase();
+  return label ? `label:${label}` : '';
 }
 
 const inputClass = 'block w-full rounded-lg border border-gray-300 bg-gray-50 p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400';
@@ -115,7 +154,8 @@ function CompanionFields ({ schema, value, onChange, readonlyKeys }: { schema: a
   );
 }
 
-export function DatasetSearch ({ label, description, value, onChange, required, disabled, datasource, eventType, pin }: DatasetSearchProps) {
+export function DatasetSearch ({ label, description, value, onChange, required, disabled, datasource, eventType, pin, recentEntries, onFreeText }: DatasetSearchProps) {
+  const inputId = useId();
   const config = getHDSModel().datasources.forKey(datasource)!;
   const minQueryLength = config.minQueryLength || 3;
   const companionSchema = useMemo(() => getCompanionSchema(eventType), [eventType]);
@@ -154,6 +194,8 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
   const [results, setResults] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // The query whose search has completed (empty while typing below the minimum length)
+  const [searchedQuery, setSearchedQuery] = useState('');
   const [availableSources, setAvailableSources] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
   // Track which companion sub-keys were pre-filled from datasource (readonly)
@@ -220,7 +262,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
   const doSearch = useCallback(async (text: string) => {
     if (text.length < minQueryLength) {
       setResults([]);
-      setIsOpen(false);
+      setSearchedQuery('');
       return;
     }
     setIsLoading(true);
@@ -233,18 +275,20 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
       const data = await response.json();
       const items = data[config.resultKey] || [];
       setResults(items);
-      setIsOpen(items.length > 0);
+      setIsOpen(true);
     } catch (err) {
       console.error('DatasetSearch fetch error:', err);
       setResults([]);
-      setIsOpen(false);
+      setIsOpen(true);
     } finally {
+      setSearchedQuery(text);
       setIsLoading(false);
     }
   }, [config, minQueryLength, selectedSources, availableSources.length]);
 
   function handleInputChange (text: string) {
     setQuery(text);
+    setSearchedQuery('');
     lastQueryRef.current = text;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => doSearch(text), 300);
@@ -284,6 +328,13 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
     onChange(combined);
   }
 
+  function handleFreeText () {
+    const text = query.trim();
+    if (!text || !onFreeText) return;
+    setIsOpen(false);
+    onFreeText(text);
+  }
+
   function handleSelect (item: any) {
     const selected: Record<string, any> = {};
     for (const field of config.valueFields) {
@@ -317,6 +368,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
 
   function handleClear () {
     setQuery('');
+    setSearchedQuery('');
     lastQueryRef.current = '';
     onChange(null);
     setPrefilledKeys({});
@@ -336,6 +388,41 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
   const labelField = resolveFieldName(config.displayFields.label);
   const descField = resolveFieldName(config.displayFields.description);
 
+  // The person's own concepts, deduped, newest first
+  const recentConcepts = useMemo(() => {
+    const out: any[] = [];
+    const seen = new Set<string>();
+    for (const entry of recentEntries || []) {
+      if (entry == null || typeof entry !== 'object') continue;
+      const concept = companionSchema && entry[companionSchema.datasourceProp] !== undefined
+        ? entry[companionSchema.datasourceProp]
+        : entry;
+      if (concept == null || typeof concept !== 'object') continue;
+      const key = conceptKey(concept, labelField);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      out.push(concept);
+    }
+    return out;
+  }, [recentEntries, companionSchema, labelField]);
+
+  const trimmedQuery = query.trim();
+  const shownRecent = useMemo(() => {
+    if (!trimmedQuery) return recentConcepts.slice(0, MAX_RECENT_EMPTY);
+    const q = trimmedQuery.toLowerCase();
+    return recentConcepts.filter(c => conceptLabel(c, labelField).toLowerCase().includes(q) ||
+      (Array.isArray(c.codes) && c.codes.some((code: any) => String(code?.code ?? '').toLowerCase() === q))
+    ).slice(0, MAX_RECENT_MATCHING);
+  }, [recentConcepts, trimmedQuery, labelField]);
+  const shownResults = useMemo(() => {
+    if (shownRecent.length === 0) return results;
+    const mine = new Set(shownRecent.map(c => conceptKey(c, labelField)));
+    return results.filter(r => !mine.has(conceptKey(r, labelField)));
+  }, [results, shownRecent, labelField]);
+  const nothingFound = !isLoading && searchedQuery !== '' && searchedQuery === query &&
+    shownResults.length === 0 && shownRecent.length === 0;
+  const showList = isOpen && (shownRecent.length > 0 || shownResults.length > 0 || nothingFound);
+
   // In edit mode, resolve the drug display label from the stored value
   const editDrugLabel = useMemo(() => {
     if (!isEditMode || !drugValue) return '';
@@ -352,7 +439,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
 
   return (
     <div ref={containerRef} className='relative'>
-      <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+      <label htmlFor={showStaticConcept || pinMismatch ? undefined : inputId} className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
         {label}{required && <span className='text-red-500'> *</span>}
       </label>
       {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
@@ -375,8 +462,10 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
           <>
             <div style={{ position: 'relative' }}>
               <input
+                id={inputId}
                 type='text'
                 value={query}
+                onFocus={() => { if (recentConcepts.length > 0 || searchedQuery !== '') setIsOpen(true); }}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder={`Type at least ${minQueryLength} characters to search...`}
                 disabled={disabled}
@@ -419,39 +508,77 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
               <div className='mt-1 text-xs text-gray-500 dark:text-gray-400'>Searching...</div>
             )}
 
-            {isOpen && results.length > 0 && (
-              <ul className='mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700'>
-                {results.map((item, idx) => {
-                  const itemLabel = item[labelField];
-                  const itemDesc = item[descField];
-                  const displayLabel = typeof itemLabel === 'object' ? (l(itemLabel) || itemLabel.en || '') : String(itemLabel || '');
-                  const displayDesc = typeof itemDesc === 'object' ? (l(itemDesc) || itemDesc.en || '') : String(itemDesc || '');
-                  const systems: string[] = Array.from(new Set((item.codes || []).map((c: any) => String(c.system)).filter(Boolean)));
-                  return (
-                    <li
-                      key={idx}
-                      onClick={() => handleSelect(item)}
-                      className='cursor-pointer border-b border-gray-100 px-3 py-2 last:border-0 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-600'
-                    >
-                      <div className='flex items-start justify-between gap-2'>
-                        <div className='min-w-0'>
-                          <div className='text-sm font-medium text-gray-900 dark:text-white'>{displayLabel}</div>
-                          {displayDesc && (
-                            <div className='text-xs text-gray-500 dark:text-gray-400'>{displayDesc}</div>
+            {showList && (
+              <div className='mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-700'>
+                {shownRecent.length > 0 && (
+                  <div>
+                    <div className='px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300'>{l(T.yours)}</div>
+                    <ul>
+                      {shownRecent.map(concept => (
+                        <li key={conceptKey(concept, labelField)} className='border-b border-gray-100 last:border-0 dark:border-gray-600'>
+                          <button
+                            type='button'
+                            onClick={() => handleSelect(concept)}
+                            className='block w-full px-3 py-2 text-left text-sm font-medium text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600'
+                          >
+                            {conceptLabel(concept, labelField)}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {shownRecent.length > 0 && shownResults.length > 0 && (
+                  <div className='border-t border-gray-200 px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:border-gray-600 dark:text-gray-300'>{l(T.results)}</div>
+                )}
+                {nothingFound && (
+                  onFreeText
+                    ? (
+                      <button
+                        type='button'
+                        onClick={handleFreeText}
+                        className='block w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600'
+                      >
+                        {(l(T.useTyped) || '').replace('{text}', trimmedQuery)}
+                      </button>
+                      )
+                    : (
+                      <div className='px-3 py-2 text-sm text-gray-600 dark:text-gray-300'>{l(T.noMatch)}</div>
+                      )
+                )}
+                <ul>
+                  {shownResults.map((item, idx) => {
+                    const itemLabel = item[labelField];
+                    const itemDesc = item[descField];
+                    const displayLabel = typeof itemLabel === 'object' ? (l(itemLabel) || itemLabel.en || '') : String(itemLabel || '');
+                    const displayDesc = typeof itemDesc === 'object' ? (l(itemDesc) || itemDesc.en || '') : String(itemDesc || '');
+                    const systems: string[] = Array.from(new Set((item.codes || []).map((c: any) => String(c.system)).filter(Boolean)));
+                    return (
+                      <li
+                        key={idx}
+                        onClick={() => handleSelect(item)}
+                        className='cursor-pointer border-b border-gray-100 px-3 py-2 last:border-0 hover:bg-gray-100 dark:border-gray-600 dark:hover:bg-gray-600'
+                      >
+                        <div className='flex items-start justify-between gap-2'>
+                          <div className='min-w-0'>
+                            <div className='text-sm font-medium text-gray-900 dark:text-white'>{displayLabel}</div>
+                            {displayDesc && (
+                              <div className='text-xs text-gray-500 dark:text-gray-400'>{displayDesc}</div>
+                            )}
+                          </div>
+                          {systems.length > 0 && (
+                            <div className='flex shrink-0 gap-1'>
+                              {systems.map(s => (
+                                <span key={s} className='rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-600 dark:text-gray-300'>{s}</span>
+                              ))}
+                            </div>
                           )}
                         </div>
-                        {systems.length > 0 && (
-                          <div className='flex shrink-0 gap-1'>
-                            {systems.map(s => (
-                              <span key={s} className='rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500 dark:bg-gray-600 dark:text-gray-300'>{s}</span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
             )}
           </>
           ))}

@@ -10,7 +10,7 @@
     "preview": "vite preview --port 5174"
   },
   "dependencies": {
-    "hds-lib": "github:healthdatasafe/hds-lib-js",
+    "hds-lib": "github:healthdatasafe/hds-lib-js#2.20.0",
     "hds-react-timeline": "git+https://github.com/healthdatasafe/hds-react-timeline.git",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

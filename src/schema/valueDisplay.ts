@@ -49,6 +49,52 @@ export function toDisplayNumber (raw: number | null | undefined, display?: Value
   return Number((raw * multiplier).toPrecision(FLOAT_NOISE_PRECISION));
 }
 
+/** Decimals written in a number's text form ("36.52" → 2, "36" → 0, "1e-7" → 0). */
+export function decimalsOf (text: string | number | null | undefined): number {
+  if (text == null) return 0;
+  const s = String(text).trim();
+  if (/e/i.test(s)) return 0;
+  const dot = s.indexOf('.');
+  return dot < 0 ? 0 : s.length - dot - 1;
+}
+
+/** Cap on derived decimals, so a pasted 0.1 + 0.2 does not become a step of 1e-17. */
+const MAX_STEP_DECIMALS = 10;
+
+export interface NumberStepInput {
+  /** Step declared by the item, in the RAW scale. Wins when set (> 0). */
+  step?: number | null;
+  /** Least decimals the field steps by, in the DISPLAY scale (item `number.display.precision`, or the host's). */
+  precision?: number | null;
+  /** Display scaling of the raw value (the declared step is converted with it). */
+  display?: ValueDisplay;
+  /** Text currently in the field (display scale). */
+  text?: string;
+  /** Lower bound in the display scale: it is the step base, so its decimals count too. */
+  displayMin?: number;
+}
+
+/**
+ * The `step` attribute of a number input.
+ *
+ * 1. A step declared by the item wins, converted into the display scale.
+ * 2. Otherwise the field steps by its decimals: the larger of the declared `precision`, the
+ *    decimals typed (36.52 → 0.01) and those of `min` (the step base). Following what is typed
+ *    means a typed value is never a `stepMismatch`.
+ * 3. Nothing declared and no decimals typed: `any`, as before (a whole number steps by 1 with
+ *    the arrows, and any decimal is accepted).
+ */
+export function numberInputStep ({ step, precision, display, text, displayMin }: NumberStepInput): number | string {
+  if (typeof step === 'number' && step > 0) {
+    const s = toDisplayNumber(step, display);
+    if (s != null && s > 0) return s;
+  }
+  const declared = typeof precision === 'number' && precision >= 0 ? Math.floor(precision) : undefined;
+  const n = Math.min(MAX_STEP_DECIMALS, Math.max(declared ?? 0, decimalsOf(text), decimalsOf(displayMin)));
+  if (declared == null && n === 0) return 'any';
+  return n > 0 ? (10 ** -n).toFixed(n) : 1;
+}
+
 /**
  * Convert a user-typed display value back to the raw value to store.
  *

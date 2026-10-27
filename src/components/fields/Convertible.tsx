@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getHDSModel, localizeText, HDSSettings } from 'hds-lib';
+import { getHDSModel, localizeText } from 'hds-lib';
 import type { FieldProps } from '../../types';
+import { readPreferredMethod, initialConvertibleMethod, isKnownMethod, observationLabel } from '../../schema/convertibleMethod';
 import { InfoIcon } from './FieldLabel';
 import { StampGridPicker, isRepresentationAvailable } from '../StampGridPicker';
+
+const RECORDED_AS = { en: 'Recorded as', fr: 'Enregistré comme' };
 
 interface ConverterEngine {
   key: string;
@@ -13,18 +16,24 @@ interface ConverterEngine {
 interface ConvertibleFieldProps extends FieldProps {
   /** converter-engine block from the itemDef */
   converterEngine?: ConverterEngine;
+  /** HDS item key (e.g. `body-vulva-mucus-inspect`): its `preferred-input-<itemKey>` setting is read first. */
+  itemKey?: string;
 }
 
 /**
  * Field component for convertible items (euclidian-distance converter engine).
  *
  * Option B: Method picker → observation selector, with _raw (dimension stops) as fallback.
- * - If preferred-input-{itemKey} setting is set, pre-selects that method and hides the method picker.
- * - Otherwise shows a method dropdown, then the method's observation options.
+ * - If the person's method is set (`preferred-input-<itemKey>`, then the converter-model form
+ *   `preferred-input-<models>`), pre-selects that method and hides the method picker. It wins
+ *   over the method a stored value was recorded in: that one is shown as a "recorded as" note,
+ *   and the stored observation is highlighted in her method's words (closest match).
+ * - Otherwise shows a method dropdown (pre-selected on the recorded method), then the method's
+ *   observation options.
  * - Selecting an observation calls convertMethodToEvent to produce the vector + source block.
  * - "_raw" virtual method shows dimension stop selectors.
  */
-export function Convertible ({ label, description, value, onChange, converterEngine, required, disabled }: ConvertibleFieldProps) {
+export function Convertible ({ label, description, value, onChange, converterEngine, required, disabled, itemKey: hdsItemKey }: ConvertibleFieldProps) {
   const [engine, setEngine] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
@@ -32,6 +41,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
   const itemKey = converterEngine?.models;
   const source = value?.source;
   const vectors = value?.vectors;
+  const preferredMethod = useMemo(() => readPreferredMethod(hdsItemKey, itemKey), [hdsItemKey, itemKey]);
 
   // Load converter engine
   useEffect(() => {
@@ -41,19 +51,8 @@ export function Convertible ({ label, description, value, onChange, converterEng
         const model = getHDSModel();
         const eng = await model.converters.ensureEngine(itemKey);
         setEngine(eng);
-
-        // Check for converter-default setting
-        if (HDSSettings.isHooked) {
-          const defaultMethod = HDSSettings.get(`preferred-input-${itemKey}`);
-          if (defaultMethod && typeof defaultMethod === 'string') {
-            setSelectedMethod(defaultMethod);
-          }
-        }
-
-        // If value already has a source, pre-select that method
-        if (source?.key) {
-          setSelectedMethod(source.key);
-        }
+        // Her method first; the recorded method only when she has none (B-2026-10-26-10).
+        setSelectedMethod(initialConvertibleMethod({ preferred: preferredMethod, sourceKey: source?.key, methodIds: eng.methodIds }));
       } catch (e) {
         console.error('Failed to load converter engine:', e);
       }
@@ -76,12 +75,8 @@ export function Convertible ({ label, description, value, onChange, converterEng
     });
   }, [engine]);
 
-  // Check if method selector should be hidden (converter-default set)
-  const hideMethodSelector = useMemo(() => {
-    if (!HDSSettings.isHooked || !itemKey) return false;
-    const defaultMethod = HDSSettings.get(`preferred-input-${itemKey}`);
-    return !!defaultMethod;
-  }, [itemKey]);
+  // Method selector hidden when her method is set (and known to the engine) — show its name instead
+  const hideMethodSelector = !!engine && isKnownMethod(preferredMethod, engine.methodIds);
 
   // Get components (observation options) for the selected method
   const methodDef = selectedMethod && engine ? engine.getMethodDef(selectedMethod) : null;
@@ -106,8 +101,19 @@ export function Convertible ({ label, description, value, onChange, converterEng
     onChange({ vectors: newVectors });
   }
 
-  // Resolve current observation value from source for highlighting
-  const currentObservation = source?.sourceData;
+  // The stored observation, in the selected method's words: as recorded when the methods match,
+  // else the closest observation of the selected method (what the diary shows). Display only:
+  // an untouched field keeps the stored value as recorded.
+  const currentObservation = useMemo(() => {
+    if (source && source.key === selectedMethod) return source.sourceData;
+    if (!engine || !selectedMethod || selectedMethod === '_raw' || !vectors || typeof vectors !== 'object') return undefined;
+    try {
+      return engine.fromVector(selectedMethod, vectors)?.data;
+    } catch {
+      return undefined;
+    }
+  }, [engine, selectedMethod, source, vectors]);
+  const recordedElsewhere = !!source?.key && source.key !== selectedMethod;
 
   if (loading) {
     return (
@@ -264,11 +270,11 @@ export function Convertible ({ label, description, value, onChange, converterEng
         </div>
       )}
 
-      {/* Show current source info if value has source block */}
+      {/* Where the stored value comes from; "recorded as" when it was recorded in another method */}
       {source && (
-        <div className='mt-2 rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-400'>
-          Source: <span className='font-medium'>{String(source.sourceData)}</span>
-          <span className='ml-1 text-gray-400'>({localizeText(engine.getMethodDef(source.key)?.name) || source.key})</span>
+        <div className='mt-2 rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300'>
+          {recordedElsewhere ? (localizeText(RECORDED_AS) || 'Recorded as') : 'Source'}: <span className='font-medium'>{observationLabel(engine.getMethodDef(source.key), source.sourceData)}</span>
+          <span className='ml-1'>({localizeText(engine.getMethodDef(source.key)?.name) || source.key})</span>
         </div>
       )}
     </div>

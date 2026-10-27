@@ -53,13 +53,20 @@ describe('Select — a stored value that matches no option', () => {
 });
 
 describe('NumberInput — step', () => {
-  it('emits step="any" when the item declares none', () => {
+  it('emits step="any" when the item declares none and the value has no decimals', () => {
     // Without a step attribute the browser defaults to 1, so 72.5 kg would be a stepMismatch
     // and block submission under native form validation.
     const html = renderToStaticMarkup(
-      <NumberInput label='Weight' value={72.5} onChange={() => {}} required={false} disabled={false} />
+      <NumberInput label='Weight' value={72} onChange={() => {}} required={false} disabled={false} />
     );
     expect(html).toContain('step="any"');
+  });
+
+  it('steps a decimal value by its own decimals, so it is never a stepMismatch', () => {
+    const html = renderToStaticMarkup(
+      <NumberInput label='Weight' value={72.5} onChange={() => {}} required={false} disabled={false} />
+    );
+    expect(html).toContain('step="0.1"');
   });
 
   it('emits a declared step, scaled into the display scale', () => {
