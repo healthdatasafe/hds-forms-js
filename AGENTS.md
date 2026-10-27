@@ -99,7 +99,7 @@ Type aliases re-export from hds-lib (`appTemplates.ItemLabels`, `appTemplates.It
 
 ### Tests
 
-- [`tests/`](tests/) — vitest, pure unit tests on schema generation and event-data conversion. No DOM. Add tests next to similar existing ones.
+- [`tests/`](tests/) — vitest, pure unit tests on schema generation and event-data conversion, plus `renderToStaticMarkup` render checks. Interaction tests (focus, change, async effects) opt into a DOM per file with `// @vitest-environment happy-dom` and drive `react-dom/client` under `act` (see `tests/fieldTouched.test.tsx`). Add tests next to similar existing ones.
 - Visual / interaction verification happens in `src-test-app/` (run `npm run test-app`).
 
 ### Versioning

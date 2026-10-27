@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { localizeText, HDSSettings, getHDSModel, appTemplates } from 'hds-lib';
 import type { ItemData } from '../schema/schemas';
 import { Checkbox } from './fields/Checkbox';
@@ -44,6 +46,60 @@ interface HDSFormFieldProps {
    * Only `datasource-search` items read it; ignored for every other type.
    */
   pin?: ItemPin;
+  /**
+   * Least decimals a `number` field steps by when the item declares no `step`, in the display
+   * scale (2 for a basal temperature: 36.50 → 36.51). Defaults to the item's
+   * `number.display.precision`; the field also steps by the decimals typed (36.52 → 0.01).
+   */
+  precision?: number;
+  /**
+   * The value was pre-filled by the host (e.g. from the person's last entry) rather than typed.
+   * Until the field is touched (focused, clicked or changed) its wrapper carries
+   * `data-hds-prefilled="true"`, which the host styles (a tint), so the person sees which
+   * values she has checked. Turning `prefilled` on again starts a new untouched period.
+   * Pass `false` rather than `undefined` when it may turn on later: the wrapper is only
+   * rendered when `prefilled` or `onFieldTouched` is set, and adding it remounts the field.
+   */
+  prefilled?: boolean;
+  /**
+   * Called once, on the first focus, click or change inside the field, with the item key.
+   * Set with or without `prefilled`; when either is set the field is wrapped in a `<div>`.
+   */
+  onFieldTouched?: (itemKey: string | undefined) => void;
+}
+
+/**
+ * Wraps a field to report the first touch and to mark it while pre-filled and untouched.
+ * Capture-phase listeners, so every input inside (composite parts, stamp grids, companion
+ * fields) counts, without reaching into the field's DOM.
+ */
+function TouchTracker ({ itemKey, prefilled, onFieldTouched, children }: { itemKey?: string; prefilled?: boolean; onFieldTouched?: (itemKey: string | undefined) => void; children: ReactNode }) {
+  const [touched, setTouched] = useState(false);
+  const touchedRef = useRef(false);
+  const wasPrefilled = useRef(prefilled);
+  useEffect(() => {
+    if (prefilled && !wasPrefilled.current) {
+      touchedRef.current = false;
+      setTouched(false);
+    }
+    wasPrefilled.current = prefilled;
+  }, [prefilled]);
+  function touch () {
+    if (touchedRef.current) return;
+    touchedRef.current = true;
+    setTouched(true);
+    onFieldTouched?.(itemKey);
+  }
+  return (
+    <div
+      data-hds-prefilled={prefilled && !touched ? 'true' : undefined}
+      onFocusCapture={touch}
+      onClickCapture={touch}
+      onChangeCapture={touch}
+    >
+      {children}
+    </div>
+  );
 }
 
 function sourceCaption (source?: appTemplates.ItemLabelSource): string {
@@ -57,7 +113,17 @@ function sourceCaption (source?: appTemplates.ItemLabelSource): string {
   return parts.join(' · ');
 }
 
-export function HDSFormField ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin }: HDSFormFieldProps) {
+export function HDSFormField (props: HDSFormFieldProps) {
+  const { prefilled, onFieldTouched, ...fieldProps } = props;
+  if (prefilled == null && onFieldTouched == null) return <HDSFormFieldInner {...fieldProps} />;
+  return (
+    <TouchTracker itemKey={props.itemKey} prefilled={prefilled} onFieldTouched={onFieldTouched}>
+      <HDSFormFieldInner {...fieldProps} />
+    </TouchTracker>
+  );
+}
+
+function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched'>) {
   const overrideArray: FieldLabelOverridesWithSource[] | undefined = Array.isArray(labelOverrides)
     ? labelOverrides
     : undefined;
@@ -78,7 +144,7 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
                   {caption}
                 </div>
               )}
-              <HDSFormField
+              <HDSFormFieldInner
                 itemData={itemData}
                 itemKey={itemKey}
                 value={value}
@@ -87,6 +153,7 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
                 disabled={disabled}
                 labelOverrides={{ question: ov.question, description: ov.description, options: ov.options }}
                 pin={pin}
+                precision={precision}
               />
             </div>
           );
@@ -157,6 +224,7 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
           min={(itemData as any).min}
           max={(itemData as any).max}
           step={(itemData as any).step}
+          precision={precision}
         />
       );
     }
@@ -196,7 +264,7 @@ export function HDSFormField ({ itemData, itemKey, value, onChange, required, di
     }
     case 'convertible': {
       const converterEngine = (itemData as any)['converter-engine'];
-      return <Convertible {...baseProps} converterEngine={converterEngine} />;
+      return <Convertible {...baseProps} converterEngine={converterEngine} itemKey={itemKey} />;
     }
     case 'slider': {
       const s = itemData as any;
