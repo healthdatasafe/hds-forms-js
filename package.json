@@ -75,6 +75,6 @@
   },
   "dependencies": {
     "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui",
-    "hds-lib": "github:healthdatasafe/hds-lib-js"
+    "hds-lib": "github:healthdatasafe/hds-lib-js#2.20.0"
   }
 }
