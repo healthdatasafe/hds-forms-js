@@ -1,5 +1,52 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **`NumberInput` steps by the value's decimals, and a `precision` prop.** With no `step` declared
+  by the item, a number field steps by the decimals it is written with (36.52 → `step="0.01"`),
+  at least `precision` (display decimals; `HDSFormField` takes it from its new `precision` prop,
+  else the item's `number.display.precision`) and at least the decimals of `min` (the step
+  base). The step follows what is typed, so a typed value is never a `stepMismatch`; with
+  nothing declared and no decimals the input keeps `step="any"`. A zero or negative declared
+  step is now treated as no step (`step="0"` is invalid HTML and fell back to 1). Replaces
+  hds-webapp's DOM patching of `input.step`. New helpers `numberInputStep` and `decimalsOf` in
+  `src/schema/valueDisplay.ts`.
+- **`HDSFormField` `prefilled` and `onFieldTouched`.** A pre-filled field carries
+  `data-hds-prefilled="true"` on a wrapper until it is focused, clicked or changed (the host
+  styles it); `onFieldTouched(itemKey)` fires once on the first touch. Without either prop the
+  DOM is unchanged. Replaces hds-webapp's `classList` toggling on the library's inputs.
+- **`DatasetSearch` `recentEntries` and `onFreeText`.** The person's own entries are listed
+  first ("Your entries"), on focus and above matching search results, deduped; picking one
+  selects its concept only. When a search finds nothing, `onFreeText(text)` is offered as
+  "Use “text”" (the value is not changed: the host routes a typed name); without it the list
+  says "Nothing found".
+- **`ItemSearchPicker` `searchLabel`** (default `Search items`), the search box's accessible
+  name.
+
+### Fixed
+
+- **`Convertible` keeps the person's method when editing a value recorded in another one**
+  (B-2026-10-26-10). It used to switch the form to the recorded `source.key`, so opening a Mira
+  reading turned a Creighton chart's form into Mira's. Her method now wins; the stored
+  observation is highlighted in her method's words (closest match, display only: an untouched
+  field keeps the stored value) and the recorded method shows as "Recorded as …". The method is
+  read from hds-lib's key: `preferred-input-<itemKey>` (`CERVICAL_FLUID_METHOD_KEY` for cervical
+  fluid), then the legacy `preferred-input-<models>` (`CERVICAL_FLUID_METHOD_LEGACY_KEY`), so the
+  form and `getPreferredInput` agree (B-2026-10-26-16). `HDSFormField` passes `itemKey` to it.
+  A preferred method the engine does not know no longer hides the method picker.
+- **Accessibility** (B-2026-10-27-11): the number input is tied to its label (`id` / `htmlFor`,
+  description via `aria-describedby`); the `DatasetSearch` search box is tied to the field
+  label; `ItemSearchPicker`'s search box has an accessible name and its count badges are
+  `gray-700` on `gray-200` (dark: `gray-100` on `gray-600`), above 4.5:1 (was 3.9:1).
+
+### Changed
+
+- **hds-lib 2.20.0** (`github:healthdatasafe/hds-lib-js#2.20.0`, was unpinned at 2.8.0 in the
+  lockfile) for the cervical-fluid method key constants. Consumers need hds-lib 2.20.0 or later.
+- Dev: `happy-dom` for the interaction tests (touched fields, `Convertible`, `DatasetSearch`).
+
 ## [0.20.0] - 2026-10-02
 
 ### Changed

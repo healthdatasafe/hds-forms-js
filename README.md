@@ -44,6 +44,45 @@ import { HDSFormField } from 'hds-forms';
 
 Supported field types: `checkbox`, `date`, `text`, `number`, `select`, `composite`, `datasource-search`.
 
+#### Number steps
+
+A `number` field steps by the decimals its value is written with (36.52 → `step="0.01"`), so the
+arrows move the digits that change from one day to the next, and a typed value is never a
+`stepMismatch`. A `step` declared by the item wins. Otherwise the least granularity is the
+`precision` prop (display decimals, e.g. `2` for a basal temperature), defaulting to the item's
+`number.display.precision`. With nothing declared and no decimals in the value, the input keeps
+`step="any"`.
+
+```tsx
+<HDSFormField itemData={itemDef.data} value={value} onChange={setValue} precision={2} />
+```
+
+#### Pre-filled values and touched fields
+
+A host that pre-fills a field (from the person's last entry, say) passes `prefilled`. Until the
+field is focused, clicked or changed, its wrapper carries `data-hds-prefilled="true"`, which the
+host styles; `onFieldTouched(itemKey)` is called once on that first touch. Pass `false` rather
+than `undefined` when the flag may turn on later (the wrapper is only rendered when one of the two
+props is set). Without either prop the DOM is unchanged.
+
+```tsx
+<HDSFormField itemData={itemDef.data} itemKey={key} value={value} onChange={setValue}
+  prefilled={fromLastEntry} onFieldTouched={(k) => markChecked(k)} />
+```
+
+```css
+[data-hds-prefilled] :is(input, select, textarea) { background: var(--prefill-tint); }
+```
+
+#### Convertible items (charting methods)
+
+A `convertible` field opens in the person's method: the HDSSettings key
+`preferred-input-<itemKey>` (for cervical fluid hds-lib's `CERVICAL_FLUID_METHOD_KEY`), then the
+legacy converter-model key `preferred-input-<models>` (`CERVICAL_FLUID_METHOD_LEGACY_KEY`). A value
+recorded in another method keeps her method: the stored observation is highlighted in her
+method's words (closest match) and the recorded one is shown as "Recorded as …". An untouched
+field keeps the stored value as recorded. Pass `itemKey` so the item's own key is read first.
+
 #### Date / time / duration companions
 
 When an item declares a `dateTime` or `duration` block, `<HDSFormField>` renders the corresponding companion input next to the value field — the companions write to the surrounding Pryv event's `event.time` / `event.duration` (Pryv-native), not to the payload schema. Companions can be exposed individually:
@@ -155,6 +194,21 @@ The pin stores the resolved concept rather than an id because datasets-service h
 ### `<DatasetSearch>`
 
 Renders a typeahead search field bound to a remote dataset endpoint (e.g. `datasets-service`'s `/medication`, `/treatment`, `/procedure`). On selection, populates the host item's payload (`drug` / `regimen` / `procedure`) and any companion fields (`intake.{doseValue, doseUnit, route}`, procedure `findings[]`, free-text `notes`). Companion fields render inline.
+
+Optional props:
+
+- `recentEntries`: the person's own entries of the item (stored shape, newest first). Their
+  concepts are listed first ("Your entries"): on focus before anything is typed, then the ones
+  matching the query above the search results, deduped by `hdsId` / code / label. Picking one
+  selects its concept only.
+- `onFreeText(text)`: when a search finds nothing, the list offers "Use “text”" and calls it. The
+  field's value is not changed, since a typed name is not a coded concept: the host routes it
+  (e.g. to the item's `-basic` twin). Without it the list says "Nothing found".
+
+### `<ItemSearchPicker>`
+
+Searchable, grouped item list. `searchLabel` names the search box for assistive technology
+(default `Search items`; a placeholder is not a label).
 
 ### `<ConsentPanel>`
 
