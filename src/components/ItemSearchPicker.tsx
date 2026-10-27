@@ -17,6 +17,8 @@ export interface ItemSearchPickerProps {
   onSelect: (key: string) => void;
   /** Search placeholder */
   placeholder?: string;
+  /** Accessible name of the search box (`aria-label`); a placeholder is not a label. Default 'Search items'. */
+  searchLabel?: string;
   /** Filter function to restrict which items are shown */
   filter?: (item: ItemSearchPickerItem) => boolean;
   /** Set of item keys to mark as used (shown with checkmark, non-clickable) */
@@ -42,6 +44,7 @@ export function ItemSearchPicker ({
   selectedKey,
   onSelect,
   placeholder = 'Search items...',
+  searchLabel = 'Search items',
   filter,
   usedKeys,
   selectable = true,
@@ -98,6 +101,7 @@ export function ItemSearchPicker ({
       <div className='sticky top-0 border-b border-gray-200 bg-gray-50 p-2 dark:border-gray-600 dark:bg-gray-700'>
         <input
           type='text'
+          aria-label={searchLabel}
           placeholder={placeholder}
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -112,7 +116,7 @@ export function ItemSearchPicker ({
               className='flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm font-semibold text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600'
             >
               <span>{(expandedGroups.has(group) || !!search) ? '\u25BE' : '\u25B8'} {group}</span>
-              <span className='rounded-full bg-gray-200 px-1.5 text-xs text-gray-500 dark:bg-gray-600 dark:text-gray-400'>
+              <span className='rounded-full bg-gray-200 px-1.5 text-xs text-gray-700 dark:bg-gray-600 dark:text-gray-100'>
                 {groupedItems[group].length}
               </span>
             </button>
