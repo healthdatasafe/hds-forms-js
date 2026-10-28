@@ -1,22 +1,32 @@
+import { localizeText } from 'hds-lib';
 import { HDSFormField } from '../HDSFormField';
 import type { FieldProps } from '../../types';
 import type { ItemData } from '../../schema/schemas';
+import { ALL_OR_NOTHING_HINT, useAllOrNothing } from './allOrNothing';
 
 interface CompositeFieldProps extends FieldProps {
   composite: Record<string, ItemData>;
+  /** The eventType's JSON schema for this object (its `properties` and `required`). */
+  objectSchema?: any;
+  /**
+   * A group inside another composite (e.g. `intake.frequency`): all or nothing when
+   * `objectSchema.required` lists keys. The item's top-level composite is never gated.
+   */
+  nested?: boolean;
 }
 
-export function Composite ({ label, description, value, onChange, composite, disabled }: CompositeFieldProps) {
-  const compositeValue = value || {};
+export function Composite ({ label, description, value, onChange, composite, disabled, objectSchema, nested }: CompositeFieldProps) {
+  const required = nested ? objectSchema?.required : undefined;
+  const { draft, update, incomplete, isFieldRequired } = useAllOrNothing(value, required, onChange, null);
 
   function handleFieldChange (key: string, fieldValue: any) {
-    const updated = { ...compositeValue };
+    const updated = { ...draft };
     if (fieldValue == null) {
       delete updated[key];
     } else {
       updated[key] = fieldValue;
     }
-    onChange(Object.keys(updated).length > 0 ? updated : null);
+    update(updated);
   }
 
   return (
@@ -30,13 +40,15 @@ export function Composite ({ label, description, value, onChange, composite, dis
           <HDSFormField
             key={key}
             itemData={itemData}
-            value={compositeValue[key]}
+            value={draft[key]}
             onChange={(v) => handleFieldChange(key, v)}
-            required={!(itemData as any).canBeNull}
+            required={!(itemData as any).canBeNull || isFieldRequired(key)}
             disabled={disabled}
+            objectSchema={objectSchema?.properties?.[key] ?? null}
           />
         ))}
       </div>
+      {incomplete && <p className='mt-2 text-sm text-red-600 dark:text-red-400' role='alert'>{localizeText(ALL_OR_NOTHING_HINT)}</p>}
     </fieldset>
   );
 }
