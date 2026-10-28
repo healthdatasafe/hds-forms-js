@@ -178,7 +178,9 @@ export function schemaFor (v: ItemData): JSONSchema {
   }
   const action = SCHEMAS_PER_TYPE[v.type];
   if (action == null) {
-    throw new Error(`Cannot find schema for type: "${v.type}"`);
+    // `imported` (data-model 3.27.0) or a type a newer data model added: its content is an object nobody enters here.
+    schema.type = 'object';
+    return schema;
   }
   action(schema, v);
   return schema;

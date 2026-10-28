@@ -16,6 +16,7 @@ import { Convertible } from './fields/Convertible';
 import { Slider } from './fields/Slider';
 
 const NOT_EDITABLE_HERE = { en: 'Not editable here: add it as a document.', fr: 'Non modifiable ici : ajoutez-le comme document.' };
+const NOT_EDITABLE = { en: 'Not editable here.', fr: 'Non modifiable ici.' };
 
 const l = localizeText;
 
@@ -304,6 +305,13 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
         </div>
       );
     default:
-      return <div className='text-sm text-red-500'>Unknown field type: {(itemData as any).type}</div>;
+      // `imported` (a coded result written by an importer, data-model 3.27.0) or a type a newer data model added:
+      // shown, never entered here.
+      return (
+        <div>
+          <div className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>{label}</div>
+          <p className='text-sm text-gray-500 dark:text-gray-400'>{l(NOT_EDITABLE)}</p>
+        </div>
+      );
   }
 }
