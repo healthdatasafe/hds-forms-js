@@ -4,6 +4,7 @@ import type { FieldProps } from '../../types';
 import { getCompanionSchema, extractCompanionDefaults, getEnumLabel, keyToLabel } from '../../schema/companionFields';
 import { buildPinnedValue, pinDisplayLabel } from '../../schema/itemPin';
 import type { ItemPin } from '../../schema/itemPin';
+import { ALL_OR_NOTHING_HINT, useAllOrNothing } from './allOrNothing';
 
 const l = localizeText;
 
@@ -67,10 +68,32 @@ function conceptKey (concept: any, labelField: string): string {
 const inputClass = 'block w-full rounded-lg border border-gray-300 bg-gray-50 p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400';
 const labelClass = 'mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400';
 
+/**
+ * A nested object inside a companion (e.g. `intake.frequency`), rendered as its own group:
+ * all or nothing when its schema lists `required` keys, so a partial object is never emitted.
+ */
+function CompanionGroup ({ name, schema, value, onChange, locked }: { name: string; schema: any; value: any; onChange: (v: any) => void; locked: boolean }) {
+  const { draft, update, incomplete, isFieldRequired } = useAllOrNothing(value, schema.required, onChange, undefined);
+  return (
+    <fieldset className='rounded border border-gray-200 p-2 dark:border-gray-600' title={schema.description || ''}>
+      <legend className={labelClass}>{keyToLabel(name)}</legend>
+      <CompanionFields
+        schema={schema}
+        value={draft}
+        onChange={update}
+        readonlyKeys={locked ? new Set(Object.keys(schema.properties)) : undefined}
+        isFieldRequired={isFieldRequired}
+      />
+      {incomplete && <p className='mt-1 text-xs text-red-600 dark:text-red-400' role='alert'>{l(ALL_OR_NOTHING_HINT)}</p>}
+    </fieldset>
+  );
+}
+
 /** Render input fields for a companion object's sub-properties */
-function CompanionFields ({ schema, value, onChange, readonlyKeys }: { schema: any; value: any; onChange: (v: any) => void; readonlyKeys?: Set<string> }) {
+function CompanionFields ({ schema, value, onChange, readonlyKeys, isFieldRequired }: { schema: any; value: any; onChange: (v: any) => void; readonlyKeys?: Set<string>; isFieldRequired?: (key: string) => boolean }) {
   if (schema.type !== 'object' || !schema.properties) return null;
   const current = value || {};
+  const star = (key: string) => (isFieldRequired?.(key) ? ' *' : '');
 
   function update (field: string, val: any) {
     const next = { ...current, [field]: val };
@@ -83,6 +106,7 @@ function CompanionFields ({ schema, value, onChange, readonlyKeys }: { schema: a
   // Separate: inline (number, enum selects, boolean), text (free text, full width below)
   const inlineFields = entries.filter(([, s]) => s.type === 'number' || (s.type === 'string' && s.enum) || s.type === 'boolean');
   const textFields = entries.filter(([, s]) => s.type === 'string' && !s.enum);
+  const objectFields = entries.filter(([, s]) => s.type === 'object' && s.properties);
   const ro = readonlyKeys || new Set<string>();
   const readonlyClass = 'opacity-60 cursor-not-allowed';
 
@@ -94,7 +118,7 @@ function CompanionFields ({ schema, value, onChange, readonlyKeys }: { schema: a
             const locked = ro.has(key);
             return (
               <div key={key} className={propSchema.type === 'number' ? 'w-20 shrink-0' : 'min-w-0 flex-1'} title={propSchema.description || ''}>
-                <label className={labelClass}>{keyToLabel(key)}</label>
+                <label className={labelClass}>{keyToLabel(key)}{star(key)}</label>
                 {propSchema.type === 'number' && (
                   <input
                     type='number'
@@ -134,11 +158,21 @@ function CompanionFields ({ schema, value, onChange, readonlyKeys }: { schema: a
           })}
         </div>
       )}
+      {objectFields.map(([key, propSchema]) => (
+        <CompanionGroup
+          key={key}
+          name={key}
+          schema={propSchema}
+          value={current[key]}
+          onChange={(v) => update(key, v)}
+          locked={ro.has(key)}
+        />
+      ))}
       {textFields.map(([key, propSchema]) => {
         const locked = ro.has(key);
         return (
           <div key={key} title={propSchema.description || ''}>
-            <label className={labelClass}>{keyToLabel(key)}</label>
+            <label className={labelClass}>{keyToLabel(key)}{star(key)}</label>
             <input
               type='text'
               value={current[key] || ''}

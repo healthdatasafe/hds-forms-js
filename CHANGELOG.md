@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.22.0] - 2026-10-28
+
+### Added
+
+- **All-or-nothing nested groups.** A nested composite group whose eventType object lists `required`
+  keys (data-model 3.23.0 `intake.frequency`: `times`, `period`, `periodUnit`) keeps a partial entry
+  as an on-screen draft and reports it upward only once every required key is set, so a partial
+  object is never written. Its required fields get the asterisk once the group is started, and an
+  alert asks to fill in all the fields or none. The item's top-level composite and groups without
+  `required` behave as before. `HDSFormField` reads the item's eventType schema for a top-level
+  composite and hands each sub-field its part (new internal prop `objectSchema`). Shared hook in
+  `fields/allOrNothing.ts`. Tests `tests/allOrNothing.test.tsx`.
+- **`DatasetSearch` companion fields render nested objects.** An object property of a companion
+  (`intake.frequency` on `medication/coded-v1`) was skipped, so the coded intake form could not
+  enter a frequency; it now renders as its own group, all or nothing like above.
+
 ## [0.21.0] - 2026-10-27
 
 ### Added

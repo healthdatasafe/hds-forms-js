@@ -9,6 +9,7 @@ import { NumberInput } from './fields/NumberInput';
 import { Select } from './fields/Select';
 import { MultiSelect } from './fields/MultiSelect';
 import { Composite } from './fields/Composite';
+import { eventTypeObjectSchema } from './fields/allOrNothing';
 import { DatasetSearch } from './fields/DatasetSearch';
 import type { ItemPin } from '../schema/itemPin';
 import { Convertible } from './fields/Convertible';
@@ -66,6 +67,12 @@ interface HDSFormFieldProps {
    * Set with or without `prefilled`; when either is set the field is wrapped in a `<div>`.
    */
   onFieldTouched?: (itemKey: string | undefined) => void;
+  /**
+   * Internal, set by `Composite` for its sub-fields: the eventType JSON schema of this
+   * sub-field (`null` when the eventType has none). Leave unset on an item: a top-level
+   * composite then reads its schema from the item's `eventType`.
+   */
+  objectSchema?: any;
 }
 
 /**
@@ -123,7 +130,7 @@ export function HDSFormField (props: HDSFormFieldProps) {
   );
 }
 
-function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched'>) {
+function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision, objectSchema }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched'>) {
   const overrideArray: FieldLabelOverridesWithSource[] | undefined = Array.isArray(labelOverrides)
     ? labelOverrides
     : undefined;
@@ -154,6 +161,7 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
                 labelOverrides={{ question: ov.question, description: ov.description, options: ov.options }}
                 pin={pin}
                 precision={precision}
+                objectSchema={objectSchema}
               />
             </div>
           );
@@ -255,7 +263,9 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
     }
     case 'composite': {
       const composite = (itemData as any).composite;
-      return <Composite {...baseProps} composite={composite} />;
+      const nested = objectSchema !== undefined;
+      const schema = nested ? objectSchema : eventTypeObjectSchema((itemData as any).eventType);
+      return <Composite {...baseProps} composite={composite} objectSchema={schema} nested={nested} />;
     }
     case 'datasource-search': {
       const dsKey = (itemData as any).datasource;
