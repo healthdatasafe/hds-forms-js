@@ -16,7 +16,7 @@ interface ConverterEngine {
 }
 
 interface BaseItemData {
-  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'multi-select' | 'composite' | 'datasource-search' | 'convertible' | 'slider' | 'system';
+  type: 'checkbox' | 'date' | 'text' | 'number' | 'select' | 'multi-select' | 'composite' | 'datasource-search' | 'convertible' | 'slider' | 'system' | 'attachments';
   label: localizableText;
   description?: localizableText;
   canBeNull?: boolean;
@@ -131,7 +131,15 @@ interface SystemData extends BaseItemData {
   type: 'system';
 }
 
-export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | MultiSelectData | CompositeData | DatasourceSearchData | ConvertibleData | SliderData | SystemData;
+/**
+ * A document item (data-model 3.25.0, `document` on `file/xds-v1`): files carried as attachments, imported rather
+ * than entered field by field. `HDSFormField` shows it as not editable here; `ItemSearchPicker` does not offer it.
+ */
+interface AttachmentsData extends BaseItemData {
+  type: 'attachments';
+}
+
+export type ItemData = CheckboxData | DateData | TextData | NumberData | SelectData | MultiSelectData | CompositeData | DatasourceSearchData | ConvertibleData | SliderData | SystemData | AttachmentsData;
 
 export interface JSONSchema {
   title: string;
@@ -159,7 +167,7 @@ const l = localizeText;
 
 type SchemaAction = (schema: JSONSchema, v: ItemData) => void;
 
-const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, 'multi-select': multiSelect, composite, 'datasource-search': datasourceSearch, convertible, slider, system };
+const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, 'multi-select': multiSelect, composite, 'datasource-search': datasourceSearch, convertible, slider, system, attachments };
 
 export function schemaFor (v: ItemData): JSONSchema {
   const schema: JSONSchema = {
@@ -259,6 +267,11 @@ function convertible (schema: JSONSchema, _v: ItemData): void {
  * pack does not crash on one — but it is not a form field, and the renderers skip it.
  */
 function system (schema: JSONSchema, _v: ItemData): void {
+  schema.type = 'object';
+}
+
+/** A document's content is its metadata object (the files are attachments): described, never a form input */
+function attachments (schema: JSONSchema, _v: ItemData): void {
   schema.type = 'object';
 }
 
