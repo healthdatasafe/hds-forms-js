@@ -2,6 +2,12 @@ import { useState, useMemo } from 'react';
 import { getHDSModel, localizeText } from 'hds-lib';
 import { getItemGroup } from '../formBuilderUtils';
 
+/** Item types a form renders (hds-lib 2.28.0 `ENTERABLE_ITEM_TYPES`; copied so older hds-lib pins filter the same). */
+const ENTERABLE_ITEM_TYPES = [
+  'number', 'text', 'select', 'checkbox', 'date', 'picture',
+  'composite', 'datasource-search', 'convertible', 'slider', 'multi-select'
+];
+
 export interface ItemSearchPickerItem {
   key: string;
   label: string;
@@ -58,11 +64,11 @@ export function ItemSearchPicker ({
     if (externalItems) return externalItems;
     try {
       const model = getHDSModel();
-      // getAllActive() already drops system items; the deprecated-inclusive path must too. Document items
-      // (`attachments`) are imported, not picked; read from the data so an hds-lib before 2.26.0 skips them too.
+      // Only types a form renders are offered: no system, document (`attachments`) or `imported` item, nor a type a
+      // newer data model adds. Read from the data, so an hds-lib before 2.28.0 (blacklist getAllActive) skips them too.
       const defs = (includeDeprecated
-        ? model.itemsDefs.getAll().filter((d: any) => !d.isSystem)
-        : model.itemsDefs.getAllActive()).filter((d: any) => d.data?.type !== 'attachments');
+        ? model.itemsDefs.getAll()
+        : model.itemsDefs.getAllActive()).filter((d: any) => ENTERABLE_ITEM_TYPES.includes(d.data?.type));
       return defs.map((d: any) => ({
         key: d.key,
         label: typeof d.label === 'object' ? (localizeText(d.label) || d.key) : (d.label || d.key),

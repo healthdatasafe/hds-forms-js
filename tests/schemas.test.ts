@@ -239,8 +239,9 @@ describe('schemaFor', () => {
     expect(schemaFor(data)).toEqual({ title: 'Connected services status', type: 'object' });
   });
 
-  it('throws for unknown type', () => {
-    const data = { type: 'unknown', label: { en: 'Bad' } } as any;
-    expect(() => schemaFor(data)).toThrow('Cannot find schema for type: "unknown"');
+  // `imported` (data-model 3.27.0) and any type a newer pack adds: described as an object, never thrown on.
+  it('imported or unknown type → object (no throw)', () => {
+    expect(schemaFor({ type: 'imported', label: { en: 'Other blood results' } } as any)).toEqual({ title: 'Other blood results', type: 'object' });
+    expect(schemaFor({ type: 'unknown', label: { en: 'Bad' } } as any)).toEqual({ title: 'Bad', type: 'object' });
   });
 });

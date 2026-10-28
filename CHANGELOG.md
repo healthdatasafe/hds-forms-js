@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.24.0] - 2026-10-28
+
+### Added
+
+- **Imported items** (data-model 3.27.0, `type: imported`: coded lab results on `lab-result/coded-v1`, written by an
+  importer) and **any item type a newer data model adds**:
+  - `HDSFormField` shows the item's name with "Not editable here." (EN/FR) instead of the red "Unknown field type".
+  - `schemaFor` describes the item as an object instead of throwing `Cannot find schema for type`.
+  - `ItemSearchPicker` offers only the types a form renders (hds-lib 2.28.0 `ENTERABLE_ITEM_TYPES`). That holds
+    with any hds-lib pin, including when `includeDeprecated` is set.
+
 ## [0.23.0] - 2026-10-28
 
 ### Added
