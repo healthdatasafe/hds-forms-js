@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.23.0] - 2026-10-28
+
+### Added
+
+- **Document items** (data-model 3.25.0, `type: attachments`: files imported as attachments, metadata on
+  `file/xds-v1`). `HDSFormField` shows the item's name with "Not editable here: add it as a document." (EN/FR)
+  instead of "Unknown field type"; `schemaFor` describes it as an object instead of throwing; `ItemSearchPicker`
+  never offers it, also with an hds-lib before 2.26.0 whose `getAllActive()` still lists it.
+
 ## [0.22.0] - 2026-10-28
 
 ### Added

@@ -15,6 +15,8 @@ import type { ItemPin } from '../schema/itemPin';
 import { Convertible } from './fields/Convertible';
 import { Slider } from './fields/Slider';
 
+const NOT_EDITABLE_HERE = { en: 'Not editable here: add it as a document.', fr: 'Non modifiable ici : ajoutez-le comme document.' };
+
 const l = localizeText;
 
 /**
@@ -293,6 +295,14 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
     case 'system':
       // State written by software (e.g. `sync-status`), never a user-entered field.
       return null;
+    case 'attachments':
+      // A document: imported as a file, never entered field by field.
+      return (
+        <div>
+          <div className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>{label}</div>
+          <p className='text-sm text-gray-500 dark:text-gray-400'>{l(NOT_EDITABLE_HERE)}</p>
+        </div>
+      );
     default:
       return <div className='text-sm text-red-500'>Unknown field type: {(itemData as any).type}</div>;
   }

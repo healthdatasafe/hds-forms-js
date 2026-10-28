@@ -58,10 +58,11 @@ export function ItemSearchPicker ({
     if (externalItems) return externalItems;
     try {
       const model = getHDSModel();
-      // getAllActive() already drops system items; the deprecated-inclusive path must too.
-      const defs = includeDeprecated
+      // getAllActive() already drops system items; the deprecated-inclusive path must too. Document items
+      // (`attachments`) are imported, not picked; read from the data so an hds-lib before 2.26.0 skips them too.
+      const defs = (includeDeprecated
         ? model.itemsDefs.getAll().filter((d: any) => !d.isSystem)
-        : model.itemsDefs.getAllActive();
+        : model.itemsDefs.getAllActive()).filter((d: any) => d.data?.type !== 'attachments');
       return defs.map((d: any) => ({
         key: d.key,
         label: typeof d.label === 'object' ? (localizeText(d.label) || d.key) : (d.label || d.key),
