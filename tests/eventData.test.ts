@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { prefillFromEvents, matchEventsToItemDefs, formDataToActions, formDataToEventBatch } from '../src/schema/eventData';
 import type { ItemDef } from '../src/schema/itemDefToSchema';
+import { ratioGenericFieldValue } from '../src/schema/ratioGeneric';
 
 function makeItemDef (overrides: Partial<ItemDef['data']> & { streamId?: string }): ItemDef {
   const { streamId, ...dataOverrides } = overrides;
@@ -229,6 +230,73 @@ describe('ratio/generic select object content (#6)', () => {
     const result = matchEventsToItemDefs(itemDefs, events);
     expect(result.values.ttc).toBe(8);
     expect(result.eventIds.ttc).toBe('e1');
+  });
+});
+
+// data-model 3.33.0: a `type: number` item on ratio/generic (INR) authors ratioRelativeTo: 1
+function makeRatioGenericNumber (streamId: string, ratioRelativeTo?: number): ItemDef {
+  return {
+    data: {
+      type: 'number',
+      label: { en: 'INR' },
+      eventType: 'ratio/generic',
+      streamId,
+      ...(ratioRelativeTo !== undefined ? { ratioRelativeTo } : {})
+    } as any,
+    eventTemplate: () => ({ streamIds: [streamId], type: 'ratio/generic' })
+  };
+}
+
+describe('ratio/generic number object content (INR)', () => {
+  const inr = 'body-blood-coagulation-inr';
+
+  it('formDataToActions writes { value, relativeTo: 1 } on create', () => {
+    const actions = formDataToActions([{ key: 'inr', itemDef: makeRatioGenericNumber(inr, 1) }], { inr: 2.5 }, {}, 1000);
+    expect(actions[0].action).toBe('create');
+    expect(actions[0].params.type).toBe('ratio/generic');
+    expect(actions[0].params.content).toEqual({ value: 2.5, relativeTo: 1 });
+  });
+
+  it('an update sends content only, so the stored clientData (hdsComparator) is kept', () => {
+    const actions = formDataToActions([{ key: 'inr', itemDef: makeRatioGenericNumber(inr, 1) }], { inr: 3.1 }, { inr: 'e1' }, 1000);
+    expect(actions[0].action).toBe('update');
+    expect(actions[0].params.update).toEqual({ content: { value: 3.1, relativeTo: 1 }, time: 1000 });
+  });
+
+  it('formDataToEventBatch writes the same shape', () => {
+    const events = formDataToEventBatch([{ key: 'inr', itemDef: makeRatioGenericNumber(inr, 1) }], { inr: 1.2 }, 1000);
+    expect(events[0].content).toEqual({ value: 1.2, relativeTo: 1 });
+  });
+
+  it('prefill unwraps the object back to the number (round-trip)', () => {
+    const events = [{ id: 'e1', type: 'ratio/generic', streamIds: [inr], content: { value: 2.5, relativeTo: 1 }, time: 100 }];
+    const result = matchEventsToItemDefs([{ key: 'inr', itemDef: makeRatioGenericNumber(inr, 1) }], events);
+    expect(result.values.inr).toBe(2.5);
+    expect(result.eventIds.inr).toBe('e1');
+  });
+
+  it('throws when the pack publishes no ratioRelativeTo (nothing to derive it from)', () => {
+    expect(() => formDataToActions([{ key: 'inr', itemDef: makeRatioGenericNumber(inr) }], { inr: 2.5 }, {}, 1000))
+      .toThrow(/does not publish ratioRelativeTo/);
+  });
+
+  it('HDSFormField reads stored content passed as its value (hds-webapp edit mode) as the scalar', () => {
+    const number = { type: 'number', eventType: 'ratio/generic' };
+    const select = { type: 'select', eventType: 'ratio/generic' };
+    expect(ratioGenericFieldValue(number, { value: 2.5, relativeTo: 1 })).toBe(2.5);
+    expect(ratioGenericFieldValue(select, { value: 4, relativeTo: 8 })).toBe(4);
+    expect(ratioGenericFieldValue(number, 2.5)).toBe(2.5);
+    expect(ratioGenericFieldValue({ type: 'composite', eventType: 'ratio/generic' }, { value: 1 })).toEqual({ value: 1 });
+    expect(ratioGenericFieldValue({ type: 'number', eventType: 'time/s' }, { value: 1 })).toEqual({ value: 1 });
+  });
+
+  it('a number item on another eventType still writes a bare number', () => {
+    const itemDef: ItemDef = {
+      data: { type: 'number', label: { en: 'PT' }, eventType: 'time/s', streamId: 'pt' } as any,
+      eventTemplate: () => ({ streamIds: ['pt'], type: 'time/s' })
+    };
+    const actions = formDataToActions([{ key: 'pt', itemDef }], { pt: 12.4 }, {}, 1000);
+    expect(actions[0].params.content).toBe(12.4);
   });
 });
 

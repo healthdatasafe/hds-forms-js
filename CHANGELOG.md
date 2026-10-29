@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.25.0] - 2026-10-29
+
+### Added
+
+- **Number items on `ratio/generic`** (data-model 3.33.0, INR: `body-blood-coagulation-inr`). The typed number is the
+  numerator and the item's authored `ratioRelativeTo` the denominator: every write path (`formDataToActions`,
+  `formDataToEventBatch`, `jsonFormForItemDef`) stores `{ value, relativeTo }`, prefill unwraps it. A pack that
+  publishes no `ratioRelativeTo` on such an item throws a clear error (nothing to derive it from).
+
+### Fixed
+
+- `HDSFormField` reads stored `{ value, relativeTo }` content passed as its `value` (hds-webapp passes an edited event's
+  content, and the person's last entry, as is) as the field's scalar. A ratio/generic select opened that way used to
+  show an extra `[object Object]` option, and a number field would have shown an empty input.
+
 ## [0.24.0] - 2026-10-28
 
 ### Added

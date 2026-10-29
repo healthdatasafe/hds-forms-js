@@ -110,6 +110,34 @@ describe('jsonFormForItemDef', () => {
     });
   });
 
+  // data-model 3.33.0: INR is a `type: number` item on ratio/generic with an authored ratioRelativeTo
+  describe('ratio/generic number (INR)', () => {
+    function makeInrItemDef (ratioRelativeTo?: number) {
+      const itemDef = makeItemDef(
+        { type: 'number', label: { en: 'INR' }, eventType: 'ratio/generic' },
+        { streamIds: ['body-blood-coagulation-inr'], type: 'ratio/generic' }
+      );
+      if (ratioRelativeTo !== undefined) (itemDef.data as any).ratioRelativeTo = ratioRelativeTo;
+      return itemDef;
+    }
+
+    it('wraps the number as content.value', () => {
+      const schema = jsonFormForItemDef(makeInrItemDef(1)).schema as any;
+      expect(schema.properties.content.type).toBe('object');
+      expect(schema.properties.content.properties.value.type).toBe('number');
+    });
+
+    it('writes { value, relativeTo: 1 }', () => {
+      const eventData = jsonFormForItemDef(makeInrItemDef(1)).eventDataForFormData({ content: { value: 2.5 } }) as any;
+      expect(eventData.content).toEqual({ value: 2.5, relativeTo: 1 });
+      expect(eventData.type).toBe('ratio/generic');
+    });
+
+    it('throws a clear error when the pack publishes no ratioRelativeTo', () => {
+      expect(() => jsonFormForItemDef(makeInrItemDef())).toThrow(/does not publish ratioRelativeTo/);
+    });
+  });
+
   describe('variations', () => {
     it('adds type selector to schema', () => {
       const itemDef = makeItemDef({
