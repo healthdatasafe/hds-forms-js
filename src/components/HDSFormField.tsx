@@ -12,6 +12,7 @@ import { Composite } from './fields/Composite';
 import { eventTypeObjectSchema } from './fields/allOrNothing';
 import { DatasetSearch } from './fields/DatasetSearch';
 import type { ItemPin } from '../schema/itemPin';
+import { ratioGenericFieldValue } from '../schema/ratioGeneric';
 import { Convertible } from './fields/Convertible';
 import { Slider } from './fields/Slider';
 
@@ -183,7 +184,7 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
   const description = descSource ? (l(descSource) || undefined) : undefined;
   const isRequired = required ?? false;
 
-  const baseProps = { label, description, value, onChange, required: isRequired, disabled };
+  const baseProps = { label, description, value: ratioGenericFieldValue(itemData as any, value), onChange, required: isRequired, disabled };
   const labelOverridesForOptions = effective;
 
   switch (itemData.type) {

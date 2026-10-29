@@ -1,5 +1,5 @@
 import type { ItemDef } from './itemDefToSchema';
-import { isSelectRatioGeneric, ratioGenericRelativeTo } from './ratioGeneric';
+import { isRatioGeneric, ratioGenericRelativeTo } from './ratioGeneric';
 
 /**
  * Get the possible event types for an item def.
@@ -21,23 +21,24 @@ function getEventTypes (itemDef: ItemDef): string[] {
  * Some HDS event types require **object** content even though the form field
  * produces a scalar. The canonical case is a `select` whose `eventType` is
  * `ratio/generic`: the JSON-schema path (`_jsonFormForItemDef`) wraps the chosen
- * option value as `{ value, relativeTo: max(option values) }`. The action/batch
- * path must emit the same shape (or the store rejects it with
+ * option value as `{ value, relativeTo: max(option values) }`. A `number` item on
+ * `ratio/generic` (INR) wraps the typed value the same way, with the item's authored
+ * `ratioRelativeTo`. The action/batch path must emit the same shape (or the store rejects it with
  * `INVALID_TYPE "must be object"`), and prefill must unwrap it back to the
  * scalar so the round-trip is symmetric. See hds-forms-js#6.
  */
 
-/** Write side: wrap a scalar select value into canonical object content. */
+/** Write side: wrap a scalar select or number value into canonical object content. */
 function toEventContent (itemDef: ItemDef, value: any, eventType: string): any {
-  if (!isSelectRatioGeneric(itemDef, eventType)) return value;
+  if (!isRatioGeneric(itemDef, eventType)) return value;
   // Already shaped (e.g. prefilled object) — leave untouched.
   if (value == null || typeof value === 'object') return value;
   return { value: Number(value), relativeTo: ratioGenericRelativeTo(itemDef) };
 }
 
-/** Read side: unwrap canonical object content back to the select's scalar. */
+/** Read side: unwrap canonical object content back to the field's scalar. */
 function fromEventContent (itemDef: ItemDef, content: any, eventType: string): any {
-  if (!isSelectRatioGeneric(itemDef, eventType)) return content;
+  if (!isRatioGeneric(itemDef, eventType)) return content;
   if (content != null && typeof content === 'object' && 'value' in content) return content.value;
   return content;
 }

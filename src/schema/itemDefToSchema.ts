@@ -104,7 +104,8 @@ function _jsonFormForItemDef (itemDef: ItemDef): JsonFormResult {
     };
   }
 
-  if (type === 'select' && itemDef.data.eventType === 'ratio/generic') {
+  // A select's option or a number item's value (INR) is the numerator of `{ value, relativeTo }`
+  if ((type === 'select' || type === 'number') && itemDef.data.eventType === 'ratio/generic') {
     const relativeTo = ratioGenericRelativeTo(itemDef);
     return {
       schema: {
