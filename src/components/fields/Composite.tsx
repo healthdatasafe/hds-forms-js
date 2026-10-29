@@ -20,8 +20,11 @@ export function Composite ({ label, description, value, onChange, composite, dis
   const { draft, update, incomplete, isFieldRequired } = useAllOrNothing(value, required, onChange, null);
 
   function handleFieldChange (key: string, fieldValue: any) {
+    // The spread keeps stored keys that are not form fields (an importer's codings, ids).
     const updated = { ...draft };
-    if (fieldValue == null) {
+    // A cleared text or date input sends '': on an optional sub-field that drops the key,
+    // as the companion fields do (eventType strings are `minLength: 1`). A required one keeps it.
+    if (fieldValue == null || (fieldValue === '' && (composite[key] as any)?.canBeNull)) {
       delete updated[key];
     } else {
       updated[key] = fieldValue;
