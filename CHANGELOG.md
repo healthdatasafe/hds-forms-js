@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.26.0] - 2026-10-29
+
+### Fixed
+
+- **A cleared optional text sub-field of a composite drops its key** instead of storing `''`, which a closed
+  eventType's `minLength: 1` string rejects (`encounter/visit-v1` `reason`, `notes`). Same for a cleared date
+  sub-field, and as the `DatasetSearch` companion fields already did. Only the empty string counts as cleared
+  (whitespace is kept, as for a top-level item). A required sub-field still keeps `''`, and stored keys that
+  are not form fields (an importer's participants or codings) still survive an edit. Tests
+  `tests/compositeClear.test.tsx`.
+
 ## [0.25.0] - 2026-10-29
 
 ### Added
