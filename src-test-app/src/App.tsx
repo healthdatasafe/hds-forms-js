@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { getItems, getModel } from './hdsLibService';
-import { HDSSettings, localizeText, eventToShortText, durationToLabel } from 'hds-lib';
+import { HDSSettings, localizeText, eventToShortText, durationToLabel, getPreferredInput } from 'hds-lib';
 import { HDSFormField } from 'hds-forms/components/HDSFormField';
+import { Select } from 'hds-forms/components/fields/Select';
 import { HDSFormSection } from 'hds-forms/components/HDSFormSection';
 import { ItemSearchPicker } from 'hds-forms/components/ItemSearchPicker';
 import type { ItemSearchPickerItem } from 'hds-forms/components/ItemSearchPicker';
@@ -30,17 +31,28 @@ function safeLabel (sec: number): string {
   try { return durationToLabel(sec); } catch { return `${sec}s`; }
 }
 
+/** Unit choice for a variation item, seeded like HDSFormSection: the preferred input, else the first option. */
+function defaultEventType (key: string): string | undefined {
+  if (!key) return undefined;
+  const options = getModel().itemsDefs.forKey(key, false)?.data?.variations?.eventType?.options;
+  if (!options) return undefined;
+  return getPreferredInput(key)?.eventType ?? options[0]?.value;
+}
+
 /** Picker + form + envelope toggles (time/duration) + Short text + 3 debug panels. Owns its own state. */
 function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list' }: SingleFieldPanelProps) {
   // Selection + value share one state so changing the selected item atomically clears the value.
   // (Using two states with a useEffect-reset would race against the first render of HDSFormField
   // — the new DatasetSearch instance would capture the prior value into its initialDrugRef and
   // get stuck in edit-mode showing an empty static-text view.)
-  const [selection, setSelection] = useState<{ key: string; value: any }>({ key: '', value: undefined });
+  // `eventType` is the unit choice of a variation item (body-weight: mass/kg | mass/lb), undefined otherwise.
+  const [selection, setSelection] = useState<{ key: string; value: any; eventType?: string }>({ key: '', value: undefined });
   const selectedKey = selection.key;
   const fieldValue = selection.value;
-  const setSelectedKey = useCallback((key: string) => setSelection({ key, value: undefined }), []);
+  const selectedEventType = selection.eventType;
+  const setSelectedKey = useCallback((key: string) => setSelection({ key, value: undefined, eventType: defaultEventType(key) }), []);
   const setFieldValue = useCallback((value: any) => setSelection(prev => ({ ...prev, value })), []);
+  const setSelectedEventType = useCallback((eventType: string) => setSelection(prev => ({ ...prev, eventType })), []);
 
   const [fieldSchema, setFieldSchema] = useState<any>(null);
   const [eventData, setEventData] = useState<any>(null);
@@ -67,7 +79,7 @@ function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list
       const schema = schemaFor(itemDef.data);
       setFieldSchema(schema);
       setEventData(null);
-      const jsonForm = jsonFormForItemDef(itemDef);
+      const jsonForm = jsonFormForItemDef(itemDef, { eventType: selectedEventType });
       setEventData({ converter: jsonForm.eventDataForFormData, schema: jsonForm.schema });
       const dur = (itemDef.data as any)?.duration;
       setDurationMeta(dur
@@ -76,7 +88,7 @@ function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list
     } catch (e) {
       console.error('Schema error:', e);
     }
-  }, [selectedKey]);
+  }, [selectedKey, selectedEventType]);
 
   // Synthesize a full event { time, duration?, type, streamIds, content } from current inputs.
   const synthesizedEvent = useMemo<any>(() => {
@@ -176,8 +188,9 @@ function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list
           const model = getModel();
           const itemDef = model.itemsDefs.forKey(selectedKey);
           if (!itemDef) return <p className='text-red-500'>Item not found</p>;
+          const variations = itemDef.data?.variations?.eventType;
           return (
-            <div className='rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
+            <div className='space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700'>
               <HDSFormField
                 key={selectedKey}
                 itemData={itemDef.data}
@@ -185,6 +198,14 @@ function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list
                 value={fieldValue}
                 onChange={setFieldValue}
               />
+              {variations && (
+                <Select
+                  label={localizeText(variations.label) || ''}
+                  value={selectedEventType}
+                  onChange={setSelectedEventType}
+                  options={variations.options.map((o: any) => ({ value: o.value, label: localizeText(o.label) || '' }))}
+                />
+              )}
             </div>
           );
         })()}

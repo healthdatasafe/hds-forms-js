@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **Test app: Single Field builds events for unit-choice items** (2026-11-03, B-2026-10-27-3). It called
+  `jsonFormForItemDef` without `eventType`, so `eventTemplate()` threw for every variation item (`body-weight`, glucose,
+  the lab items) and no event or short text showed. It now seeds the unit like `HDSFormSection` (preferred input, else
+  the first option), shows the unit select, and passes the choice. Test app only; the library is unchanged.
+
 ## [0.26.0] - 2026-10-29
 
 ### Fixed
