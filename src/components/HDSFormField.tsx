@@ -58,6 +58,13 @@ interface HDSFormFieldProps {
    */
   precision?: number;
   /**
+   * The unit the host chose for an item with `variations.eventType` (its own Unit select, or the stored
+   * event's type). The number field shows that option's unit; without it the field falls back to the
+   * person's preference, which disagreed with the host's select (B-2026-10-28-39). Ignored when it is not
+   * one of the item's options.
+   */
+  eventType?: string;
+  /**
    * The value was pre-filled by the host (e.g. from the person's last entry) rather than typed.
    * Until the field is touched (focused, clicked or changed) its wrapper carries
    * `data-hds-prefilled="true"`, which the host styles (a tint), so the person sees which
@@ -134,7 +141,7 @@ export function HDSFormField (props: HDSFormFieldProps) {
   );
 }
 
-function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision, objectSchema }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched'>) {
+function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision, eventType, objectSchema }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched'>) {
   const overrideArray: FieldLabelOverridesWithSource[] | undefined = Array.isArray(labelOverrides)
     ? labelOverrides
     : undefined;
@@ -165,6 +172,7 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
                 labelOverrides={{ question: ov.question, description: ov.description, options: ov.options }}
                 pin={pin}
                 precision={precision}
+                eventType={eventType}
                 objectSchema={objectSchema}
               />
             </div>
@@ -197,7 +205,11 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
     case 'number': {
       let unit: string | undefined;
       const variations = (itemData as any).variations?.eventType;
-      if (variations?.options && HDSSettings.isHooked) {
+      const chosen = eventType != null ? variations?.options?.find((o: any) => o.value === eventType) : undefined;
+      if (chosen) {
+        // 0. The unit the host chose
+        if (chosen.label) unit = l(chosen.label) || undefined;
+      } else if (variations?.options && HDSSettings.isHooked) {
         // 1. Per-item override
         const perItem = HDSSettings.get(`preferred-input-${itemKey}`);
         let selected = perItem

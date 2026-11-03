@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.28.0] - 2026-11-03
+
+### Added
+
+- **`HDSFormField` `eventType` prop: the unit the host chose** for an item with `variations.eventType` (B-2026-10-28-39).
+  The number field showed the person's preferred unit (per-item setting, then `unitSystem`), so editing a lb entry
+  with a kg preference read "kg" next to the number while the host's Unit select said lb (the stored type was right).
+  With `eventType` set to one of the item's options, the field shows that option's unit; otherwise the preference
+  applies as before. `HDSFormSection` passes its own unit selection, and so does the test app. Tests
+  `tests/variationUnit.test.tsx`.
+
 ## [0.27.0] - 2026-11-03
 
 ### Fixed

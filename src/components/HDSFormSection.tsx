@@ -159,6 +159,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
               disabled={disabled}
               labelOverrides={labelOverrides}
               pin={pin}
+              eventType={variations ? formValues[`${key}__eventType`] : undefined}
             />
             {variations && (
               <Select
