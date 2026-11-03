@@ -197,6 +197,7 @@ function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list
                 itemKey={selectedKey}
                 value={fieldValue}
                 onChange={setFieldValue}
+                eventType={selectedEventType}
               />
               {variations && (
                 <Select
