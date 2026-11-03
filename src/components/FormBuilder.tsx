@@ -29,6 +29,7 @@ export interface FormBuilderLabels {
   coverageMissing: string;
   coverageUnknown: string;
   coverageApply: string;
+  unknownItem: string;
 }
 
 const DEFAULT_LABELS: FormBuilderLabels = {
@@ -50,7 +51,8 @@ const DEFAULT_LABELS: FormBuilderLabels = {
   coverageOk: 'All question items are covered by the request\'s permissions.',
   coverageMissing: 'permission(s) missing for this questionnaire',
   coverageUnknown: 'unknown item(s)',
-  coverageApply: 'Add missing permissions to request'
+  coverageApply: 'Add missing permissions to request',
+  unknownItem: 'Unknown item: not in the data model, remove it'
 };
 
 // -- Component props --
@@ -456,7 +458,10 @@ export default function FormBuilder ({
                       {section.itemKeys.map((itemKey: string, iIdx: number) => {
                         const customization = section.getItemCustomization(itemKey);
                         const isEditing = editingItemKey === `${section.key}:${itemKey}`;
-                        const itemDef = model.itemsDefs.forKey(itemKey);
+                        // A key the model does not know (removed, renamed, saved against a newer model) is shown so
+                        // it can be removed; throwing here blanked the whole app (B-2026-11-03-1).
+                        const itemDef = model.itemsDefs.forKey(itemKey, false);
+                        const isUnknown = itemDef == null;
                         const defaultRepeatable = itemDef?.repeatable || 'unlimited';
                         const effectiveRepeatable = customization?.repeatable ? String(customization.repeatable) : defaultRepeatable;
                         const isOverridden = customization?.repeatable != null;
@@ -466,6 +471,11 @@ export default function FormBuilder ({
                               <span className='flex-1 text-gray-700 dark:text-gray-300' title={itemDescription(itemKey)}>
                                 {itemLabel(itemKey)}
                                 <span className='ml-1 text-xs text-gray-400'>({itemKey})</span>
+                                {isUnknown && (
+                                  <span className='ml-1 rounded bg-red-100 px-1 text-xs text-red-700 dark:bg-red-900 dark:text-red-300' data-testid='unknown-item'>
+                                    {lb.unknownItem}
+                                  </span>
+                                )}
                                 <span className={`ml-1 rounded px-1 ${
                                   isOverridden
                                     ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300'
@@ -477,12 +487,14 @@ export default function FormBuilder ({
                               </span>
                               {!readOnly && (
                                 <>
-                                  <button
-                                    onClick={e => { e.stopPropagation(); setEditingItemKey(isEditing ? null : `${section.key}:${itemKey}`); }}
-                                    className='px-0.5 text-base text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400'
-                                    title={lb.customize}
-                                  >⚙
-                                  </button>
+                                  {!isUnknown && (
+                                    <button
+                                      onClick={e => { e.stopPropagation(); setEditingItemKey(isEditing ? null : `${section.key}:${itemKey}`); }}
+                                      className='px-0.5 text-base text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400'
+                                      title={lb.customize}
+                                    >⚙
+                                    </button>
+                                  )}
                                   <button
                                     onClick={e => { e.stopPropagation(); moveItemUp(section.key, itemKey); }}
                                     disabled={iIdx === 0}

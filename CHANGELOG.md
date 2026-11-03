@@ -1,8 +1,14 @@
 # Changelog
 
-## [Unreleased]
+## [0.27.0] - 2026-11-03
 
 ### Fixed
+
+- **`FormBuilder` and `HDSFormSection` survive an item key the model does not know** (B-2026-11-03-1). A data set
+  naming a removed or renamed key, an imported template or a data set saved against a newer model threw `Cannot find
+  item definition with key` while the builder rendered, which blanked the doctor-dashboard editor. The builder now
+  shows the key with an "unknown item" marker (new label `unknownItem`) and only its remove button; the section
+  preview skips it. Tests `tests/unknownItemKey.test.tsx`.
 
 - **Test app: Single Field builds events for unit-choice items** (2026-11-03, B-2026-10-27-3). It called
   `jsonFormForItemDef` without `eventType`, so `eventTemplate()` threw for every variation item (`body-weight`, glucose,

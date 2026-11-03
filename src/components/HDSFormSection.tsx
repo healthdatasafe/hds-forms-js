@@ -112,7 +112,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
   // Build field labels map for EntryList (honours per-section label overrides)
   const fieldLabels: Record<string, string> = {};
   for (const key of fieldKeys) {
-    const itemDef = model.itemsDefs.forKey(key);
+    const itemDef = model.itemsDefs.forKey(key, false);
     if (itemDef) {
       const override = section.itemCustomizations?.[key]?.labels?.question;
       fieldLabels[key] = (override ? l(override) : l(itemDef.data.label)) || key;
@@ -141,7 +141,8 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
       )}
 
       {fieldKeys.map((key) => {
-        const itemDef = model.itemsDefs.forKey(key);
+        // An unknown key renders nothing rather than throwing (B-2026-11-03-1)
+        const itemDef = model.itemsDefs.forKey(key, false);
         if (!itemDef) return null;
 
         const variations = itemDef.data?.variations?.eventType;
