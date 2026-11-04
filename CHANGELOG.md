@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.28.1] - 2026-11-04
+
+### Changed
+
+- **hds-lib 2.40.0** (from 2.20.0; pryv 3.18.0, `@pryv/cmc` 3.23.0). No code change: the library calls neither
+  `accessInfo()` nor `username()`, whose rejection of a refused token is the one behaviour change in pryv 3.18.0
+  (pryv/lib-js#80). A consumer on hds-lib 2.40.0 now resolves a single hds-lib instead of a nested 2.20.0.
+
 ## [0.28.0] - 2026-11-03
 
 ### Added
