@@ -32,6 +32,47 @@ const eventTypeDefs: Record<string, any> = {
   }
 };
 
+// The data-model 3.46.0 shapes (trimmed): timing, course, status and reasons.
+const regimen = {
+  type: 'object',
+  properties: {
+    doseValue: { type: 'number' },
+    timeOfDay: { type: 'array', items: { type: 'string' } },
+    when: { type: 'array', items: { type: 'string', enum: ['morning', 'evening'] } },
+    bounds: {
+      type: 'object',
+      properties: { duration: { type: 'number' }, durationUnit: { type: 'string', enum: ['d', 'wk'] }, start: { type: 'string' }, end: { type: 'string' } },
+      dependencies: { duration: ['durationUnit'], durationUnit: ['duration'] },
+      not: { required: ['duration', 'end'] }
+    }
+  }
+};
+const reason = { type: 'string', enum: ['medical-advice', 'other'] };
+const eventTypes346: Record<string, any> = {
+  'medication/coded-v1': {
+    type: 'object',
+    required: ['drug'],
+    properties: {
+      drug: { type: 'object' },
+      intake: regimen,
+      status: { type: 'string', enum: ['taken', 'skipped'] },
+      skipReason: { type: 'string', enum: ['forgot', 'other'] },
+      stopReason: reason
+    }
+  },
+  'medication/prescription-v1': {
+    type: 'object',
+    required: ['drug'],
+    properties: {
+      drug: { type: 'object' },
+      posology: regimen,
+      status: { type: 'string', enum: ['active', 'stopped', 'completed'] },
+      statusChanged: { type: 'string' },
+      stopReason: reason
+    }
+  }
+};
+
 vi.mock('hds-lib', () => ({
   localizeText: (t: any) => (typeof t === 'string' ? t : (t?.en ?? '')),
   getHDSModel: () => ({
@@ -48,6 +89,7 @@ vi.mock('hds-lib', () => ({
 
 const { DatasetSearch } = await import('../src/components/fields/DatasetSearch');
 const { ItemSearchPicker } = await import('../src/components/ItemSearchPicker');
+const { getCompanionSchema } = await import('../src/schema/companionFields');
 
 const LEVO = { label: { en: 'Levothyroxine' }, codes: [{ system: 'ATC', code: 'H03AA01' }], hdsId: 'hds:med:levo' };
 const IBU = { label: { en: 'Ibuprofen' }, codes: [{ system: 'ATC', code: 'M01AE01' }], hdsId: 'hds:med:ibu' };
@@ -187,6 +229,66 @@ describe('DatasetSearch — label', () => {
     const input = c.querySelector('input')!;
     expect(label.getAttribute('for')).toBe(input.id);
     expect(input.id).not.toBe('');
+  });
+});
+
+describe('DatasetSearch — data-model 3.46.0 medication fields', () => {
+  const saved = { ...eventTypeDefs };
+  beforeEach(() => { Object.assign(eventTypeDefs, eventTypes346); });
+  afterEach(() => {
+    for (const k of Object.keys(eventTypeDefs)) delete eventTypeDefs[k];
+    Object.assign(eventTypeDefs, saved);
+  });
+
+  function labels (c: HTMLElement): string[] {
+    return Array.from(c.querySelectorAll('label, legend')).map(e => e.textContent || '');
+  }
+
+  it('asks for the dose only: no status, reason, timing or course input', async () => {
+    const c = await mount(<DatasetSearch {...base} value={{ drug: LEVO }} onChange={() => {}} />);
+    const shown = labels(c);
+    expect(shown).toContain('Dose Value');
+    for (const hidden of ['Status', 'Skip Reason', 'Stop Reason', 'Bounds', 'Time Of Day', 'When', 'Duration']) {
+      expect(shown).not.toContain(hidden);
+    }
+  });
+
+  it('hides the order status of a prescription', async () => {
+    const c = await mount(<DatasetSearch {...base} eventType='medication/prescription-v1' value={{ drug: LEVO }} onChange={() => {}} />);
+    const shown = labels(c);
+    expect(shown).toContain('Dose Value');
+    for (const hidden of ['Status', 'Status Changed', 'Stop Reason', 'Bounds']) {
+      expect(shown).not.toContain(hidden);
+    }
+  });
+
+  it('keeps hidden values when the dose is edited', async () => {
+    const onChange = vi.fn();
+    const value = {
+      drug: LEVO,
+      intake: { doseValue: 50, timeOfDay: ['08:00'], when: ['morning'], bounds: { duration: 30, durationUnit: 'd' } },
+      status: 'skipped',
+      skipReason: 'forgot'
+    };
+    const c = await mount(<DatasetSearch {...base} value={value} onChange={onChange} />);
+    const dose = c.querySelector('input[type="number"]') as HTMLInputElement;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(dose), 'value')!.set!;
+      setter.call(dose, '75');
+      dose.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(onChange).toHaveBeenLastCalledWith({ ...value, intake: { ...value.intake, doseValue: 75 } });
+  });
+
+  it('lists the hidden top-level keys; types without hiding are unchanged', () => {
+    expect(getCompanionSchema('medication/coded-v1')).toMatchObject({
+      datasourceProp: 'drug',
+      companions: [{ key: 'intake' }],
+      hidden: ['status', 'skipReason', 'stopReason']
+    });
+    expect(Object.keys(getCompanionSchema('medication/prescription-v1')!.companions[0].schema.properties)).toEqual(['doseValue']);
+    eventTypeDefs['treatment/coded-v1'] = { type: 'object', required: ['regimen'], properties: { regimen: { type: 'object' }, count: { type: 'number' }, notes: { type: 'string' } } };
+    expect(getCompanionSchema('treatment/coded-v1')).toMatchObject({ companions: [{ key: 'count' }, { key: 'notes' }], hidden: [] });
   });
 });
 
