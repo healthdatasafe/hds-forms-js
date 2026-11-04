@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.29.1] - 2026-11-04
+
+### Fixed
+
+- **A search pick no longer locks an invalid companion value.** `extractCompanionDefaults` pre-filled any value the
+  search result had, `null` included, and `DatasetSearch` locks every pre-filled key read-only. datasets-service returns
+  `route: null` / `doseUnit: null` for many medications, so the saved event carried `intake.route: null`, invalid
+  under the intake schema (string + enum), with no way for the user to change it. Only a non-null value, inside the
+  field's enum when it has one, is pre-filled now; the rest stays an ordinary input. Same rule for item pins and for
+  reopening an entry, which use the same function. Found in the data-model 3.47.0 review (plan 120). Tests in
+  `tests/companionDefaults.test.ts`.
+
 ## [0.29.0] - 2026-11-04
 
 ### Changed
