@@ -70,14 +70,21 @@ export function getCompanionSchema (eventType?: string): CompanionSchema | null 
  * Extract pre-fill values for companion fields from a datasource search result item.
  * Matches top-level properties of the item against sub-properties of each companion schema.
  * e.g. item.route → intake.route, item.doseUnit → intake.doseUnit
+ *
+ * Only a value the companion field accepts is pre-filled: not null (datasets-service returns `route: null`,
+ * `doseUnit: null` for many rows) and inside the field's enum when it has one. A pre-filled key is locked read-only,
+ * so a value the schema refuses would make the saved event invalid with no way for the user to fix it.
  */
 export function extractCompanionDefaults (companionSchema: CompanionSchema, item: Record<string, any>): Record<string, any> {
   const defaults: Record<string, any> = {};
   for (const { key, schema } of companionSchema.companions) {
     if (schema.type !== 'object' || !schema.properties) continue;
     const obj: Record<string, any> = {};
-    for (const prop of Object.keys(schema.properties)) {
-      if (item[prop] !== undefined) obj[prop] = item[prop];
+    for (const [prop, propSchema] of Object.entries(schema.properties as Record<string, any>)) {
+      const value = item[prop];
+      if (value == null) continue;
+      if (Array.isArray(propSchema?.enum) && !propSchema.enum.includes(value)) continue;
+      obj[prop] = value;
     }
     if (Object.keys(obj).length > 0) defaults[key] = obj;
   }
