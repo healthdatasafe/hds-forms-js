@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.29.0] - 2026-11-04
+
+### Changed
+
+- **`DatasetSearch` does not ask for the data-model 3.46.0 medication fields.** Every top-level property of a
+  datasource-search type other than the concept became a companion input, so with a 3.46.0 pack every coded medication
+  form would have shown raw "Status", "Skip Reason" and "Stop Reason" selects (`medication/coded-v1`), and "Status",
+  "Status Changed", "Stop Reason" on `medication/prescription-v1`. Those are now hidden, and so are `timeOfDay`,
+  `when` and `bounds` inside `intake` / `posology`: arrays were never rendered, and a half-filled `bounds` would break
+  its `dependencies` / `not` rules. The host writes them from its own screens; an edit carries the stored values
+  through unchanged. `CompanionSchema` gains `hidden` (the hidden top-level keys). Load data-model 3.46.0 only with
+  this version or later. Tests in `tests/datasetSearch.test.tsx`.
+
 ## [0.28.1] - 2026-11-04
 
 ### Changed

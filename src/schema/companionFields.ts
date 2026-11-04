@@ -10,6 +10,27 @@ export interface CompanionProperty {
 export interface CompanionSchema {
   datasourceProp: string;
   companions: CompanionProperty[];
+  /** Top-level properties not asked for, whose values an edit carries through unchanged. */
+  hidden: string[];
+}
+
+/**
+ * Medication properties a datasource search does not ask for (data-model 3.46.0). The host's own screens write a
+ * dose's status and skip reason, a stop, an order's status and the regimen's timing and course; rendered here they
+ * would be raw inputs on every coded medication form, and a half-filled `bounds` (its `dependencies` / `not` rules
+ * are not all-or-nothing) would write an invalid event. `subKeys` are hidden inside each object companion
+ * (`intake`, `posology`). Both are kept as they are on edit.
+ */
+const MEDICATION_SUB_KEYS = ['timeOfDay', 'when', 'bounds'];
+const HIDDEN_COMPANIONS: Record<string, { companions: string[]; subKeys: string[] }> = {
+  'medication/coded-v1': { companions: ['status', 'skipReason', 'stopReason'], subKeys: MEDICATION_SUB_KEYS },
+  'medication/prescription-v1': { companions: ['status', 'statusChanged', 'stopReason'], subKeys: MEDICATION_SUB_KEYS }
+};
+
+function withoutSubKeys (schema: any, subKeys: string[]): any {
+  if (schema?.type !== 'object' || !schema.properties) return schema;
+  const properties = Object.fromEntries(Object.entries(schema.properties).filter(([k]) => !subKeys.includes(k)));
+  return { ...schema, properties };
 }
 
 /**
@@ -27,13 +48,19 @@ export function getCompanionSchema (eventType?: string): CompanionSchema | null 
     const required = typeDef.required || [];
     const datasourceProp = required[0];
     if (!datasourceProp) return null;
+    const hiding = HIDDEN_COMPANIONS[eventType];
     const companions: CompanionProperty[] = [];
+    const hidden: string[] = [];
     for (const [key, schema] of Object.entries(typeDef.properties)) {
       if (key === datasourceProp) continue;
-      companions.push({ key, schema: schema as any });
+      if (hiding?.companions.includes(key)) {
+        hidden.push(key);
+        continue;
+      }
+      companions.push({ key, schema: hiding ? withoutSubKeys(schema, hiding.subKeys) : schema as any });
     }
     if (companions.length === 0) return null;
-    return { datasourceProp, companions };
+    return { datasourceProp, companions, hidden };
   } catch {
     return null;
   }

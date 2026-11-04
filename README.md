@@ -195,6 +195,11 @@ The pin stores the resolved concept rather than an id because datasets-service h
 
 Renders a typeahead search field bound to a remote dataset endpoint (e.g. `datasets-service`'s `/medication`, `/treatment`, `/procedure`). On selection, populates the host item's payload (`drug` / `regimen` / `procedure`) and any companion fields (`intake.{doseValue, doseUnit, route}`, procedure `findings[]`, free-text `notes`). Companion fields render inline.
 
+On the coded medication types it does not ask for a dose's `status` / `skipReason`, a `stopReason`, a
+prescription's `status` / `statusChanged`, or the regimen's `timeOfDay`, `when` and `bounds` (data-model 3.46.0): the
+host writes those from its own screens, and an edit keeps them unchanged. `getCompanionSchema()` lists the hidden
+top-level keys in `hidden`.
+
 Optional props:
 
 - `recentEntries`: the person's own entries of the item (stored shape, newest first). Their

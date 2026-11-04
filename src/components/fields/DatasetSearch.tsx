@@ -209,7 +209,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
     : value;
   const companionValues = companionSchema && value
     ? (hasDatasourceProp
-        ? Object.fromEntries(companionSchema.companions.map(c => [c.key, value?.[c.key]]).filter(([, v]) => v !== undefined))
+        ? Object.fromEntries([...companionSchema.companions.map(c => c.key), ...companionSchema.hidden].map(k => [k, value?.[k]]).filter(([, v]) => v !== undefined))
         : extractCompanionDefaults(companionSchema, value))
     : {};
 
