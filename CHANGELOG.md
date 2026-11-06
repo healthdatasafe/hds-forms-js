@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.29.2] - 2026-11-06
+
+### Changed
+
+- **hds-lib 2.43.0** (from 2.40.0): pryv 3.19.0 (pryv/lib-js#81, auto-login checks `requestedPermissions`), with
+  2.41.0 (medication readers) and 2.42.0 (CMC vouching) in between. hds-lib is pinned by git tag, so a consumer on
+  hds-lib 2.43.0 now gets one copy instead of two (DysNet had an npm `overrides` entry for it). No code change.
+
 ## [0.29.1] - 2026-11-04
 
 ### Fixed

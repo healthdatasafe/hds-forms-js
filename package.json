@@ -1,6 +1,6 @@
 {
   "name": "hds-forms-js",
-  "version": "0.29.1",
+  "version": "0.29.2",
   "description": "HDS Form Components — React field renderers for HDS item definitions",
   "type": "module",
   "main": "js/hds-forms.js",
@@ -76,6 +76,6 @@
   },
   "dependencies": {
     "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui",
-    "hds-lib": "github:healthdatasafe/hds-lib-js#2.40.0"
+    "hds-lib": "github:healthdatasafe/hds-lib-js#2.43.0"
   }
 }
