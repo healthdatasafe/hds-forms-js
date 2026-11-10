@@ -29,8 +29,9 @@ type QuestionnaireRequestContent = appTemplates.QuestionnaireRequestContent;
 
 /** Minimal Pryv Connection surface the prefill helpers need. */
 export interface PryvConnectionLike {
-  // pryv@3.6 Connection — `get('events', params)` returns { events: [...] }
-  get: (method: 'events', params: Record<string, unknown>) => Promise<{ events?: PryvEvent[] }>;
+  // A pryv `Connection` fits as is: its `get` resolves `Object | Object[]`, and `get('events', params)` gives
+  // `{ events: [...] }`, read below. Typed as loose as pryv's so apps need no cast (B-2026-10-26-27).
+  get: (path: 'events', queryParams: Record<string, unknown>) => Promise<unknown>;
 }
 
 export interface PryvEvent {
@@ -143,8 +144,8 @@ export async function fetchCandidatesForQuestion (
     ...scopeParams
   };
   if (baseStreams && baseStreams.length > 0) params.streams = baseStreams;
-  const result = await connection.get('events', params);
-  return result.events ?? [];
+  const result = await connection.get('events', params) as { events?: PryvEvent[] } | null;
+  return result?.events ?? [];
 }
 
 /**
