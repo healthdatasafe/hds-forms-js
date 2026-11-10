@@ -1,8 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [0.29.3] - 2026-11-10
 
 ### Fixed
+
+- **`PryvConnectionLike.get`** resolves `unknown`, like pryv's `Connection.get` (`Object | Object[]`), so a pryv
+  `Connection` is accepted by `prefillQuestionnaire` without a cast (B-2026-10-26-27). The prefill reads `events` off
+  the answer as before.
 
 - **A deploy waits until the site serves it** (2026-11-08, B-2026-11-06-12): `scripts/deploy.sh` used to report success once
   the Pages branch was pushed, even when GitHub's own Pages deploy then failed and the previous build kept serving.
