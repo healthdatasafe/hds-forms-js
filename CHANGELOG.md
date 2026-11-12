@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.30.0] - 2026-11-12
+
+### Added
+
+- **A form overrides a slider's anchors** (B-2026-11-12-1): `HDSFormField` applies `labelOverrides.sliderLabels`
+  (hds-lib 2.49.0 `ItemLabels.sliderLabels`, keyed by raw value) over the item's `slider.labels`, per anchor, for a
+  single form and for each form when several ask the item. The EQ-5D-5L preset uses it for EuroQol's VAS anchors.
+  `mergeSliderLabels` in `src/components/sliderLabels.ts`. Tests `[SLO1-4]`.
+
+### Changed
+
+- hds-lib 2.43.0 → 2.49.0.
+
 ## [0.29.3] - 2026-11-10
 
 ### Fixed

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { localizeText, HDSSettings, getHDSModel, appTemplates } from 'hds-lib';
 import type { ItemData } from '../schema/schemas';
+import { mergeSliderLabels } from './sliderLabels';
 import { Checkbox } from './fields/Checkbox';
 import { DateInput } from './fields/DateInput';
 import { TextInput } from './fields/TextInput';
@@ -169,7 +170,7 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
                 onChange={onChange}
                 required={required}
                 disabled={disabled}
-                labelOverrides={{ question: ov.question, description: ov.description, options: ov.options }}
+                labelOverrides={{ question: ov.question, description: ov.description, options: ov.options, sliderLabels: ov.sliderLabels }}
                 pin={pin}
                 precision={precision}
                 eventType={eventType}
@@ -184,7 +185,7 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
 
   // Single-form / no-override path.
   const effective: FieldLabelOverrides | undefined = overrideArray && overrideArray.length === 1
-    ? { question: overrideArray[0].question, description: overrideArray[0].description, options: overrideArray[0].options }
+    ? { question: overrideArray[0].question, description: overrideArray[0].description, options: overrideArray[0].options, sliderLabels: overrideArray[0].sliderLabels }
     : singleOverride;
 
   const label = l(effective?.question ?? itemData.label) || '';
@@ -301,7 +302,7 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
           max={s.max}
           step={s.step}
           orientation={s.slider?.orientation}
-          labels={s.slider?.labels}
+          labels={mergeSliderLabels(s.slider?.labels, labelOverridesForOptions?.sliderLabels)}
           display={s.slider?.display}
         />
       );
