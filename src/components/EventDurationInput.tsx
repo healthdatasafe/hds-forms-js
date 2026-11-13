@@ -1,5 +1,23 @@
-import { useState } from 'react';
-import { durationToLabel } from 'hds-lib';
+import { useEffect, useState } from 'react';
+import { durationToLabel, localizeText } from 'hds-lib';
+
+const TEXT = {
+  label: { en: 'Duration', fr: 'Durée' },
+  none: { en: 'No duration', fr: 'Sans durée' },
+  ongoing: { en: 'Ongoing', fr: 'En cours' },
+  length: { en: 'Length', fr: 'Longueur' },
+  endTime: { en: 'End time', fr: 'Fin' },
+  placeholder: { en: 'e.g. 30', fr: 'p. ex. 30' },
+  tooLong: { en: 'Longer than {max}', fr: 'Plus long que {max}' },
+  endBeforeStart: { en: 'The end must be after the start', fr: 'La fin doit être après le début' },
+  seconds: { en: 'seconds', fr: 'secondes' },
+  minutes: { en: 'minutes', fr: 'minutes' },
+  hours: { en: 'hours', fr: 'heures' },
+  days: { en: 'days', fr: 'jours' },
+  months: { en: 'months', fr: 'mois' },
+  years: { en: 'years', fr: 'ans' }
+};
+const tx = (k: keyof typeof TEXT) => localizeText(TEXT[k]) ?? TEXT[k].en;
 
 /** Pryv-native duration: positive seconds = span, `0` = no duration (point-in-time), `null` = ongoing/unbounded. */
 export type EventDuration = number | null;
@@ -32,20 +50,20 @@ export interface EventDurationInputProps {
    * Maps to `itemDef.duration.maxSeconds`.
    */
   maxSeconds?: number;
-  /** Visible label, default `event.duration`. */
+  /** Visible label, default "Duration" in the current language. */
   label?: string;
   className?: string;
 }
 
-interface UnitOption { value: string; label: string; seconds: number }
+interface UnitOption { value: 'seconds' | 'minutes' | 'hours' | 'days' | 'months' | 'years'; seconds: number }
 
 const UNIT_OPTIONS: UnitOption[] = [
-  { value: 'seconds', label: 'seconds', seconds: 1 },
-  { value: 'minutes', label: 'minutes', seconds: 60 },
-  { value: 'hours', label: 'hours', seconds: 3600 },
-  { value: 'days', label: 'days', seconds: 86400 },
-  { value: 'months', label: 'months', seconds: 2592000 },   // 30 days nominal
-  { value: 'years', label: 'years', seconds: 31557600 },  // 365.25 days nominal
+  { value: 'seconds', seconds: 1 },
+  { value: 'minutes', seconds: 60 },
+  { value: 'hours', seconds: 3600 },
+  { value: 'days', seconds: 86400 },
+  { value: 'months', seconds: 2592000 }, // 30 days nominal
+  { value: 'years', seconds: 31557600 } // 365.25 days nominal
 ];
 
 const inputClass = 'rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
@@ -91,10 +109,15 @@ export function EventDurationInput ({
   mandatory = false,
   allowNull = true,
   maxSeconds,
-  label = 'event.duration',
+  label = tx('label'),
   className
 }: EventDurationInputProps) {
   const [mode, setMode] = useState<DurationMode>(() => modeFromValue(value, mandatory, allowNull));
+  // a required duration that may be ongoing starts on Ongoing: say so to the host, which otherwise holds no value
+  useEffect(() => {
+    if (value === undefined && mode === 'ongoing') onChange(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on mount: the starting mode's value
+  }, []);
   const [length, setLength] = useState<{ num: string; unit: string }>(() => {
     if (typeof value === 'number' && value > 0) {
       const d = decomposeLength(value);
@@ -165,10 +188,10 @@ export function EventDurationInput ({
     <div className={className}>
       <label className={labelClass}>{label}</label>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
-        {!mandatory && radio('none', 'No duration')}
-        {allowNull && radio('ongoing', 'Ongoing')}
-        {radio('length', 'Length')}
-        {radio('endTime', 'End time')}
+        {!mandatory && radio('none', tx('none'))}
+        {allowNull && radio('ongoing', tx('ongoing'))}
+        {radio('length', tx('length'))}
+        {radio('endTime', tx('endTime'))}
       </div>
       {mode === 'length' && (
         <div className='mt-2 flex items-center gap-2'>
@@ -182,7 +205,8 @@ export function EventDurationInput ({
               setLength(next);
               emitForMode('length', next);
             }}
-            placeholder='e.g. 30'
+            placeholder={tx('placeholder')}
+            aria-label={tx('length')}
             className={`${inputClass} w-24`}
           />
           <select
@@ -195,12 +219,12 @@ export function EventDurationInput ({
             className={`${inputClass} pr-8`}
           >
             {UNIT_OPTIONS.map(u => (
-              <option key={u.value} value={u.value}>{u.label}</option>
+              <option key={u.value} value={u.value}>{tx(u.value)}</option>
             ))}
           </select>
           {lengthLabel && <span className='text-xs text-gray-500 dark:text-gray-400'>= {lengthLabel}</span>}
           {tooLong && maxLabel && (
-            <span className='text-xs text-red-600 dark:text-red-400'>Exceeds max of {maxLabel}</span>
+            <span className='text-xs text-red-600 dark:text-red-400'>{tx('tooLong').replace('{max}', maxLabel)}</span>
           )}
         </div>
       )}
@@ -213,14 +237,15 @@ export function EventDurationInput ({
               setEndStr(e.target.value);
               emitForMode('endTime', length, e.target.value);
             }}
+            aria-label={tx('endTime')}
             className={inputClass}
           />
           {endLabel && <span className='text-xs text-gray-500 dark:text-gray-400'>= {endLabel}</span>}
           {endInvalid && (
-            <span className='text-xs text-red-600 dark:text-red-400'>End must be after event.time</span>
+            <span className='text-xs text-red-600 dark:text-red-400'>{tx('endBeforeStart')}</span>
           )}
           {tooLong && maxLabel && (
-            <span className='text-xs text-red-600 dark:text-red-400'>Exceeds max of {maxLabel}</span>
+            <span className='text-xs text-red-600 dark:text-red-400'>{tx('tooLong').replace('{max}', maxLabel)}</span>
           )}
         </div>
       )}

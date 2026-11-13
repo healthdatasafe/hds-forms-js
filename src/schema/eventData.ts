@@ -114,13 +114,17 @@ export function matchEventsToItemDefs (
  *   to `eventTemplate({ context })`. Lets a section emit events placed at
  *   descendant streams of the itemDef's canonical home (e.g. `treatment`
  *   itemDef → events at `treatment-fertility`).
+ * @param durations optional per-itemKey event duration (`EventDurationInput`'s value, for an item with a `duration`
+ *   block): seconds, `null` for ongoing, `0` for none. Written on a created event (0 is left out) and on an updated
+ *   one (0 clears a span); an itemKey absent or `undefined` leaves the duration as it is.
  */
 export function formDataToActions (
   itemDefs: Array<{ key: string; itemDef: ItemDef }>,
   formData: Record<string, any>,
   existingEventIds: Record<string, string>,
   time?: number,
-  contexts?: Record<string, string | undefined>
+  contexts?: Record<string, string | undefined>,
+  durations?: Record<string, number | null | undefined>
 ): Array<{ action: 'create' | 'update' | 'delete'; key: string; params: Record<string, any> }> {
   const actions: Array<{ action: 'create' | 'update' | 'delete'; key: string; params: Record<string, any> }> = [];
   const eventTime = time || Math.floor(Date.now() / 1000);
@@ -129,6 +133,9 @@ export function formDataToActions (
     const value = formData[key];
     const existingId = existingEventIds[key];
     const ctx = contexts?.[key];
+    const duration = durations?.[key];
+    // on a new event: a span or ongoing (null); none (0) is no duration at all
+    const newDuration = duration === undefined || duration === 0 ? {} : { duration };
     // The variation choice goes INTO eventTemplate, not over its result: since
     // hds-lib 2.0.0 a bare call on a variation item throws rather than silently
     // returning eventTypes[0] (issue #13). HDSFormSection seeds
@@ -154,7 +161,8 @@ export function formDataToActions (
             streamIds: template.streamIds,
             type: eventType,
             content: null,
-            time: eventTime
+            time: eventTime,
+            ...newDuration
           }
         });
       } else {
@@ -182,6 +190,7 @@ export function formDataToActions (
       // Pass `time` through only when caller provided an explicit timestamp
       // (date picker). Otherwise leave the original event time untouched.
       if (time != null) update.time = time;
+      if (duration !== undefined) update.duration = duration;
       actions.push({
         action: 'update',
         key,
@@ -196,7 +205,8 @@ export function formDataToActions (
           streamIds: template.streamIds as string[],
           type: eventType,
           content,
-          time: eventTime
+          time: eventTime,
+          ...newDuration
         }
       });
     }
