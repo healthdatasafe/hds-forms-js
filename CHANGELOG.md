@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.32.0] - 2026-11-13
+
+### Added
+
+- **Durations in `formDataToActions`** (plan 124 1.6, plan 46 follow-up): a 6th argument, a per-itemKey duration
+  (`EventDurationInput`'s value: seconds, `null` ongoing, `0` none) for items with a `duration` block. Written on a
+  created event (a checked activity included; `0` is left out) and on an updated one (`0` clears a span).
+
+### Changed
+
+- **`EventDurationInput` speaks the current language** (en, fr): its label ("Duration" by default instead of
+  `event.duration`), modes, units and errors. A required duration that may be ongoing starts on Ongoing and now emits
+  `null` on mount, so the host holds the value it shows.
+
 ## [0.31.0] - 2026-11-13
 
 ### Added
