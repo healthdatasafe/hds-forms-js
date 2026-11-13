@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { localizeText, HDSSettings, getHDSModel, appTemplates } from 'hds-lib';
+import { localizeText, HDSSettings, HDSProfile, getHDSModel, appTemplates } from 'hds-lib';
 import type { ItemData } from '../schema/schemas';
+import { ageInYears, plausibilityText, plausibilityWarnings } from '../schema/plausibility';
 import { mergeSliderLabels } from './sliderLabels';
 import { Checkbox } from './fields/Checkbox';
 import { DateInput } from './fields/DateInput';
@@ -80,6 +81,13 @@ interface HDSFormFieldProps {
    */
   onFieldTouched?: (itemKey: string | undefined) => void;
   /**
+   * Show a warning under the field when the value looks implausible for the item and its unit (a systolic below its
+   * diastolic, a weight out of range: `plausibilityWarnings`). On by default; `false` turns it off.
+   */
+  plausibility?: boolean;
+  /** The person's age in years for the plausibility ranges; defaults to the hooked HDSProfile's date of birth */
+  ageYears?: number;
+  /**
    * Internal, set by `Composite` for its sub-fields: the eventType JSON schema of this
    * sub-field (`null` when the eventType has none). Leave unset on an item: a top-level
    * composite then reads its schema from the item's `eventType`.
@@ -132,17 +140,43 @@ function sourceCaption (source?: appTemplates.ItemLabelSource): string {
   return parts.join(' · ');
 }
 
+/** The person's age from the hooked profile, when it holds a date of birth */
+function profileAge (): number | undefined {
+  try {
+    return HDSProfile.isHooked ? ageInYears(HDSProfile.getAll().dateOfBirth) : undefined;
+  } catch { return undefined; }
+}
+
+/** The plausibility warnings of an item's value, under the field (B-2026-11-05-6); a composite's parts are not checked alone */
+function PlausibilityNote ({ itemData, itemKey, value, eventType, ageYears }: Pick<HDSFormFieldProps, 'itemData' | 'itemKey' | 'value' | 'eventType' | 'ageYears'>) {
+  const unit = eventType ?? ((itemData as any).variations ? undefined : (itemData as any).eventType);
+  const warnings = plausibilityWarnings(itemKey, value, unit, { ageYears: ageYears ?? profileAge() });
+  if (warnings.length === 0) return null;
+  const composite = (itemData as any).composite as Record<string, ItemData> | undefined;
+  const partLabels = Object.fromEntries(Object.entries(composite ?? {}).map(([k, d]) => [k, l(d.label) || k]));
+  return (
+    <div className='mt-1 space-y-1' role='status' data-hds-plausibility='warning'>
+      {warnings.map((w, i) => <p key={i} className='text-sm text-amber-700 dark:text-amber-400'>{plausibilityText(w, partLabels)}</p>)}
+    </div>
+  );
+}
+
 export function HDSFormField (props: HDSFormFieldProps) {
-  const { prefilled, onFieldTouched, ...fieldProps } = props;
-  if (prefilled == null && onFieldTouched == null) return <HDSFormFieldInner {...fieldProps} />;
+  const { prefilled, onFieldTouched, plausibility, ageYears, ...fieldProps } = props;
+  // checked on the item only, never on a composite's part (it has no item key and carries `objectSchema`)
+  const note = plausibility !== false && props.itemKey && props.objectSchema === undefined
+    ? <PlausibilityNote itemData={props.itemData} itemKey={props.itemKey} value={props.value} eventType={props.eventType} ageYears={ageYears} />
+    : null;
+  if (prefilled == null && onFieldTouched == null) return <><HDSFormFieldInner {...fieldProps} />{note}</>;
   return (
     <TouchTracker itemKey={props.itemKey} prefilled={prefilled} onFieldTouched={onFieldTouched}>
       <HDSFormFieldInner {...fieldProps} />
+      {note}
     </TouchTracker>
   );
 }
 
-function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision, eventType, objectSchema }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched'>) {
+function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision, eventType, objectSchema }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched' | 'plausibility' | 'ageYears'>) {
   const overrideArray: FieldLabelOverridesWithSource[] | undefined = Array.isArray(labelOverrides)
     ? labelOverrides
     : undefined;

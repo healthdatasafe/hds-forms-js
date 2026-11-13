@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.31.0] - 2026-11-13
+
+### Added
+
+- **Plausibility warnings** (B-2026-11-05-6): `HDSFormField` shows a warning under an item's value when it looks
+  implausible: a systolic not above its diastolic, a blood-pressure part, weight, height, temperature or heart rate out
+  of its range for the unit chosen (so a value typed in the wrong unit falls out), with adult ranges when the age is
+  known (`ageYears` prop, else the hooked `HDSProfile` date of birth). Warnings only; `plausibility={false}` turns them
+  off. Helpers exported: `plausibilityWarnings`, `plausibilityText`, `ageInYears`.
+- **Same-day duplicates**: `sameDayEntries` (the entries of an item on the day of a new value: all of them for an item
+  entered once a day, `isOncePerDayItem`, else those with the same value and unit), for the host to ask before saving.
+
 ## [0.30.0] - 2026-11-12
 
 ### Added
