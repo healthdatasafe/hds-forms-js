@@ -60,6 +60,10 @@ export {
   buildCustomFieldEntries
 } from './schema/customFields';
 
+// Plausibility warnings and same-day duplicates (B-2026-11-05-6)
+export { plausibilityWarnings, plausibilityText, ageInYears, isOncePerDayItem, sameDayEntries } from './schema/plausibility';
+export type { PlausibilityWarning, PlausibilityOptions, SameDayEntry } from './schema/plausibility';
+
 // Companion field utilities (datasource-search)
 export { getCompanionSchema, extractCompanionDefaults, getEnumLabel, keyToLabel } from './schema/companionFields';
 
