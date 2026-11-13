@@ -1,13 +1,16 @@
+import { useId } from 'react';
 import type { FieldProps } from '../../types';
 
 export function DateInput ({ label, description, value, onChange, required, disabled }: FieldProps) {
+  const id = useId();
   return (
     <div>
-      <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+      <label htmlFor={id} className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
         {label}{required && <span className='text-red-500'> *</span>}
       </label>
       {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
       <input
+        id={id}
         type='date'
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}

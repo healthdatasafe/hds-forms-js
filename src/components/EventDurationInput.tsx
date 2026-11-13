@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { durationToLabel, localizeText } from 'hds-lib';
 
 const TEXT = {
@@ -8,6 +8,7 @@ const TEXT = {
   length: { en: 'Length', fr: 'Longueur' },
   endTime: { en: 'End time', fr: 'Fin' },
   placeholder: { en: 'e.g. 30', fr: 'p. ex. 30' },
+  unit: { en: 'Unit', fr: 'Unité' },
   tooLong: { en: 'Longer than {max}', fr: 'Plus long que {max}' },
   endBeforeStart: { en: 'The end must be after the start', fr: 'La fin doit être après le début' },
   seconds: { en: 'seconds', fr: 'secondes' },
@@ -112,6 +113,7 @@ export function EventDurationInput ({
   label = tx('label'),
   className
 }: EventDurationInputProps) {
+  const labelId = useId();
   const [mode, setMode] = useState<DurationMode>(() => modeFromValue(value, mandatory, allowNull));
   // a required duration that may be ongoing starts on Ongoing: say so to the host, which otherwise holds no value
   useEffect(() => {
@@ -184,9 +186,10 @@ export function EventDurationInput ({
     </label>
   );
 
+  // the whole picker is one group named by its label (no single control to tie a <label> to)
   return (
-    <div className={className}>
-      <label className={labelClass}>{label}</label>
+    <div role='group' aria-labelledby={labelId} className={className}>
+      <span id={labelId} className={labelClass}>{label}</span>
       <div className='flex flex-wrap items-center gap-x-3 gap-y-1'>
         {!mandatory && radio('none', tx('none'))}
         {allowNull && radio('ongoing', tx('ongoing'))}
@@ -216,6 +219,7 @@ export function EventDurationInput ({
               setLength(next);
               emitForMode('length', next);
             }}
+            aria-label={tx('unit')}
             className={`${inputClass} pr-8`}
           >
             {UNIT_OPTIONS.map(u => (

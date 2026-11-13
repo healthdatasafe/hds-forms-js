@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { localizeText } from 'hds-lib';
 import type { FieldProps } from '../../types';
 import type { SliderLabel, SliderDisplay } from '../../schema/schemas';
@@ -48,6 +49,7 @@ export function Slider ({
   labels,
   display
 }: SliderFieldProps) {
+  const id = useId();
   const current = typeof value === 'number' ? value : (min + max) / 2;
   const suffix = display?.suffix ? (l(display.suffix) || '') : '';
   const displayed = formatDisplayed(current, display, step, suffix);
@@ -64,7 +66,7 @@ export function Slider ({
 
   return (
     <div>
-      <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+      <label htmlFor={id} className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
         {label}{required && <span className='text-red-500'> *</span>}
       </label>
       {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
@@ -72,6 +74,7 @@ export function Slider ({
       <div className={isVertical ? 'flex items-stretch gap-3' : 'space-y-2'}>
         <div className={isVertical ? 'flex h-56 flex-col items-center' : ''}>
           <input
+            id={id}
             type='range'
             role='slider'
             min={min}
