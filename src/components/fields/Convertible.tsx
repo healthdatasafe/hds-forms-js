@@ -155,6 +155,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
               value={selectedMethod}
               onChange={e => { setSelectedMethod(e.target.value); onChange(undefined); }}
               disabled={disabled}
+              aria-label='Input method'
               className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
             >
               <option value=''>-- Select method --</option>
@@ -213,6 +214,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
                     <select
                       value={currentVal ?? ''}
                       disabled={disabled}
+                      aria-label={isSingleComponent ? label : compLabel}
                       onChange={e => {
                         const raw = e.target.value;
                         // Parse back to original type (number or string)
@@ -255,6 +257,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
                 <select
                   value={currentDimVal ?? ''}
                   disabled={disabled}
+                  aria-label={dimLabel}
                   onChange={e => handleRawDimChange(dim, parseFloat(e.target.value))}
                   className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
                 >

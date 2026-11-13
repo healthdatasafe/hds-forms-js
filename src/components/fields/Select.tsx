@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { FieldProps } from '../../types';
 
 interface SelectFieldProps extends FieldProps {
@@ -5,13 +6,15 @@ interface SelectFieldProps extends FieldProps {
 }
 
 export function Select ({ label, description, value, onChange, options, required, disabled }: SelectFieldProps) {
+  const id = useId();
   return (
     <div>
-      <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
+      <label htmlFor={id} className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
         {label}{required && <span className='text-red-500'> *</span>}
       </label>
       {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
       <select
+        id={id}
         value={value ?? ''}
         onChange={(e) => {
           const val = e.target.value;

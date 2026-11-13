@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.33.0] - 2026-11-13
+
+### Fixed
+
+- **Every field has an accessible name** (B-2026-11-13-6): `TextInput`, `Select`, `DateInput`, `Checkbox` and `Slider`
+  tie their visible label to the control (`useId` + `htmlFor`), so a composite's parts (a care visit's "Type of
+  visit", "Reason", "Notes") are announced by name. `EventDurationInput` is a `role="group"` named by its "Duration"
+  label, and its unit select is named "Unit". `Convertible`'s method, component and dimension selects carry their
+  label as `aria-label`. Tests `accessibleNames.test.tsx`.
+
 ## [0.32.0] - 2026-11-13
 
 ### Added
