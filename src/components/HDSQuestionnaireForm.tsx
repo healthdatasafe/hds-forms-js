@@ -158,7 +158,7 @@ export function HDSQuestionnaireForm ({
       <button
         type='submit'
         disabled={disabled}
-        className='rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-300 disabled:opacity-50 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800'
+        className='rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-300 disabled:opacity-50 dark:bg-[var(--hds-primary)] dark:text-[var(--hds-primary-foreground)] dark:hover:bg-primary-400 dark:focus:ring-primary-800'
       >
         {submitLabel || 'Submit'}
       </button>
@@ -282,7 +282,7 @@ function SubFieldInput ({ subField, value, onChange, disabled }: SubFieldInputPr
                 className={
                   'px-3 py-1.5 text-sm focus:outline-none ' +
                   (selected
-                    ? 'bg-primary-600 text-white'
+                    ? 'bg-primary-600 text-white dark:bg-[var(--hds-primary)] dark:text-[var(--hds-primary-foreground)]'
                     : 'bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600')
                 }
               >

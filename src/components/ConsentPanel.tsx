@@ -227,7 +227,7 @@ export function ConsentPanel ({
           type='button'
           onClick={acceptSelection}
           disabled={isBusy || (selectable && granted.size === 0)}
-          className='inline-flex min-h-11 items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-50'
+          className='inline-flex min-h-11 items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[var(--hds-primary)] dark:text-[var(--hds-primary-foreground)] dark:hover:bg-primary-400'
         >
           {busy === true || busy === 'accepting' ? lb.accepting : lb.accept}
         </button>

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.33.1] - 2026-11-14
+
+### Fixed
+
+- **Primary buttons readable in dark** (plan 121 WP 5): from hds-style 0.5.0 dark primary is a light colour with dark
+  text on it, so white text on `bg-primary-*` fell below AA (it was 3.6:1 already on the old dark blue). In dark the
+  submit buttons (`HDSQuestionnaireForm`, `HDSFormSection`), the consent button (`ConsentPanel`), the builder's add
+  button (`QuestionnaireBuilder`) and a selected scale option take `--hds-primary` with `--hds-primary-foreground`.
+  Light unchanged.
+
 ## [0.33.0] - 2026-11-13
 
 ### Fixed

@@ -291,7 +291,7 @@ export function QuestionnaireBuilder ({
           <button
             type='button'
             onClick={tryAddQuestion}
-            className='rounded bg-primary-600 px-3 py-1 text-sm font-medium text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600'
+            className='rounded bg-primary-600 px-3 py-1 text-sm font-medium text-white hover:bg-primary-700 dark:bg-[var(--hds-primary)] dark:text-[var(--hds-primary-foreground)] dark:hover:bg-primary-400'
           >
             {lb.addQuestion}
           </button>
