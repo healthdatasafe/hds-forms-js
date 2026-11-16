@@ -84,7 +84,7 @@ function CompanionGroup ({ name, schema, value, onChange, locked }: { name: stri
         readonlyKeys={locked ? new Set(Object.keys(schema.properties)) : undefined}
         isFieldRequired={isFieldRequired}
       />
-      {incomplete && <p className='mt-1 text-xs text-red-600 dark:text-red-400' role='alert'>{l(ALL_OR_NOTHING_HINT)}</p>}
+      {incomplete && <p className='mt-1 text-xs text-red-600 dark:text-red-300' role='alert'>{l(ALL_OR_NOTHING_HINT)}</p>}
     </fieldset>
   );
 }
@@ -474,7 +474,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
   return (
     <div ref={containerRef} className='relative'>
       <label htmlFor={showStaticConcept || pinMismatch ? undefined : inputId} className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-        {label}{required && <span className='text-red-500'> *</span>}
+        {label}{required && <span className='text-red-600 dark:text-red-300'> *</span>}
       </label>
       {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
 

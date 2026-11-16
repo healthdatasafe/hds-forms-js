@@ -27,7 +27,7 @@ export function MultiSelect ({ label, description, value, onChange, options, req
   return (
     <fieldset>
       <legend className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-        {label}{required && <span className='text-red-500'> *</span>}
+        {label}{required && <span className='text-red-600 dark:text-red-300'> *</span>}
       </legend>
       {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
       <div className='space-y-2'>

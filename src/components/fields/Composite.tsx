@@ -51,7 +51,7 @@ export function Composite ({ label, description, value, onChange, composite, dis
           />
         ))}
       </div>
-      {incomplete && <p className='mt-2 text-sm text-red-600 dark:text-red-400' role='alert'>{localizeText(ALL_OR_NOTHING_HINT)}</p>}
+      {incomplete && <p className='mt-2 text-sm text-red-600 dark:text-red-300' role='alert'>{localizeText(ALL_OR_NOTHING_HINT)}</p>}
     </fieldset>
   );
 }

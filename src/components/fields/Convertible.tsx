@@ -119,7 +119,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
     return (
       <div>
         <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-          {label}{required && <span className='text-red-500'> *</span>}
+          {label}{required && <span className='text-red-600 dark:text-red-300'> *</span>}
         </label>
         {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
         <p className='text-sm text-gray-400'>Loading converter...</p>
@@ -131,10 +131,10 @@ export function Convertible ({ label, description, value, onChange, converterEng
     return (
       <div>
         <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-          {label}{required && <span className='text-red-500'> *</span>}
+          {label}{required && <span className='text-red-600 dark:text-red-300'> *</span>}
         </label>
         {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
-        <p className='text-sm text-red-500'>Converter engine not available</p>
+        <p className='text-sm text-red-600 dark:text-red-300'>Converter engine not available</p>
       </div>
     );
   }
@@ -142,7 +142,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
   return (
     <div>
       <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-        {label}{required && <span className='text-red-500'> *</span>}
+        {label}{required && <span className='text-red-600 dark:text-red-300'> *</span>}
       </label>
       {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
 

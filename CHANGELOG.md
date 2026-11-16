@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.33.3] - 2026-11-16
+
+### Fixed
+
+- **Red text and icons at AA** (B-2026-11-16-12, WCAG 1.4.3 / 1.4.11): the required-field `*` (`TextInput`, `Select`,
+  `DateInput`, `Slider`, `NumberInput`, `MultiSelect`, `DatasetSearch`, `Convertible`) and `Convertible`'s "Converter
+  engine not available" were `text-red-500` (3.8:1 on white, 3.6:1 on gray-50, 3.9:1 on the dark card). They are now
+  `text-red-600 dark:text-red-300` (4.8:1 / 4.6:1 in light, 7.6:1 on gray-800 and 5.4:1 on gray-700 in dark).
+  `DatasetSearch`'s companion "all or nothing" hint on the gray-700 panel goes from `dark:text-red-400` (3.6:1) to
+  `dark:text-red-300` (5.4:1). `FormBuilder`'s section and item remove `×` were `text-red-400` with no dark variant
+  (2.9:1 on white); they are now `text-red-600 dark:text-red-300` (4.8:1 on white, 5.4:1 on the dark hover row).
+  The other red messages (`Composite`'s hint, `EventDurationInput`, `QuestionnaireBuilder`'s key error) and
+  `EntryList`'s delete `✕` take the same pair, so red text passes on a gray-700 surface too; no `red-400` / `red-500`
+  is left.
+
 ## [0.33.2] - 2026-11-16
 
 ### Fixed

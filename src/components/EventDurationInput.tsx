@@ -228,7 +228,7 @@ export function EventDurationInput ({
           </select>
           {lengthLabel && <span className='text-xs text-gray-500 dark:text-gray-400'>= {lengthLabel}</span>}
           {tooLong && maxLabel && (
-            <span className='text-xs text-red-600 dark:text-red-400'>{tx('tooLong').replace('{max}', maxLabel)}</span>
+            <span className='text-xs text-red-600 dark:text-red-300'>{tx('tooLong').replace('{max}', maxLabel)}</span>
           )}
         </div>
       )}
@@ -246,10 +246,10 @@ export function EventDurationInput ({
           />
           {endLabel && <span className='text-xs text-gray-500 dark:text-gray-400'>= {endLabel}</span>}
           {endInvalid && (
-            <span className='text-xs text-red-600 dark:text-red-400'>{tx('endBeforeStart')}</span>
+            <span className='text-xs text-red-600 dark:text-red-300'>{tx('endBeforeStart')}</span>
           )}
           {tooLong && maxLabel && (
-            <span className='text-xs text-red-600 dark:text-red-400'>{tx('tooLong').replace('{max}', maxLabel)}</span>
+            <span className='text-xs text-red-600 dark:text-red-300'>{tx('tooLong').replace('{max}', maxLabel)}</span>
           )}
         </div>
       )}
