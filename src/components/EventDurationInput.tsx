@@ -67,7 +67,7 @@ const UNIT_OPTIONS: UnitOption[] = [
   { value: 'years', seconds: 31557600 } // 365.25 days nominal
 ];
 
-const inputClass = 'rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
+const inputClass = 'rounded-lg border border-[color:var(--hds-input,#848c97)] bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:text-white';
 const labelClass = 'mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400';
 
 function pad (n: number): string { return n < 10 ? '0' + n : String(n); }
@@ -180,7 +180,7 @@ export function EventDurationInput ({
         type='radio'
         checked={mode === m}
         onChange={() => pickMode(m)}
-        className='h-3.5 w-3.5 border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-500 dark:bg-gray-700'
+        className='h-3.5 w-3.5 border-[color:var(--hds-input,#848c97)] text-primary-600 focus:ring-primary-500 dark:bg-gray-700'
       />
       <span className='text-xs text-gray-700 dark:text-gray-300'>{text}</span>
     </label>

@@ -17,7 +17,7 @@ function toDatetimeLocal (d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const inputClass = 'rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
+const inputClass = 'rounded-lg border border-[color:var(--hds-input,#848c97)] bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-800 dark:text-white';
 const labelClass = 'mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400';
 
 /**

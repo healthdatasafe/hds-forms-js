@@ -112,7 +112,7 @@ export function ItemSearchPicker ({
           placeholder={placeholder}
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+          className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none dark:bg-gray-800 dark:text-white'
         />
       </div>
       <div className='p-1'>

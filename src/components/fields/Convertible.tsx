@@ -156,7 +156,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
               onChange={e => { setSelectedMethod(e.target.value); onChange(undefined); }}
               disabled={disabled}
               aria-label='Input method'
-              className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+              className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white'
             >
               <option value=''>-- Select method --</option>
               {methods.map((m: any) => (
@@ -222,7 +222,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
                         const val = opt ? opt.value : raw;
                         setValue(val);
                       }}
-                      className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white'
                     >
                       <option value=''>--</option>
                       {comp.options.map((opt: any) => {
@@ -259,7 +259,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
                   disabled={disabled}
                   aria-label={dimLabel}
                   onChange={e => handleRawDimChange(dim, parseFloat(e.target.value))}
-                  className='block w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                  className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white'
                 >
                   <option value=''>--</option>
                   {dimDef.stops.map((stop: any) => {

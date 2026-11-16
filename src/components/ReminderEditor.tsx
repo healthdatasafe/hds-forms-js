@@ -68,8 +68,8 @@ function describeDefault (config: ReminderEditorConfig | null): string {
   return parts.join(', ') || 'configured (no timing)';
 }
 
-const selectClass = 'rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
-const inputClass = 'w-20 rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white';
+const selectClass = 'rounded border border-[color:var(--hds-input,#848c97)] bg-white px-1 py-0.5 text-xs text-gray-900 dark:bg-gray-800 dark:text-white';
+const inputClass = 'w-20 rounded border border-[color:var(--hds-input,#848c97)] bg-white px-1 py-0.5 text-xs text-gray-900 dark:bg-gray-800 dark:text-white';
 const labelClass = 'text-gray-500 dark:text-gray-400';
 
 export function ReminderEditor ({ defaultReminder, override, onChange, availableItemKeys }: ReminderEditorProps) {

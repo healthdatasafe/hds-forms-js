@@ -219,7 +219,7 @@ export function ConsentPanel ({
           type='button'
           onClick={onRefuse}
           disabled={isBusy}
-          className='inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-800'
+          className='inline-flex min-h-11 items-center justify-center rounded-lg border border-[color:var(--hds-input,#848c97)] px-4 py-2 text-sm font-semibold transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-800'
         >
           {busy === 'refusing' ? lb.refusing : lb.refuse}
         </button>

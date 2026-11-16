@@ -247,7 +247,7 @@ function QuestionBlock ({
             onChange={(e) => onReasonChange(e.target.value)}
             disabled={disabled}
             placeholder='e.g. privacy'
-            className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+            className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-gray-50 p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white'
           />
         </div>
       )}
@@ -270,7 +270,7 @@ function SubFieldInput ({ subField, value, onChange, disabled }: SubFieldInputPr
         {subLabel && (
           <div className='mb-1 text-xs text-gray-600 dark:text-gray-400'>{subLabel}</div>
         )}
-        <div className='inline-flex overflow-hidden rounded-lg border border-gray-300 dark:border-gray-600'>
+        <div className='inline-flex overflow-hidden rounded-lg border border-[color:var(--hds-input,#848c97)]'>
           {subField.options.map((opt) => {
             const selected = value === opt.value;
             return (
@@ -305,7 +305,7 @@ function SubFieldInput ({ subField, value, onChange, disabled }: SubFieldInputPr
           value={value == null ? '' : String(value)}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+          className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-gray-50 p-2 text-sm text-gray-900 dark:bg-gray-700 dark:text-white'
         />
       </div>
     );
@@ -324,7 +324,7 @@ function SubFieldInput ({ subField, value, onChange, disabled }: SubFieldInputPr
             onChange(raw === '' ? undefined : Number(raw));
           }}
           disabled={disabled}
-          className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+          className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-gray-50 p-2 text-sm text-gray-900 dark:bg-gray-700 dark:text-white'
         />
       </div>
     );
