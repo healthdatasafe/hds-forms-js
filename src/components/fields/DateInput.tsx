@@ -6,7 +6,7 @@ export function DateInput ({ label, description, value, onChange, required, disa
   return (
     <div>
       <label htmlFor={id} className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-        {label}{required && <span className='text-red-500'> *</span>}
+        {label}{required && <span className='text-red-600 dark:text-red-300'> *</span>}
       </label>
       {description && <p className='mb-1 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
       <input

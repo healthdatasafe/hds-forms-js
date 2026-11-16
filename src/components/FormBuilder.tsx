@@ -438,7 +438,7 @@ export default function FormBuilder ({
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); removeSection(section.key); }}
-                        className='text-xs text-red-400 hover:text-red-600 dark:hover:text-red-300'
+                        className='text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200'
                         title='Remove section'
                       >×
                       </button>
@@ -509,7 +509,7 @@ export default function FormBuilder ({
                                   </button>
                                   <button
                                     onClick={e => { e.stopPropagation(); removeItemFromSection(section.key, itemKey); }}
-                                    className='px-0.5 text-base text-red-400 hover:text-red-600 dark:hover:text-red-300'
+                                    className='px-0.5 text-base text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200'
                                   >×
                                   </button>
                                 </>

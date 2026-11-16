@@ -296,7 +296,7 @@ export function QuestionnaireBuilder ({
             {lb.addQuestion}
           </button>
           {keyError && (
-            <span className='text-xs text-red-600 dark:text-red-400'>{keyError}</span>
+            <span className='text-xs text-red-600 dark:text-red-300'>{keyError}</span>
           )}
         </div>
       )}
