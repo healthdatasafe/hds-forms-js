@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.33.2] - 2026-11-16
+
+### Fixed
+
+- **Field edges at 3:1** (B-2026-11-15-15, WCAG 1.4.11): inputs, selects, textareas, checkboxes, the outline buttons
+  and the scale's segmented control had hard-coded `border-gray-300` (#D1D5DB, 1.47:1 on white) and
+  `dark:border-gray-600` / `-500` (about 1.9:1 on the dark fields), so hds-style 0.5.2's `--hds-input` did not reach
+  them. They now use `border-[color:var(--hds-input,#848c97)]` in light and dark (#848C97 in every hds-style 0.5.2
+  palette: 3.4:1 on white, 4.2:1 on gray-800). Without hds-style the fallback is the same #848C97. Decorative borders
+  (cards, dividers, dashed "add" buttons, a pinned concept's static label) are unchanged.
+
 ## [0.33.1] - 2026-11-14
 
 ### Fixed

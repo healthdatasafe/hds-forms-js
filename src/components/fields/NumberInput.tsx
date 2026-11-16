@@ -88,7 +88,7 @@ export function NumberInput ({ label, description, value, onChange, required, di
           // the model declares a step today; `numberInputStep` never returns a step a typed
           // value would mismatch (see there).
           step={displayStep}
-          className='block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
+          className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
         />
         {shownUnit && (
           <span className='shrink-0 text-sm font-medium text-gray-500 dark:text-gray-400'>{shownUnit}</span>

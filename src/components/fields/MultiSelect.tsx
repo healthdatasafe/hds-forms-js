@@ -39,7 +39,7 @@ export function MultiSelect ({ label, description, value, onChange, options, req
               checked={selected.includes(opt.value)}
               onChange={(e) => toggle(opt.value, e.target.checked)}
               disabled={disabled}
-              className='mt-1 h-4 w-4 rounded border-gray-300 bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600'
+              className='mt-1 h-4 w-4 rounded border-[color:var(--hds-input,#848c97)] bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600'
             />
             <label htmlFor={`ms-${opt.value}`} className='text-sm font-medium text-gray-900 dark:text-gray-300'>
               {opt.label}

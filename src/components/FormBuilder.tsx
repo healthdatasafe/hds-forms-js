@@ -332,7 +332,7 @@ export default function FormBuilder ({
               placeholder={lb.searchItems}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+              className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm text-gray-900 focus:border-blue-500 focus:outline-none dark:bg-gray-800 dark:text-white'
             />
             {!selectedSectionKey && sections.length > 0 && (
               <p className='mt-1 text-xs text-amber-600 dark:text-amber-400'>{lb.selectSectionToAdd}</p>
@@ -407,7 +407,7 @@ export default function FormBuilder ({
                     type='text'
                     value={section.name?.en || ''}
                     onChange={e => updateSectionName(section.key, e.target.value)}
-                    className='flex-1 rounded border border-gray-300 bg-white px-2 py-0.5 text-sm font-medium text-gray-900 focus:border-blue-500 focus:outline-none disabled:opacity-60 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                    className='flex-1 rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-0.5 text-sm font-medium text-gray-900 focus:border-blue-500 focus:outline-none disabled:opacity-60 dark:bg-gray-700 dark:text-white'
                     placeholder={lb.sectionName}
                     disabled={readOnly}
                     onClick={e => e.stopPropagation()}
@@ -523,7 +523,7 @@ export default function FormBuilder ({
                                   <select
                                     value={isOverridden ? String(customization.repeatable) : ''}
                                     onChange={e => setRepeatableValue(section.key, itemKey, e.target.value)}
-                                    className='rounded border border-gray-300 bg-white px-1 py-0.5 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                                    className='rounded border border-[color:var(--hds-input,#848c97)] bg-white px-1 py-0.5 text-xs text-gray-900 dark:bg-gray-800 dark:text-white'
                                   >
                                     <option value=''>default ({repeatableLabel(defaultRepeatable)})</option>
                                     {REPEATABLE_OPTIONS.map(opt => (

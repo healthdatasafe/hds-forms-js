@@ -201,7 +201,7 @@ export function QuestionnaireBuilder ({
             value={l(questionnaire.title) || ''}
             onChange={(e) => updateTitle(e.target.value)}
             disabled={readOnly}
-            className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+            className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm text-gray-900 disabled:opacity-60 dark:bg-gray-800 dark:text-white'
           />
         </div>
         <div>
@@ -211,7 +211,7 @@ export function QuestionnaireBuilder ({
             value={l(questionnaire.description) || ''}
             onChange={(e) => updateDescription(e.target.value)}
             disabled={readOnly}
-            className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+            className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm text-gray-900 disabled:opacity-60 dark:bg-gray-800 dark:text-white'
           />
         </div>
       </div>
@@ -251,7 +251,7 @@ export function QuestionnaireBuilder ({
                     type='button'
                     onClick={() => setEditingKey(isEditing ? null : key)}
                     disabled={readOnly}
-                    className='rounded border border-gray-300 px-2 py-0.5 text-xs hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700'
+                    className='rounded border border-[color:var(--hds-input,#848c97)] px-2 py-0.5 text-xs hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-gray-700'
                   >
                     {isEditing ? '–' : '+'}
                   </button>
@@ -286,7 +286,7 @@ export function QuestionnaireBuilder ({
             value={newKeyDraft}
             onChange={(e) => { setNewKeyDraft(e.target.value); setKeyError(null); }}
             placeholder={lb.questionKey}
-            className='rounded border border-gray-300 bg-white px-2 py-1 text-sm font-mono dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+            className='rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm font-mono dark:bg-gray-800 dark:text-white'
           />
           <button
             type='button'
@@ -327,7 +327,7 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
           value={l(question.label) || ''}
           onChange={(e) => onChange((q) => { q.label = { en: e.target.value }; })}
           disabled={readOnly}
-          className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+          className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
         />
       </div>
       <div className='grid grid-cols-2 gap-2'>
@@ -337,7 +337,7 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
             value={question.itemRef}
             onChange={(e) => onChange((q) => { q.itemRef = e.target.value; })}
             disabled={readOnly}
-            className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+            className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
           >
             {itemDefs.map((it) => (
               <option key={it.key} value={it.key}>{it.key} — {it.label}</option>
@@ -355,7 +355,7 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
                 else q.scope = { type: t, withinDays: 7 };
               })}
               disabled={readOnly}
-              className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+              className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
             >
               {SCOPE_TYPES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
@@ -372,7 +372,7 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
                   if (q.scope.type === 'window' || q.scope.type === 'latest') q.scope.withinDays = n;
                 })}
                 disabled={readOnly}
-                className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
               />
             </div>
           )}
@@ -392,7 +392,7 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
             else q.subField = { type: v as 'text' | 'number' };
           })}
           disabled={readOnly}
-          className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+          className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
         >
           <option value=''>{labels.noSubField}</option>
           {SUB_FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -442,7 +442,7 @@ function DrugCodeEditor ({ question, onChange, labels, readOnly }: SubEditorProp
             value={first.system || 'atc'}
             onChange={(e) => updateCode({ system: e.target.value, code: first.code || '' })}
             disabled={readOnly}
-            className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+            className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
           />
         </div>
         <div>
@@ -453,7 +453,7 @@ function DrugCodeEditor ({ question, onChange, labels, readOnly }: SubEditorProp
             placeholder='e.g. G03DA04'
             onChange={(e) => updateCode({ system: first.system || 'atc', code: e.target.value })}
             disabled={readOnly}
-            className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm font-mono dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+            className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm font-mono dark:bg-gray-800 dark:text-white'
           />
         </div>
       </div>
@@ -515,7 +515,7 @@ function SubFieldDetails ({ question, onChange, labels, readOnly }: SubEditorPro
           placeholder='e.g. Trimester'
           onChange={(e) => updateLabel(e.target.value)}
           disabled={readOnly}
-          className='w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+          className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
         />
       </div>
       {sub.type === 'select-segmented' && (
@@ -530,7 +530,7 @@ function SubFieldDetails ({ question, onChange, labels, readOnly }: SubEditorPro
                   placeholder={labels.optionValue}
                   onChange={(e) => updateOption(i, { value: e.target.value })}
                   disabled={readOnly}
-                  className='w-24 rounded border border-gray-300 bg-white px-2 py-1 text-sm font-mono dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                  className='w-24 rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm font-mono dark:bg-gray-800 dark:text-white'
                 />
                 <input
                   type='text'
@@ -538,7 +538,7 @@ function SubFieldDetails ({ question, onChange, labels, readOnly }: SubEditorPro
                   placeholder={labels.optionLabel}
                   onChange={(e) => updateOption(i, { label: e.target.value })}
                   disabled={readOnly}
-                  className='flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-white'
+                  className='flex-1 rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
                 />
                 <button
                   type='button'
@@ -555,7 +555,7 @@ function SubFieldDetails ({ question, onChange, labels, readOnly }: SubEditorPro
             type='button'
             onClick={addOption}
             disabled={readOnly}
-            className='mt-1 rounded border border-gray-300 px-2 py-0.5 text-xs hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700'
+            className='mt-1 rounded border border-[color:var(--hds-input,#848c97)] px-2 py-0.5 text-xs hover:bg-gray-50 disabled:opacity-50 dark:hover:bg-gray-700'
           >
             {labels.addOption}
           </button>
