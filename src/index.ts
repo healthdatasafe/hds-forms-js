@@ -4,6 +4,8 @@ export type { FieldLabelOverrides } from './components/HDSFormField';
 export { HDSFormSection } from './components/HDSFormSection';
 export type { ItemCustomization } from './components/HDSFormSection';
 export { HDSQuestionnaireForm } from './components/HDSQuestionnaireForm';
+export { DEFAULT_QUESTIONNAIRE_LABELS } from './components/questionnaireLabels';
+export type { QuestionnaireFormLabels } from './components/questionnaireLabels';
 export { QuestionnaireBuilder } from './components/QuestionnaireBuilder';
 export type { QuestionnaireBuilderProps, QuestionnaireBuilderLabels } from './components/QuestionnaireBuilder';
 export {

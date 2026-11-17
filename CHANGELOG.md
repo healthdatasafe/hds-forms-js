@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.33.5] - 2026-11-17
+
+### Added
+
+- **`HDSQuestionnaireForm` takes its texts from the app** (plan 115, found on demo in the French hds-webapp): the four
+  answer choices ("Yes", "No", "I don't know", "I'd rather not say"), the reason label and its placeholder were
+  hard-coded in English, so a French form showed French questions with English choices. A `labels` prop
+  (`QuestionnaireFormLabels`, partial) sets them; anything left out falls back to `DEFAULT_QUESTIONNAIRE_LABELS`
+  (English, the previous texts). `[QFL-1]`, `[QFL-2]`.
+
+### Fixed
+
+- **Back to "yes" keeps the prefilled records** (plan 115): choosing another answer for a question the prefill had
+  set to "yes", then "yes" again, reset its references to none, so the person was told no record matched and the
+  answer could not be saved. "Yes" now restores the references the prefill found for that question (`initialAnswers`);
+  a question the prefill did not answer still starts with none. `[QFL-3]`.
+
 ## [0.33.4] - 2026-11-16
 
 ### Fixed

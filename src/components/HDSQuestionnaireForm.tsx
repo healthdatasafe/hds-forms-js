@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { localizeText, appTemplates } from 'hds-lib';
+import { DEFAULT_QUESTIONNAIRE_LABELS } from './questionnaireLabels';
+import type { QuestionnaireFormLabels } from './questionnaireLabels';
 
 type QuestionDef = appTemplates.QuestionDef;
 type AnswerEntry = appTemplates.AnswerEntry;
@@ -9,13 +11,6 @@ type QuestionnaireRequestContent = appTemplates.QuestionnaireRequestContent;
 const l = localizeText;
 
 const ALL_STATUSES: AnswerStatus[] = ['answered', 'no', 'unknown', 'declined'];
-
-const STATUS_LABEL: Record<AnswerStatus, string> = {
-  answered: 'Yes',
-  no: 'No',
-  unknown: "I don't know",
-  declined: "I'd rather not say"
-};
 
 /**
  * Plan 71 Phase C — questionnaire renderer.
@@ -57,6 +52,8 @@ interface HDSQuestionnaireFormProps {
   }) => React.ReactNode;
   disabled?: boolean;
   submitLabel?: string;
+  /** The form's own texts (answer choices, reason field), each falling back to English. */
+  labels?: Partial<QuestionnaireFormLabels>;
 }
 
 export function HDSQuestionnaireForm ({
@@ -66,9 +63,11 @@ export function HDSQuestionnaireForm ({
   onSubmit,
   renderAnsweredBody,
   disabled,
-  submitLabel
+  submitLabel,
+  labels
 }: HDSQuestionnaireFormProps) {
   const [answers, setAnswers] = useState<Record<string, AnswerEntry>>(initialAnswers || {});
+  const texts: QuestionnaireFormLabels = { ...DEFAULT_QUESTIONNAIRE_LABELS, ...labels };
 
   useEffect(() => {
     if (initialAnswers) setAnswers(initialAnswers);
@@ -86,9 +85,12 @@ export function HDSQuestionnaireForm ({
 
   function handleStatusChange (key: string, status: AnswerStatus) {
     switch (status) {
-      case 'answered':
-        setAnswer(key, { status: 'answered', references: [] });
+      case 'answered': {
+        // Back to "yes" after another choice: the records the prefill found for this question, not none.
+        const initial = initialAnswers != null && Object.hasOwn(initialAnswers, key) ? initialAnswers[key] : undefined;
+        setAnswer(key, initial?.status === 'answered' ? { ...initial, references: [...initial.references] } : { status: 'answered', references: [] });
         break;
+      }
       case 'no':
         setAnswer(key, { status: 'no' });
         break;
@@ -152,6 +154,7 @@ export function HDSQuestionnaireForm ({
           onReasonChange={(r) => setReason(key, r)}
           renderAnsweredBody={renderAnsweredBody}
           disabled={disabled}
+          texts={texts}
         />
       ))}
 
@@ -176,6 +179,7 @@ interface QuestionBlockProps {
   onReasonChange: (reason: string) => void;
   renderAnsweredBody?: HDSQuestionnaireFormProps['renderAnsweredBody'];
   disabled?: boolean;
+  texts: QuestionnaireFormLabels;
 }
 
 function QuestionBlock ({
@@ -187,7 +191,8 @@ function QuestionBlock ({
   onQualifierChange,
   onReasonChange,
   renderAnsweredBody,
-  disabled
+  disabled,
+  texts
 }: QuestionBlockProps) {
   const labelText = l(question.label) || questionKey;
   const status = answer?.status;
@@ -212,7 +217,7 @@ function QuestionBlock ({
               disabled={disabled}
               className='accent-primary-600'
             />
-            {STATUS_LABEL[s]}
+            {texts[s]}
           </label>
         ))}
       </div>
@@ -239,14 +244,14 @@ function QuestionBlock ({
       {status === 'declined' && (
         <div className='mt-3'>
           <label className='mb-1 block text-xs text-gray-600 dark:text-gray-400'>
-            Reason (optional)
+            {texts.reason}
           </label>
           <input
             type='text'
             value={answer?.status === 'declined' ? (answer.reason ?? '') : ''}
             onChange={(e) => onReasonChange(e.target.value)}
             disabled={disabled}
-            placeholder='e.g. privacy'
+            placeholder={texts.reasonPlaceholder}
             className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-gray-50 p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white'
           />
         </div>
