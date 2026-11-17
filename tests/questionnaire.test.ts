@@ -199,6 +199,23 @@ describe('prefillQuestionnaire', () => {
     });
     expect(conn.calls).toHaveLength(3);
   });
+
+  it('keeps question keys named like Object.prototype members (B-2026-11-16-21)', async () => {
+    const keys = ['__proto__', 'constructor', 'toString', 'valueOf', 'hasOwnProperty'];
+    const conn = mockConnection(keys.map((_k, i) => [{ id: `evt-${i}`, type: 'body-weight/kg' }]));
+    const request = JSON.parse(JSON.stringify({ questions: {} }));
+    for (const k of keys) Object.defineProperty(request.questions, k, { value: weightQuestion, enumerable: true });
+    const answers = await prefillQuestionnaire({
+      connection: conn,
+      request,
+      nowSeconds: NOW,
+      resolveEventType: () => 'body-weight/kg'
+    });
+    expect(Object.keys(answers)).toEqual(keys);
+    expect(Object.getPrototypeOf(answers)).toBe(Object.prototype);
+    expect(Object.getOwnPropertyDescriptor(answers, '__proto__')?.value).toEqual({ status: 'answered', references: ['evt-0'] });
+    expect(Object.keys(JSON.parse(JSON.stringify(answers)))).toEqual(keys);
+  });
 });
 
 describe('buildAnswerBatch', () => {

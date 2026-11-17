@@ -167,21 +167,18 @@ export async function prefillQuestionnaire (opts: PrefillOptions): Promise<Recor
     nowSeconds = Math.floor(Date.now() / 1000),
     resolveEventType
   } = opts;
-  const answers: Record<string, AnswerEntry> = {};
   const entries = Object.entries(request.questions);
   // Per-question lookups are independent — fan out in parallel.
-  await Promise.all(entries.map(async ([key, question]) => {
+  const filled = await Promise.all(entries.map(async ([key, question]): Promise<[string, AnswerEntry] | null> => {
     const candidates = await fetchCandidatesForQuestion(
       connection, question, baseStreams, nowSeconds, maxCandidatesPerQuestion, resolveEventType
     );
     const matched = matchEvent
       ? candidates.filter((e) => matchEvent(e, question))
       : candidates;
-    if (matched.length === 0) return;
-    answers[key] = {
-      status: 'answered',
-      references: matched.map((e) => e.id)
-    };
+    if (matched.length === 0) return null;
+    return [key, { status: 'answered', references: matched.map((e) => e.id) }];
   }));
-  return answers;
+  // Object.fromEntries, not `answers[key] = ...`, which drops a key named `__proto__` (B-2026-11-16-21).
+  return Object.fromEntries(filled.filter((e): e is [string, AnswerEntry] => e != null));
 }
