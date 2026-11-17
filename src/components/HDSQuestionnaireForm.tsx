@@ -87,7 +87,7 @@ export function HDSQuestionnaireForm ({
     switch (status) {
       case 'answered': {
         // Back to "yes" after another choice: the records the prefill found for this question, not none.
-        const initial = initialAnswers != null && Object.hasOwn(initialAnswers, key) ? initialAnswers[key] : undefined;
+        const initial = initialAnswers != null && Object.prototype.hasOwnProperty.call(initialAnswers, key) ? initialAnswers[key] : undefined;
         setAnswer(key, initial?.status === 'answered' ? { ...initial, references: [...initial.references] } : { status: 'answered', references: [] });
         break;
       }
