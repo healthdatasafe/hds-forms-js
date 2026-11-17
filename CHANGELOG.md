@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.33.6] - 2026-11-17
+
+### Fixed
+
+- **0.33.5 did not typecheck in consumers below ES2022**: the "yes again" restore used `Object.hasOwn`, which a
+  consumer compiling this package's sources with an older `lib` (hds-webapp) rejects. It uses
+  `Object.prototype.hasOwnProperty.call`; no behaviour change. Use 0.33.6, not 0.33.5.
+
 ## [0.33.5] - 2026-11-17
 
 ### Added
