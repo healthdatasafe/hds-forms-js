@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Documentation
+
+- **README pin example: IVF is SNOMED `52637005`, not `63487001`** (*Assisted fertilization*, the same slip data-model
+  corrected in 3.5.0). The example value now has the shape a datasets-service search returns (`system: 'SNOMED-CT'`,
+  `source`, and the `hdsId` that `treatment/coded-v1` requires on each code), so a copied pin writes a valid event.
+
 ## [0.33.6] - 2026-11-17
 
 ### Fixed

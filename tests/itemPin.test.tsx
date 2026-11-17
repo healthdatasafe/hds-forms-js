@@ -74,7 +74,7 @@ const IVF = {
   datasource: 'treatment',
   value: {
     label: { en: 'In vitro fertilization' },
-    codes: [{ system: 'SNOMED', code: '63487001' }],
+    codes: [{ system: 'SNOMED-CT', code: '52637005' }],
     hdsId: 'hds:treatment:ivf',
     route: 'oral'
   }
