@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.33.4] - 2026-11-16
+
+### Fixed
+
+- **Questionnaire answers keyed `__proto__` are kept** (B-2026-11-16-21): `prefillQuestionnaire` and
+  `HDSQuestionnaireForm`'s answer state assigned `answers[key] = ...`, which sets the prototype for a question key
+  named `__proto__` instead of adding it, so that answer was lost on prefill and on submit. Both now build the map with
+  `Object.fromEntries`; prefill answers come back in the request's question order. Tests with the keys `__proto__`,
+  `constructor`, `toString`, `valueOf` and `hasOwnProperty` (`questionnaire.test.ts`, `questionnaireFormKeys.test.tsx`).
+
 ## [0.33.3] - 2026-11-16
 
 ### Fixed

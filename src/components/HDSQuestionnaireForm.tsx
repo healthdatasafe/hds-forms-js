@@ -76,9 +76,9 @@ export function HDSQuestionnaireForm ({
 
   function setAnswer (key: string, next: AnswerEntry | undefined) {
     setAnswers(prev => {
-      const out = { ...prev };
-      if (next == null) delete out[key];
-      else out[key] = next;
+      // Object.fromEntries, not `out[key] = next`, which drops a key named `__proto__` (B-2026-11-16-21).
+      const kept = Object.entries(prev).filter(([k]) => k !== key);
+      const out: Record<string, AnswerEntry> = Object.fromEntries(next == null ? kept : [...kept, [key, next]]);
       onAnswerChange?.(out);
       return out;
     });
