@@ -174,8 +174,13 @@ A `datasource-search` item normally asks the respondent to find the concept them
           datasource: 'treatment',
           value: {            // the datasource's valueFields, as a selection would have produced
             label: { en: 'In vitro fertilization' },
-            codes: [{ system: 'SNOMED', code: '63487001' }],
-            hdsId: 'hds:treatment:ivf'
+            codes: [{
+              code: '52637005',
+              system: 'SNOMED-CT',
+              source: { key: 'SNOMED-CT-STORMM' },
+              hdsId: 'S:SNOMED-CT/k:SNOMED-CT-STORMM/C:52637005'
+            }],
+            hdsId: 'S:SNOMED-CT/k:SNOMED-CT-STORMM/C:52637005'
           }
         }
       }
