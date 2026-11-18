@@ -36,7 +36,8 @@
     "test:watch": "vitest",
     "test-app": "npm --prefix src-test-app run dev",
     "test-app:setup": "npm --prefix src-test-app install",
-    "build:app": "npm --prefix src-test-app run build"
+    "build:app": "npm --prefix src-test-app run build",
+    "license": "source-licenser -c .licenser.yml ."
   },
   "repository": {
     "type": "git",
@@ -49,7 +50,7 @@
     "Safe",
     "forms"
   ],
-  "author": "HDS",
+  "author": "Health Data Safe (https://www.healthdatasafe.org)",
   "license": "BSD-3-Clause",
   "peerDependencies": {
     "react": ">=19",
@@ -68,6 +69,7 @@
     "neostandard": "^0.12.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "source-licenser": "^2.0.6",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.20.0",
