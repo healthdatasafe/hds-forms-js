@@ -414,7 +414,7 @@ interface SubEditorProps {
 
 function DrugCodeEditor ({ question, onChange, labels, readOnly }: SubEditorProps) {
   const codes = (question.params?.drug as { codes?: Array<{ system?: string, code?: string }> })?.codes;
-  const first = (codes && codes[0]) || { system: 'atc', code: '' };
+  const first = (codes && codes[0]) || { system: 'ATC', code: '' };
 
   function updateCode (next: { system: string, code: string }) {
     onChange((q) => {
@@ -427,7 +427,7 @@ function DrugCodeEditor ({ question, onChange, labels, readOnly }: SubEditorProp
         return;
       }
       if (!q.params) q.params = {};
-      q.params.drug = { codes: [{ system: next.system || 'atc', code: trimmedCode }] };
+      q.params.drug = { codes: [{ system: next.system || 'ATC', code: trimmedCode }] };
     });
   }
 
@@ -439,7 +439,7 @@ function DrugCodeEditor ({ question, onChange, labels, readOnly }: SubEditorProp
           <label className='mb-0.5 block text-xs text-gray-700 dark:text-gray-300'>{labels.drugSystem}</label>
           <input
             type='text'
-            value={first.system || 'atc'}
+            value={first.system || 'ATC'}
             onChange={(e) => updateCode({ system: e.target.value, code: first.code || '' })}
             disabled={readOnly}
             className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
@@ -451,7 +451,7 @@ function DrugCodeEditor ({ question, onChange, labels, readOnly }: SubEditorProp
             type='text'
             value={first.code || ''}
             placeholder='e.g. G03DA04'
-            onChange={(e) => updateCode({ system: first.system || 'atc', code: e.target.value })}
+            onChange={(e) => updateCode({ system: first.system || 'ATC', code: e.target.value })}
             disabled={readOnly}
             className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm font-mono dark:bg-gray-800 dark:text-white'
           />

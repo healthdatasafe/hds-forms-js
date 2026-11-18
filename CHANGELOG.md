@@ -1,6 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [0.33.7] - 2026-11-18
+
+### Fixed
+
+- **QuestionnaireBuilder wrote the drug filter's code system as `atc`**, while datasets-service and the medication
+  events it codes use `ATC`. New filters now default to `ATC`. A system already stored on a request is kept as is:
+  the one reader of `params.drug` (hds-webapp's prefill) compares systems case-insensitively, so stored `atc`
+  requests keep matching and need no migration.
 
 ### Documentation
 
