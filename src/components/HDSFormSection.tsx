@@ -5,6 +5,8 @@ import { Select } from './fields/Select';
 import { EntryList } from './EntryList';
 import type { SectionEntry } from '../types';
 import { asItemPin } from '../schema/itemPin';
+import { FORM_TEXTS as T } from './formTexts';
+import { todayString, localDateToTime } from './localDate';
 
 const l = localizeText;
 
@@ -42,10 +44,6 @@ interface HDSFormSectionProps {
   entries?: SectionEntry[];
   onEditEntry?: (index: number) => void;
   onDeleteEntry?: (index: number) => void;
-}
-
-function todayString (): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 /**
@@ -102,8 +100,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
   function handleSubmit (e: React.FormEvent) {
     e.preventDefault();
     if (isRecurring) {
-      const time = Math.floor(new Date(entryDate).getTime() / 1000);
-      onSubmit({ ...formValues, __time: time });
+      onSubmit({ ...formValues, __time: localDateToTime(entryDate) });
     } else {
       onSubmit(formValues);
     }
@@ -128,7 +125,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
       {isRecurring && (
         <div>
           <label className='mb-1 block text-sm font-medium text-gray-900 dark:text-white'>
-            Date
+            {l(T.date)}
           </label>
           <input
             type='date'
@@ -202,7 +199,7 @@ export function HDSFormSection ({ section, values: initialValues, onSubmit, onDa
         disabled={disabled}
         className='rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-300 disabled:opacity-50 dark:bg-[var(--hds-primary)] dark:text-[var(--hds-primary-foreground)] dark:hover:bg-primary-400 dark:focus:ring-primary-800'
       >
-        {submitLabel || (isRecurring ? 'Add entry' : 'Submit')}
+        {submitLabel || l(isRecurring ? T.addEntry : T.submit)}
       </button>
 
       {isRecurring && entries && onEditEntry && onDeleteEntry && (

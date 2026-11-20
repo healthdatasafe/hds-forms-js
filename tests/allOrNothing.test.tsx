@@ -87,6 +87,7 @@ afterEach(() => {
   container?.remove();
   root = null;
   container = null;
+  vi.unstubAllGlobals();
 });
 
 async function setInput (el: HTMLInputElement | HTMLSelectElement, value: string, event: 'input' | 'change'): Promise<void> {
@@ -157,6 +158,9 @@ describe('all-or-nothing nested groups', () => {
   });
 
   it('coded form companions: frequency renders as a group and is all or nothing', async () => {
+    // DatasetSearch fetches `{endpoint}/sources` on mount. Unstubbed, that was a real DNS lookup of
+    // example.invalid (≈2.4 s), which pushed this test past the 5 s timeout under load (B-2026-11-20-16).
+    vi.stubGlobal('fetch', vi.fn(async () => ({ json: async () => ({ sources: {} }) })));
     const emitted: any[] = [];
     function Host () {
       const [v, setV] = useState<any>({ drug: { label: { en: 'Levothyroxine' }, codes: [] } });
