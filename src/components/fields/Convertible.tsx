@@ -4,8 +4,7 @@ import type { FieldProps } from '../../types';
 import { readPreferredMethod, initialConvertibleMethod, isKnownMethod, observationLabel } from '../../schema/convertibleMethod';
 import { InfoIcon } from './FieldLabel';
 import { StampGridPicker, isRepresentationAvailable } from '../StampGridPicker';
-
-const RECORDED_AS = { en: 'Recorded as', fr: 'Enregistré comme' };
+import { FORM_TEXTS as T } from '../formTexts';
 
 interface ConverterEngine {
   key: string;
@@ -122,7 +121,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
           {label}{required && <span className='text-red-600 dark:text-red-300'> *</span>}
         </label>
         {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
-        <p className='text-sm text-gray-400'>Loading converter...</p>
+        <p className='text-sm text-gray-400'>{localizeText(T.loadingConverter)}</p>
       </div>
     );
   }
@@ -134,7 +133,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
           {label}{required && <span className='text-red-600 dark:text-red-300'> *</span>}
         </label>
         {description && <p className='mb-2 text-sm text-gray-500 dark:text-gray-400'>{description}</p>}
-        <p className='text-sm text-red-600 dark:text-red-300'>Converter engine not available</p>
+        <p className='text-sm text-red-600 dark:text-red-300'>{localizeText(T.converterUnavailable)}</p>
       </div>
     );
   }
@@ -150,15 +149,15 @@ export function Convertible ({ label, description, value, onChange, converterEng
       {!hideMethodSelector
         ? (
           <div className='mb-3'>
-            <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>Input method</label>
+            <label className='mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400'>{localizeText(T.inputMethod)}</label>
             <select
               value={selectedMethod}
               onChange={e => { setSelectedMethod(e.target.value); onChange(undefined); }}
               disabled={disabled}
-              aria-label='Input method'
+              aria-label={localizeText(T.inputMethod)}
               className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white'
             >
-              <option value=''>-- Select method --</option>
+              <option value=''>{localizeText(T.selectMethod)}</option>
               {methods.map((m: any) => (
                 <option key={m.id} value={m.id}>{m.name}</option>
               ))}
@@ -276,7 +275,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
       {/* Where the stored value comes from; "recorded as" when it was recorded in another method */}
       {source && (
         <div className='mt-2 rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300'>
-          {recordedElsewhere ? (localizeText(RECORDED_AS) || 'Recorded as') : 'Source'}: <span className='font-medium'>{observationLabel(engine.getMethodDef(source.key), source.sourceData)}</span>
+          {localizeText(recordedElsewhere ? T.recordedAs : T.source)}: <span className='font-medium'>{observationLabel(engine.getMethodDef(source.key), source.sourceData)}</span>
           <span className='ml-1'>({localizeText(engine.getMethodDef(source.key)?.name) || source.key})</span>
         </div>
       )}

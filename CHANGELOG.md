@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.33.8] - 2026-11-20
+
+### Fixed
+
+- **The section form's default date was the UTC day, and a recurring entry was timed at UTC midnight**
+  (B-2026-11-20-7). In Switzerland an entry made between midnight and 1–2 am defaulted to the day before, and a
+  recurring entry landed at 01:00/02:00 local (west of UTC: on the previous evening). Both now use the local day:
+  `todayString()` reads local date fields and `__time` is local midnight of the chosen date (`src/components/localDate.ts`).
+- **Untranslated texts in the section form and the convertible field** (B-2026-11-20-8): "Date", "Add entry",
+  "Submit", the entry list's "Previous entries" / "Actions" / "Edit" / "Delete", and Convertible's loading and
+  unavailable messages, "Input method", "-- Select method --" and "Source" now go through `localizeText` with French
+  values (`src/components/formTexts.ts`). English wording is unchanged.
+
+### Tests
+
+- **allOrNothing "coded form companions" no longer flakes** (B-2026-11-20-16): DatasetSearch's mount-time fetch of
+  `{endpoint}/sources` hit the network (a ≈2.4 s DNS lookup of `example.invalid`) and pushed the test past the 5 s
+  timeout under load. The test stubs `fetch`; it now runs in under 10 ms.
+
 ## [0.33.7] - 2026-11-18
 
 ### Fixed
