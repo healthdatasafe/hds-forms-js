@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getHDSModel, localizeText } from 'hds-lib';
 import type { FieldProps } from '../../types';
-import { readPreferredMethod, initialConvertibleMethod, isKnownMethod, observationLabel } from '../../schema/convertibleMethod';
+import { readPreferredMethod, initialConvertibleMethod, isKnownMethod, observationLabel, canonicalObservation, offeredOptions } from '../../schema/convertibleMethod';
 import { InfoIcon } from './FieldLabel';
 import { StampGridPicker, isRepresentationAvailable } from '../StampGridPicker';
 import { FORM_TEXTS as T } from '../formTexts';
@@ -104,7 +104,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
   // else the closest observation of the selected method (what the diary shows). Display only:
   // an untouched field keeps the stored value as recorded.
   const currentObservation = useMemo(() => {
-    if (source && source.key === selectedMethod) return source.sourceData;
+    if (source && source.key === selectedMethod) return canonicalObservation(engine?.getMethodDef(selectedMethod), source.sourceData);
     if (!engine || !selectedMethod || selectedMethod === '_raw' || !vectors || typeof vectors !== 'object') return undefined;
     try {
       return engine.fromVector(selectedMethod, vectors)?.data;
@@ -183,6 +183,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
             const useStampGrid = isSingleComponent &&
               comp.field === 'mucus' &&
               isRepresentationAvailable(selectedMethod);
+            const shownOptions = offeredOptions(comp.options, currentVal);
 
             const setValue = (val: any) => {
               if (isSingleComponent) {
@@ -203,7 +204,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
                   ? (
                     <StampGridPicker
                       representationId={selectedMethod}
-                      options={comp.options}
+                      options={shownOptions}
                       value={currentVal}
                       disabled={disabled}
                       onChange={setValue}
@@ -224,7 +225,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
                       className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-white p-2 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white'
                     >
                       <option value=''>--</option>
-                      {comp.options.map((opt: any) => {
+                      {shownOptions.map((opt: any) => {
                         const optLabel = opt.label ? (localizeText(opt.label) || String(opt.value)) : String(opt.value);
                         return <option key={String(opt.value)} value={String(opt.value)}>{optLabel}</option>;
                       })}
