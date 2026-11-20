@@ -253,6 +253,24 @@ Permissions follow Pryv's shape (`streamId`, `level`, optional `name` / `default
 
 Displays a compact table of recurring entries. Used internally by `HDSFormSection` but also exported for custom layouts.
 
+### `hds-forms/conversation` — `<AnchoredDocumentView>`
+
+The person's own document, zoomed onto where a value is printed and highlighted, for "can you confirm this value?"
+(HDS Reader). Zoom out to the whole page and back to the value with one button; pinch, drag, + / −.
+
+```tsx
+import { AnchoredDocumentView, readSourceAnchor } from 'hds-forms-js/conversation';
+
+const anchor = readSourceAnchor(valueEvent.clientData); // { attachmentId, page, bbox? } or null
+<AnchoredDocumentView source={{ url: fileUrl, kind: 'pdf' }} anchor={anchor} label='Haemoglobin 138 g/L'>
+  <ConfirmButtons />
+</AnchoredDocumentView>
+```
+
+`bbox` is `[x, y, width, height]` in percent of the page, origin top left (data-model `clientData.hdsSourceAnchor`);
+without one the page is shown with no highlight. PDFs are drawn by pdf.js (`pdfjs-dist`, loaded only when a PDF is
+shown); a host that already loads pdf.js passes `loadPdfJs` and `pdfOptions` (its fonts and decoders).
+
 ## Schema Utilities
 
 ```ts

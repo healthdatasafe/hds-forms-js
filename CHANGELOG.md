@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.34.0] - 2026-11-20
+
+### Added
+
+- **`hds-forms-js/conversation`, a new subpath for the components of a conversation with the person**, starting with
+  **`<AnchoredDocumentView>`**: the person's own document, zoomed onto where a value is printed and highlighted, for
+  "can you confirm this value?" (HDS Reader). It takes the file (`source: { url, kind: 'pdf' | 'image' }`) and the
+  value's anchor (`clientData.hdsSourceAnchor`: page and `bbox` in percent of the page, origin top left); with no box
+  it shows the page with no highlight and says so. She zooms out to the whole page and back to the value with one
+  button, and pinches, drags and uses the + / − buttons and keys; buttons are 44 px touch targets, texts in English
+  and French. On a phone a whole printed row is shown readable (a line at least 18 px tall), from its left edge where
+  the label is printed. The host's confirm / correct controls go in as `children`. A PDF's anchored page is drawn by
+  pdf.js (`pdfjs-dist` 6.4.299, the version hds-webapp uses, loaded only when a PDF is shown); a host that already
+  loads pdf.js passes its own `loadPdfJs` and `pdfOptions`. Helpers: `readSourceAnchor` (reads and checks
+  `hdsSourceAnchor`; a bad box is dropped, the page kept), `anchoredAttachment` (the attachment an anchor points into,
+  with its kind), and the framing functions (`frameBox`, `fitPage`, `zoomAt`, `panBy`).
+- **Test app: a "Document" tab** showing `AnchoredDocumentView` on a PDF or picture opened with its picker or given as
+  `?src=<address>`, prefilled with the anchor of the haemoglobin line of the HDS Reader's synthetic report
+  s-lab-fr-0001 (`?tab=document` opens it). The document itself is not published with the app.
+
+### Fixed
+
+- **Test app: it did not start** (`hds-feminine-cycle-ui` "does not provide an export named `RECORDED_PEAK_ITEM`"):
+  hds-react-timeline needs the app's cycle-ui 0.11, and Vite resolved this library's own older copy (0.8.3). The app
+  now dedupes `hds-feminine-cycle-ui`, as it does `hds-lib` and the timeline.
+
 ## [0.33.8] - 2026-11-20
 
 ### Fixed

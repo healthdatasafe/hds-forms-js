@@ -7,13 +7,12 @@ export default defineConfig({
   build: {
     outDir: 'js',
     lib: {
-      entry: 'src/index.ts',
-      name: 'HDSForms',
+      entry: { 'hds-forms': 'src/index.ts', conversation: 'src/conversation/index.ts' },
       formats: ['es', 'cjs'],
-      fileName: (format) => `hds-forms.${format === 'es' ? 'mjs' : 'js'}`
+      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'mjs' : 'js'}`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime', 'hds-lib'],
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'hds-lib', /^pdfjs-dist(\/|$)/],
       output: {
         globals: {
           react: 'React',
