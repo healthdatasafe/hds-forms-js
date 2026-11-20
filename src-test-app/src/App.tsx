@@ -13,9 +13,10 @@ import { schemaFor } from 'hds-forms/schema/schemas';
 import { jsonFormForItemDef } from 'hds-forms/schema/itemDefToSchema';
 import type { SectionEntry } from 'hds-forms/types';
 import FormBuilder from './FormBuilder';
+import DocumentPanel from './DocumentPanel';
 import { Timeline } from 'hds-react-timeline';
 
-type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'timeline' | 'settings';
+type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'timeline' | 'settings' | 'document';
 
 // Public read-only demo access on the throwaway `sample-mira` account, scoped to
 // the `mira-demo` stream. This bundle is published to gh-pages, so anything used
@@ -233,7 +234,7 @@ function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list
 }
 
 export default function App () {
-  const [tab, setTab] = useState<Tab>('fields');
+  const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).get('tab') === 'document' ? 'document' : 'fields'));
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ItemSearchPickerItem[]>([]);
 
@@ -349,6 +350,9 @@ export default function App () {
         <button className={tabClass('settings')} onClick={() => setTab('settings')}>
           Settings
         </button>
+        <button className={tabClass('document')} onClick={() => setTab('document')}>
+          Document
+        </button>
       </div>
 
       <div className='rounded-b-lg border border-t-0 border-gray-200 bg-white p-6 dark:border-gray-600 dark:bg-gray-800'>
@@ -420,6 +424,7 @@ export default function App () {
 
         {/* ── Settings Tab ── */}
         {tab === 'settings' && <SettingsPanel />}
+        {tab === 'document' && <DocumentPanel />}
       </div>
     </div>
   );
