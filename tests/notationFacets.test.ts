@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { registry } from 'hds-feminine-cycle-ui';
 import { compatible, choices, toggle, resolve, selectionOf, pickedValue, type Selection } from '../src/schema/notationFacets';
-import { buildNotation, itemValuesOf, candidateOf, type NotationModel } from '../src/schema/methodNotation';
+import { buildNotation, itemValuesOf, candidateOf, recordOf, storedAnnotations, withAnnotations, type NotationModel } from '../src/schema/methodNotation';
 
 const fixture = (): any => JSON.parse(readFileSync(new URL('./fixtures/creighton-v0.json', import.meta.url), 'utf-8'));
 const rep = registry.get('creighton')!;
@@ -38,7 +38,7 @@ describe('buildNotation (Creighton, from the model)', () => {
   it('mucus alone: sticker, number, letters; the offered codes only', () => {
     const m = mucusModel();
     expect(m.rows.map(r => r.id)).toEqual(['sticker', 'number', 'letters']);
-    expect(m.candidates.length).toBe(67);
+    expect(m.candidates.length).toBe(95);
     expect(m.candidates.map(c => c.payload.text)).not.toContain('10');
     expect(m.covers).toEqual([MUCUS]);
     expect(m.writes).toEqual([MUCUS]);
@@ -48,15 +48,42 @@ describe('buildNotation (Creighton, from the model)', () => {
     const m = fullModel();
     expect(m.rows.map(r => r.id)).toEqual(['sticker', 'bleeding', 'number', 'letters']);
     expect(m.order.bleeding).toEqual(['H', 'M', 'L', 'VL', 'B']);
-    expect(m.candidates.length).toBe(67 + 5 + 5 * 67);
+    // H and M alone; L, VL and B only with a mucus or dry code (fcui `bleedingNotation[].mucus`, book ch. 6).
+    expect(m.candidates.length).toBe(95 + 2 + 3 * 95);
     expect(m.covers).toEqual([MUCUS, BLEEDING]);
     expect(m.writes).toEqual([MUCUS, BLEEDING, BROWN]);
   });
 
-  it('skips a notation row without parts (a later row kind)', () => {
+  it('skips a notation row without parts (a later row kind); annotation rows become annotations', () => {
     const def = fixture();
-    def.notation.rows.push({ id: 'frequency', label: { en: 'Frequency' } });
-    expect(mucusModel(def).rows.map(r => r.id)).toEqual(['sticker', 'number', 'letters']);
+    def.notation.rows.push({ id: 'later', label: { en: 'Later' } });
+    const m = mucusModel(def);
+    expect(m.rows.map(r => r.id)).toEqual(['sticker', 'number', 'letters']);
+    expect(m.annotations.map(a => a.id)).toEqual(['frequency']);
+    expect(m.annotations[0].requiredAtEntry).toBe(true);
+    // No mucus item entered: no annotation
+    expect(buildNotation({ methodDef: def, rep, itemKeys: [BLEEDING] })!.annotations).toEqual([]);
+  });
+
+  it('recordOf: a code needs its required frequency; a bleeding letter alone does not', () => {
+    const f = fullModel();
+    const cand = (text: string) => f.candidates.find(c => c.payload.text === text)!;
+    expect(recordOf(f, cand('6C'), {})).toEqual({ valid: false, text: '6C', annotations: undefined });
+    expect(recordOf(f, cand('6C'), { frequency: 'X2' })).toEqual({ valid: true, text: '6C X2', annotations: { frequency: 'X2' } });
+    expect(recordOf(f, cand('VL 10KL'), { frequency: 'AD' }).text).toBe('VL 10KL AD');
+    expect(recordOf(f, cand('H'), { frequency: 'X2' })).toEqual({ valid: true, text: 'H' });
+    expect(recordOf(f, cand('6C'), { frequency: 'X9' }).valid).toBe(false);
+    expect(recordOf(f, null, { frequency: 'X1' }).valid).toBe(false);
+  });
+
+  it('storedAnnotations / withAnnotations: read and write source.annotations', () => {
+    const m = mucusModel();
+    expect(storedAnnotations(m, { source: { key: 'creighton', sourceData: '6C', annotations: { frequency: 'X1', other: 'z' } } })).toEqual({ frequency: 'X1' });
+    expect(storedAnnotations(m, { source: { key: 'billings', sourceData: 'dry', annotations: { frequency: 'X1' } } })).toEqual({});
+    expect(storedAnnotations(m, { source: { key: 'creighton', sourceData: '6C' } })).toEqual({});
+    const c = { vectors: { a: 1 }, source: { key: 'creighton', sourceData: '6C' } };
+    expect(withAnnotations(c, { frequency: 'X2' })).toEqual({ vectors: { a: 1 }, source: { key: 'creighton', sourceData: '6C', annotations: { frequency: 'X2' } } });
+    expect(withAnnotations(c, undefined)).toBe(c);
   });
 
   it('the choice texts and words come from the notation block', () => {
@@ -78,7 +105,7 @@ describe('notation facets', () => {
     expect(new Set([green, white, red]).size).toBe(3);
     for (const c of ['2', '2W', '4']) expect(stickerOfCode(f, c)).toBe(green);
     for (const c of ['8CK', '10KL', '10DL', '6GCKL']) expect(stickerOfCode(f, c)).toBe(white);
-    for (const c of ['6R', '10B', '10R', 'H', 'VL', 'B', 'L 6C', 'B 0']) expect(stickerOfCode(f, c)).toBe(red);
+    for (const c of ['6R', '8R', '10B', '10R', 'H', 'M', 'VL 6C', 'L 6C', 'B 0']) expect(stickerOfCode(f, c)).toBe(red);
     expect(f.order.sticker).toEqual([green, white, red]);
     expect(f.display.sticker[white].cell?.baby).toBe(true);
     expect(f.display.sticker[white].cell?.code).toBeUndefined();
@@ -123,10 +150,14 @@ describe('notation facets', () => {
     expect(res(m, { ...sel, sticker: stickerOfCode(m, '6C') })).toBe('6C');
   });
 
-  it('a bleeding record: alone, or with mucus; a red sticker narrows to them', () => {
+  it('a bleeding record: H, M alone; L, VL, B with a code; a red sticker narrows to them', () => {
     const f = fullModel();
-    expect(res(f, { bleeding: 'L' })).toBe('L');
+    expect(res(f, { bleeding: 'H' })).toBe('H');
+    expect(show(f, { bleeding: 'M' }, 'base')).toEqual([]);
+    expect(res(f, { bleeding: 'L' })).toBeNull();
     expect(res(f, { bleeding: 'L', base: '6', colour: 'C' })).toBe('L 6C');
+    expect(res(f, { bleeding: 'B', base: '0' })).toBe('B 0');
+    expect(show(f, { bleeding: 'VL' }, 'base')).toEqual(['0', '2', '2W', '4', '6', '8', '10']);
     const red = stickerOfCode(f, 'H');
     expect(show(f, { sticker: red }, 'bleeding')).toEqual(['H', 'M', 'L', 'VL', 'B']);
     expect(show(f, { sticker: stickerOfCode(f, '6C') }, 'bleeding')).toEqual([]);
@@ -159,23 +190,33 @@ describe('notation facets', () => {
 });
 
 describe('the choices follow the model data, with no code change', () => {
-  it('a code removed from the generated list: 6 + G no longer resolves and needs a colour', () => {
+  it('a code removed from the generated list: 6 + G + Y no longer resolves and needs L', () => {
     const before = mucusModel();
-    expect(res(before, { base: '6', consistency: 'G' })).toBe('6G');
+    expect(res(before, { base: '6', consistency: 'G', colour: 'Y' })).toBe('6GY');
     const def = fixture();
-    def.components[0].options = def.components[0].options.filter((o: any) => o.value !== '6G');
+    def.components[0].options = def.components[0].options.filter((o: any) => o.value !== '6GY');
     const after = mucusModel(def);
-    expect(res(after, { base: '6', consistency: 'G' })).toBeNull();
-    expect(show(after, { base: '6', consistency: 'G' }, 'colour')).toEqual(['C', 'CK', 'K', 'Y']);
+    expect(res(after, { base: '6', consistency: 'G', colour: 'Y' })).toBeNull();
+    expect(show(after, { base: '6', consistency: 'G', colour: 'Y' }, 'lubricative')).toEqual(['true']);
   });
 
-  it('a rule relaxed (8B added with its parts): B is offered with 8', () => {
-    expect(show(mucusModel(), { base: '8' }, 'colour')).not.toContain('B');
+  it('a rule relaxed (8PC added with its parts): P is offered with 8', () => {
+    expect(show(mucusModel(), { base: '8' }, 'consistency')).not.toContain('P');
     const def = fixture();
-    def.components[0].options.push({ value: '8B', label: { en: '8B — Tacky, brown', fr: '8B — Poisseux, brun' }, vector: {}, parts: { category: 'mucus', base: '8', consistency: null, colour: 'B', lubricative: false } });
+    def.components[0].options.push({ value: '8PC', label: { en: '8PC — Tacky, pasty, cloudy', fr: '8PC — Poisseux, pâteux, trouble' }, vector: {}, parts: { category: 'mucus', base: '8', consistency: 'P', colour: 'C', lubricative: false } });
     const after = mucusModel(def);
-    expect(show(after, { base: '8' }, 'colour')).toContain('B');
-    expect(res(after, { base: '8', colour: 'B' })).toBe('8B');
+    expect(show(after, { base: '8' }, 'consistency')).toContain('P');
+    expect(res(after, { base: '8', consistency: 'P', colour: 'C' })).toBe('8PC');
+  });
+
+  it('the practitioner answers reach the picker with no code change (plan 131 08)', () => {
+    const m = mucusModel();
+    expect(res(m, { consistency: 'P', colour: 'C' })).toBe('PC');
+    expect(res(m, { base: '6', consistency: 'P', colour: 'C' })).toBe('6PC');
+    expect(res(m, { base: '8', colour: 'R' })).toBe('8R');
+    expect(res(m, { base: '10', colour: 'KY' })).toBe('10KY');
+    expect(res(m, { base: '6', consistency: 'G' })).toBeNull();
+    expect(show(m, { consistency: 'P' }, 'base')).toEqual(['6']);
   });
 
   it('a code made not offered disappears; the stored one still opens', () => {

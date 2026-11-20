@@ -7,23 +7,38 @@ import { StampGridPicker, isRepresentationAvailable } from '../StampGridPicker';
 import { FORM_TEXTS as T } from '../formTexts';
 import { registry } from 'hds-feminine-cycle-ui';
 import { NotationPicker } from '../NotationPicker';
-import { buildNotation, candidateOf, type NotationModel } from '../../schema/methodNotation';
+import { buildNotation, candidateOf, recordOf, storedAnnotations, withAnnotations, type AnnotationPicks, type NotationModel } from '../../schema/methodNotation';
 import { resolve, selectionOf, type Selection } from '../../schema/notationFacets';
 
 /**
- * The notation rows for one stored mucus code (plan 134). The partial picks live here; a resolved record calls
- * `onPick(code)`, an incomplete or cleared one `onPick(undefined)`.
+ * The notation rows for one stored mucus code (plan 134). The partial picks live here; a complete record (code and
+ * required annotations, plan 131 frequency) calls `onPick(code, annotations)`, an incomplete or cleared one
+ * `onPick(undefined)`.
  */
-function ConvertibleNotation ({ model, current, disabled, onPick }: { model: NotationModel; current: any; disabled?: boolean; onPick: (code: string | undefined) => void }) {
+function ConvertibleNotation ({ model, current, stored, disabled, onPick }: { model: NotationModel; current: any; stored: any; disabled?: boolean; onPick: (code: string | undefined, annotations?: AnnotationPicks) => void }) {
   const [selection, setSelection] = useState<Selection>(() => {
     const c = current != null ? candidateOf(model, String(current), undefined) : null;
     return c ? selectionOf(c, model.rows) : {};
   });
-  const pick = (next: Selection) => {
+  const [annotations, setAnnotations] = useState<AnnotationPicks>(() => storedAnnotations(model, stored));
+  const pick = (next: Selection, nextAnnotations: AnnotationPicks) => {
     setSelection(next);
-    onPick(resolve(model.candidates, model.rows, next)?.payload.mucus);
+    setAnnotations(nextAnnotations);
+    const resolved = resolve(model.candidates, model.rows, next);
+    const record = recordOf(model, resolved, nextAnnotations);
+    if (record.valid) onPick(resolved!.payload.mucus, record.annotations);
+    else onPick(undefined);
   };
-  return <NotationPicker model={model} selection={selection} onSelectionChange={pick} disabled={disabled} />;
+  return (
+    <NotationPicker
+      model={model}
+      selection={selection}
+      onSelectionChange={s => pick(s, annotations)}
+      annotations={annotations}
+      onAnnotationsChange={a => pick(selection, a)}
+      disabled={disabled}
+    />
+  );
 }
 
 interface ConverterEngine {
@@ -102,13 +117,13 @@ export function Convertible ({ label, description, value, onChange, converterEng
   const components = methodDef?.components || [];
   const isSingleComponent = components.length === 1;
 
-  // Handle observation selection
-  async function handleObservationSelect (observation: any) {
+  // Handle observation selection; `annotations` (notation methods) go to `source.annotations`.
+  async function handleObservationSelect (observation: any, annotations?: AnnotationPicks) {
     if (!itemKey || !selectedMethod) return;
     try {
       const model = getHDSModel();
       const event = await model.converters.convertMethodToEvent(itemKey, selectedMethod, observation);
-      onChange(event.content);
+      onChange(withAnnotations(event.content, annotations));
     } catch (e) {
       console.error('Conversion error:', e);
     }
@@ -232,8 +247,9 @@ export function Convertible ({ label, description, value, onChange, converterEng
                       key={selectedMethod}
                       model={notationModel}
                       current={currentVal}
+                      stored={value}
                       disabled={disabled}
-                      onPick={code => code != null ? setValue(code) : onChange(undefined)}
+                      onPick={(code, annotations) => code != null ? handleObservationSelect(code, annotations) : onChange(undefined)}
                     />
                     )
                   : useStampGrid

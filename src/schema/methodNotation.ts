@@ -12,9 +12,21 @@ import type { FacetValue, NotationCandidate, NotationRow } from './notationFacet
 
 /** The method's `notation` block (model-cervical-fluid `NotationDef`). */
 export interface NotationDefLike {
-  rows: Array<{ id: string; label?: any; parts?: string[] }>;
+  rows: Array<{ id: string; label?: any; parts?: string[]; annotation?: string }>;
   values: Record<string, Array<{ value: string | boolean; label?: any; code?: string; text?: string }>>;
+  annotations?: NotationAnnotationLike[];
 }
+
+/** An annotation of the method's notation (model-cervical-fluid `NotationAnnotation`, e.g. Creighton frequency). */
+export interface NotationAnnotationLike {
+  id: string;
+  label?: any;
+  requiredAtEntry?: boolean;
+  values: Array<{ value: string; label?: any }>;
+}
+
+/** Picked annotation values, by annotation id. */
+export type AnnotationPicks = Record<string, string>;
 
 /** A bleeding letter (hds-feminine-cycle-ui `BleedingNotationEntry`). */
 export interface BleedingEntryLike {
@@ -23,6 +35,8 @@ export interface BleedingEntryLike {
   band: string;
   itemKey: string;
   value?: number;
+  /** The mucus part of the record: `none` the letter alone, `required` always with a code; omitted: either. */
+  mucus?: 'none' | 'required';
 }
 
 /** What a candidate saves. */
@@ -55,6 +69,11 @@ export interface NotationModel {
   display: Record<string, Record<FacetValue, ChoiceDisplay>>;
   /** The mucus item the picker enters, if any. */
   mucusItemKey?: string;
+  /**
+   * The annotations of a record that has a code (Creighton frequency), each on its own row, in the order of the
+   * notation's rows. They never filter the candidates; a `requiredAtEntry` one completes the record.
+   */
+  annotations: NotationAnnotationLike[];
   /** Members of `itemKeys` the picker enters. */
   covers: string[];
   /** Every item key the picker may write: `covers` and the presence items of bleeding letters. */
@@ -152,8 +171,9 @@ export function buildNotation ({ methodDef, rep, itemKeys, current, dayContext }
   const mucusOptions = mucusItemKey ? options : [];
   for (const o of mucusOptions) add(o, undefined);
   for (const b of bleedings) {
-    add(undefined, b);
-    for (const o of mucusOptions) add(o, b);
+    // A letter that needs a code is offered alone only when the host does not enter mucus.
+    if (b.mucus !== 'required' || mucusOptions.length === 0) add(undefined, b);
+    if (b.mucus !== 'none') for (const o of mucusOptions) add(o, b);
   }
 
   // Stickers in order of first appearance, those a bleeding letter draws last (dry, mucus, then red).
@@ -188,9 +208,51 @@ export function buildNotation ({ methodDef, rep, itemKeys, current, dayContext }
     }
   }
 
+  // Annotation rows: a row with `annotation` naming an entry of `notation.annotations` (NotationDef contract).
+  const annotations: NotationAnnotationLike[] = mucusItemKey
+    ? notation.rows
+      .map(r => r.annotation ? notation.annotations?.find(a => a.id === r.annotation) : undefined)
+      .filter((a): a is NotationAnnotationLike => !!a && Array.isArray(a.values) && a.values.length > 0)
+    : [];
+
   const covers = itemKeys.filter(k => k === mucusItemKey || bleedings.some(b => b.itemKey === k));
   const writes = [...new Set([...covers, ...bleedings.map(b => b.itemKey)])];
-  return { methodId: rep.spec.boundMethod.methodId, rows, candidates, order, display, mucusItemKey, covers, writes };
+  return { methodId: rep.spec.boundMethod.methodId, rows, candidates, order, display, mucusItemKey, annotations, covers, writes };
+}
+
+/**
+ * Whether the record is complete and how it is written: a resolved candidate, plus every required annotation when
+ * it has a code ("L 6C X2"). Annotations of a record without a code (a bleeding letter alone) are left out.
+ */
+export function recordOf (model: NotationModel, resolved: { payload: NotationPayload } | null, picks: AnnotationPicks): { valid: boolean; text?: string; annotations?: AnnotationPicks } {
+  if (!resolved) return { valid: false };
+  if (resolved.payload.mucus == null) return { valid: true, text: resolved.payload.text };
+  const annotations: AnnotationPicks = {};
+  for (const a of model.annotations) {
+    const v = picks[a.id];
+    if (v != null && a.values.some(x => x.value === v)) annotations[a.id] = v;
+  }
+  const valid = model.annotations.every(a => !a.requiredAtEntry || annotations[a.id] != null);
+  const text = [resolved.payload.text, ...model.annotations.map(a => annotations[a.id]).filter(Boolean)].join(' ');
+  return { valid, text, annotations: Object.keys(annotations).length ? annotations : undefined };
+}
+
+/** The annotations stored on a mucus content of the method (`source.annotations`), those the model knows. */
+export function storedAnnotations (model: NotationModel, content: any): AnnotationPicks {
+  const out: AnnotationPicks = {};
+  const stored = content?.source?.key === model.methodId ? content.source.annotations : undefined;
+  if (!stored || typeof stored !== 'object') return out;
+  for (const a of model.annotations) {
+    const v = stored[a.id];
+    if (typeof v === 'string' && a.values.some(x => x.value === v)) out[a.id] = v;
+  }
+  return out;
+}
+
+/** The converter content with the record's annotations in `source.annotations` (none: the content as it is). */
+export function withAnnotations (content: any, annotations: AnnotationPicks | undefined): any {
+  if (!annotations || !content?.source) return content;
+  return { ...content, source: { ...content.source, annotations: { ...annotations } } };
 }
 
 /**

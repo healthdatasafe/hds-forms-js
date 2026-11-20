@@ -3,16 +3,16 @@ import { getHDSModel } from 'hds-lib';
 import { registry, bleedingBandOf } from 'hds-feminine-cycle-ui';
 import { NotationPicker } from './NotationPicker';
 import { canonicalObservation } from '../schema/convertibleMethod';
-import { buildNotation, itemValuesOf, candidateOf, type NotationModel, type BleedingEntryLike } from '../schema/methodNotation';
+import { buildNotation, itemValuesOf, candidateOf, recordOf, storedAnnotations, withAnnotations, type AnnotationPicks, type NotationModel, type BleedingEntryLike } from '../schema/methodNotation';
 import { resolve, selectionOf, type Selection } from '../schema/notationFacets';
 import { NOTATION_CONVERTER as CONVERTER, type MethodNotation } from './useMethodNotation';
 
 export interface NotationState {
   /** Nothing picked. */
   empty: boolean;
-  /** The picks resolve to exactly one record. */
+  /** The picks resolve to exactly one record, with its required annotations (Creighton frequency). */
   valid: boolean;
-  /** The record as written, e.g. "L 6C". */
+  /** The record as written, e.g. "L 6C X2". */
   text?: string;
 }
 
@@ -65,25 +65,33 @@ export function MethodNotationPicker ({ notation, values, onChange, dayContext, 
     : null, [notation, seed, dayContext]);
 
   const [selection, setSelection] = useState<Selection | null>(null);
+  const [annotations, setAnnotations] = useState<AnnotationPicks>({});
   useEffect(() => {
     if (selection != null || !model || !seed) return;
     const c = candidateOf(model, seed.mucus, seed.bleeding);
     setSelection(c ? selectionOf(c, model.rows) : {});
+    if (c?.payload.mucus != null && model.mucusItemKey) setAnnotations(storedAnnotations(model, values[model.mucusItemKey]));
   }, [model, seed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const seq = useRef(0);
-  async function pick (next: Selection) {
+  async function pick (next: Selection, nextAnnotations: AnnotationPicks) {
     if (!model) return;
     setSelection(next);
+    setAnnotations(nextAnnotations);
     const resolved = resolve(model.candidates, model.rows, next);
-    const state: NotationState = { empty: Object.keys(next).length === 0, valid: !!resolved, text: resolved?.payload.text };
-    const { mucus, items } = itemValuesOf(model, resolved?.payload ?? null);
+    const record = recordOf(model, resolved, nextAnnotations);
+    const state: NotationState = {
+      empty: Object.keys(next).length === 0 && Object.keys(nextAnnotations).length === 0,
+      valid: record.valid,
+      text: record.valid ? record.text : undefined
+    };
+    const { mucus, items } = itemValuesOf(model, record.valid ? resolved!.payload : null);
     const patch: Record<string, unknown> = { ...items };
     const n = ++seq.current;
     if (mucus != null && model.mucusItemKey) {
       try {
         const event = await getHDSModel().converters.convertMethodToEvent(CONVERTER, model.methodId, mucus);
-        patch[model.mucusItemKey] = event.content;
+        patch[model.mucusItemKey] = withAnnotations(event.content, record.annotations);
       } catch (e) {
         console.error('Conversion error:', e);
         for (const k of Object.keys(patch)) patch[k] = undefined;
@@ -94,5 +102,14 @@ export function MethodNotationPicker ({ notation, values, onChange, dayContext, 
   }
 
   if (!model || selection == null) return null;
-  return <NotationPicker model={model} selection={selection} onSelectionChange={pick} disabled={disabled} />;
+  return (
+    <NotationPicker
+      model={model}
+      selection={selection}
+      onSelectionChange={s => pick(s, annotations)}
+      annotations={annotations}
+      onAnnotationsChange={a => pick(selection, a)}
+      disabled={disabled}
+    />
+  );
 }
