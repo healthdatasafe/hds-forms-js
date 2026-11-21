@@ -206,6 +206,28 @@ describe('[DOC] the document step and her note', () => {
     expect(acts2.skipDocument).toHaveBeenCalledWith('d1', 100, 'not a lab report');
   });
 
+  it('the host\'s send button sends the note alone (noteAloneSignal)', async () => {
+    const c = of([pv('a')]);
+    const acts = actions();
+    const step = conv.nextStep(c, E, ready);
+    await render(bubble(c, step, acts, { note: 'ask the lab', noteAloneSignal: 0 }));
+    expect(acts.dismiss).not.toHaveBeenCalled();
+    await act(async () => { root!.render(bubble(c, step, acts, { note: 'ask the lab', noteAloneSignal: 1 })); });
+    expect(acts.dismiss).toHaveBeenCalledWith(['a'], 'skip', 100, 'ask the lab');
+  });
+
+  it('a proposed document without an anchor still shows the document; a done document says what was saved', async () => {
+    const c = of([pdoc('d1')]);
+    await render(bubble(c, conv.nextStep(c, E, ready), actions()));
+    expect(button('See the document')).not.toBeNull();
+    const status = { alertEventId: 's', kind: 'task-status', hds: { kind: 'task-status', about: DOC, status: 'done', attempt: 1 }, time: 1, direction: 'received', from: null } as any;
+    const onOpen = vi.fn();
+    await render(<conv.DocumentStatusBubble title='Lab report' status={status} contactName='Dr Test' saved={6} onOpenDocument={onOpen} />);
+    expect(container.querySelector('[data-closing-line]')?.textContent).toBe('6 values saved · See them');
+    await click(button('See them'));
+    expect(onOpen).toHaveBeenCalled();
+  });
+
   it('every text has its en and fr', () => {
     const missing = Object.entries(conv.CONVERSATION_TEXTS as Record<string, { en?: string; fr?: string }>)
       .filter(([, t]) => !t.en || !t.fr).map(([k]) => k);

@@ -38,6 +38,15 @@ export interface QuestionCardProps {
 }
 
 const ROLES = new Set(['sampling', 'report', 'received', 'other']);
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** The printed birth date as she reads dates: from its day (`birthDay`, or a printed ISO date), else as printed */
+function birthText (identity: { birthDate?: unknown; birthDay?: unknown }, locale?: string): string {
+  const day = typeof identity.birthDay === 'string' && ISO_DAY.test(identity.birthDay)
+    ? identity.birthDay
+    : typeof identity.birthDate === 'string' && ISO_DAY.test(identity.birthDate) ? identity.birthDate : null;
+  return day != null ? dayText(day, locale) : String(identity.birthDate);
+}
 
 /**
  * A question from the contact with what she needs to answer it (she no longer has the document open): the printed name
@@ -72,7 +81,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
       {identity != null && (
         <dl className='mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm'>
           {identity.name != null && <><dt className='text-gray-600 dark:text-gray-400'>{tx('printedName')}</dt><dd className='font-medium'>{String(identity.name)}</dd></>}
-          {identity.birthDate != null && <><dt className='text-gray-600 dark:text-gray-400'>{tx('printedBirth')}</dt><dd className='font-medium'>{String(identity.birthDate)}</dd></>}
+          {identity.birthDate != null && <><dt className='text-gray-600 dark:text-gray-400'>{tx('printedBirth')}</dt><dd className='font-medium'>{birthText(identity, locale)}</dd></>}
         </dl>
       )}
       {/* the contact read no name or birth date (CONVERSATION.md: then the question carries no identity): she checks on

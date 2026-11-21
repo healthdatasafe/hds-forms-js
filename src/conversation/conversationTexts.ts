@@ -67,6 +67,11 @@ export const CONVERSATION_TEXTS = {
   hideEverything: { en: 'Hide', fr: 'Masquer' },
 
   // the working indicator (a typing indicator for the contact's work on a document)
+  'working.sent': { en: 'Sent “{title}” to {name}. Waiting for {name} to start…', fr: '« {title} » envoyé à {name}. En attente que {name} commence…' },
+  'working.sentNoTitle': { en: 'Sent to {name}. Waiting for {name} to start…', fr: 'Envoyé à {name}. En attente que {name} commence…' },
+  'done.saved': { en: '{n} values saved', fr: '{n} valeurs enregistrées' },
+  'done.savedOne': { en: '1 value saved', fr: '1 valeur enregistrée' },
+  'done.seeThem': { en: 'See them', fr: 'Les voir' },
   'working.received': { en: '{name} received “{title}” and is starting on it…', fr: '{name} a reçu « {title} » et s’y met…' },
   'working.receivedNoTitle': { en: '{name} received your document and is starting on it…', fr: '{name} a reçu votre document et s’y met…' },
   'working.reading': { en: '{name} is reading “{title}”…', fr: '{name} lit « {title} »…' },
