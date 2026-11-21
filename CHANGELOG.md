@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.37.0] - 2026-11-21
+
+### Added
+
+- **The conversation one by one** (plan 128, perki: "like chatting with someone, one by one, with proposals of action
+  I can just click"), for any contact and any HDS app:
+  - `nextStep(conversation, engines, options)`: what she answers next about a document, a pure function of the
+    conversation: `is-this-yours` → the document's date → questions about one value → values to check → the values read
+    clearly as one batch turn ("Confirm the 22" / "One by one"; never a value to check) → the clear values one by one →
+    a summary (kept aside, waiting for the contact, set aside, unanswerable). `conversationProgress`, `progressText`
+    ("28 values · 1 question · 9 answered"), `documentOrder` (the order the document prints).
+  - `<ConversationStepBubble>`: the step as the contact's last bubble with quick replies (Confirm · Correct · Already in
+    my record · Later; the options of a question; the batch; the summary), the document on the value, `shownAt` from
+    when it first showed. "Later" (`onLater`) writes nothing: a `skip` would let the contact delete the value once its
+    work is done (R10).
+  - `<DocumentStatusBubble>`: a document in the thread: its state, progress, notices, "See everything" (the
+    `DocumentConversationCard` overview).
+  - `useDocumentConversations(connection, relationships, options)`: the person's side of every relationship's
+    conversation (read, settle per document, R11, answer through hds-lib with the item streams created first, the
+    conversation children granted when a contact talks with none, `is-this-yours` answered on a profile match), moved
+    here from hds-webapp so any HDS app gets the whole behaviour.
+  - `answerRuns`: a run of single confirmations as one bubble ("You confirmed 12 values").
+  - `QuestionCard variant='plain'`; `ValueLine`, `ValueReview`, `useConversationRun`, `blockText` shared by the card
+    and the step.
+  - `readSourceAnchor` reads the anchor's `eventId` (data-model 4.25.0); `anchorDocumentId(clientData)`: the anchor's
+    document, else the one event `related` names.
+- **`docs/CONVERSATION-COMPONENTS.md`**: every conversation component, what it renders, the CONVERSATION.md kind and
+  fields it maps to, props, texts and examples, for any HDS app on either side of a conversation.
+
 ## [0.36.0] - 2026-11-21
 
 ### Added

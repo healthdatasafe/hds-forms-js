@@ -32,6 +32,8 @@ export interface QuestionCardProps {
   loadPdfJs?: () => Promise<PdfJsLike>;
   pdfOptions?: Record<string, unknown>;
   className?: string;
+  /** `panel` (default): its own background, inside a card; `plain`: none, inside a bubble */
+  variant?: 'panel' | 'plain';
 }
 
 const ROLES = new Set(['sampling', 'report', 'received', 'other']);
@@ -42,7 +44,7 @@ const ROLES = new Set(['sampling', 'report', 'received', 'other']);
  * `which-date`, the options of a choice question, the printed line it is about. An unknown or third-party code is shown,
  * not answerable (R8). Answered: what she answered.
  */
-export function QuestionCard ({ question, about, contactName, sourceOf, busy = false, canUndoMatch = false, onAnswer, locale, loadPdfJs, pdfOptions, className }: QuestionCardProps) {
+export function QuestionCard ({ question, about, contactName, sourceOf, busy = false, canUndoMatch = false, onAnswer, locale, loadPdfJs, pdfOptions, className, variant = 'panel' }: QuestionCardProps) {
   const c = question.item.content;
   const [showDoc, setShowDoc] = useState(false);
   const [otherDay, setOtherDay] = useState('');
@@ -60,7 +62,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
   const matched = answer?.action === 'confirm' && answer?.basis === 'profile-match';
 
   return (
-    <div className={cx(panel, className)} data-question={question.code}>
+    <div className={cx(variant === 'panel' && panel, className)} data-question={question.code}>
       <p className='text-sm font-semibold'>{questionText(question.code, contactName)}</p>
       {about != null && <p className={cx(small, 'mt-1')}>{tx('aboutValue', { label: printedText(about.item.content.printed) })}</p>}
 

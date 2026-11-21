@@ -1,0 +1,145 @@
+import type { DocumentConversation, ProposedValueView, QuestionView } from 'hds-lib';
+import { batchCandidates, isWritten, rowBlock, type RowBlock, type RowBlockOptions } from './rowBlock';
+import { tx } from './labels';
+
+/**
+ * One step of a conversation shown one by one, as a chat (perki: "the questions should appear like if I was chatting
+ * with someone, one by one, with proposals of action I can just click"): what the person answers next about one
+ * document. A pure function of the document's conversation (her answers live on her `sent` child, so leaving and coming
+ * back shows the same step). `key` changes when what the step shows changes (ids and `modified`).
+ */
+export type ConversationStep =
+  | { kind: 'question'; key: string; question: QuestionView; about: ProposedValueView | null }
+  | { kind: 'value'; key: string; value: ProposedValueView }
+  | { kind: 'batch'; key: string; values: ProposedValueView[] }
+  | { kind: 'summary'; key: string; keptAside: ProposedValueView[]; waiting: Array<{ value: ProposedValueView; block: RowBlock }>; skipped: ProposedValueView[]; unanswerable: QuestionView[] };
+
+export interface StepOptions extends RowBlockOptions {
+  /** The fewest values read clearly that make a batch step (default 3); `Infinity`: strictly one by one */
+  batchMin?: number;
+  /** She chose "One by one" on the batch step: it is not offered again */
+  batchDeclined?: boolean;
+  /** She closed the summary: no step until something new comes */
+  summaryAcknowledged?: boolean;
+  /** "Review the ones set aside": values she set aside ("Later", or answered `skip`) come back as steps */
+  includeSkipped?: boolean;
+  /**
+   * The candidates she set aside with "Later": nothing is written (an answer `skip` would let the contact delete the
+   * value once its work is `done`, R10), so the value stays open and the contact waits; it comes back from the summary.
+   */
+  deferred?: readonly string[];
+}
+
+const SETTLED = new Set(['awaiting-answers', 'done']);
+const LINE_STATUSES = new Set(['kept-aside', 'unmapped']);
+const itemKey = (i: { id: string; modified: number }): string => `${i.id}:${i.modified}`;
+
+/** Values in the order the document prints them: page, then the line's top; without an anchor, as they came */
+export function documentOrder (values: ProposedValueView[]): ProposedValueView[] {
+  const pos = (pv: ProposedValueView): [number, number, number] => {
+    const a = pv.item.content.anchor;
+    const page = typeof a?.page === 'number' ? a.page : Number.MAX_SAFE_INTEGER;
+    const top = Array.isArray(a?.bbox) && typeof a.bbox[1] === 'number' ? a.bbox[1] : Number.MAX_SAFE_INTEGER;
+    return [page, top, pv.item.created];
+  };
+  return [...values].sort((x, y) => {
+    const [p1, t1, c1] = pos(x);
+    const [p2, t2, c2] = pos(y);
+    return p1 - p2 || t1 - t2 || c1 - c2;
+  });
+}
+
+const openQuestion = (q: QuestionView, includeSkipped: boolean): boolean => q.answerable && (q.state === 'open' || (includeSkipped && q.state === 'skipped'));
+
+/**
+ * The next step about one document, or null when nothing waits for her (or the contact still works, or the document is
+ * not hers). In order: `is-this-yours` (nothing is written before it, R3); the document's `which-date`; the questions
+ * about one value (a `choose` brings a re-proposal while she goes on); the values to `check`; the values read clearly,
+ * offered first as one batch (`batchMin`; never a value to check, never one asked about), then one by one; then one
+ * summary of what she cannot answer here (kept aside, waiting for the contact, set aside, a question this version
+ * cannot answer). Answered, written and replaced values are never a step.
+ */
+export function nextStep (conv: DocumentConversation, engines: readonly string[], opts: StepOptions = {}): ConversationStep | null {
+  if (conv.identity === 'not-mine') return null;
+  if (opts.status !== undefined && !SETTLED.has(opts.status ?? '')) return null;
+  const includeSkipped = opts.includeSkipped === true;
+  const blockOpts: RowBlockOptions = opts.status !== undefined ? { status: opts.status } : {};
+  const pvOf = (candidateId: unknown): ProposedValueView | null => conv.proposedValues.find((p) => p.candidateId === candidateId) ?? null;
+  const question = (q: QuestionView): ConversationStep => ({ kind: 'question', key: itemKey(q.item), question: q, about: pvOf(q.item.content.candidateId) });
+
+  const identity = conv.questions.find((q) => q.code === 'is-this-yours' && openQuestion(q, includeSkipped));
+  if (identity != null) return question(identity);
+  const documentDate = conv.questions.find((q) => q.code === 'which-date' && q.item.content.candidateId == null && openQuestion(q, includeSkipped));
+  if (documentDate != null) return question(documentDate);
+  const aboutValues = conv.questions.filter((q) => q.item.content.candidateId != null && openQuestion(q, includeSkipped));
+  if (aboutValues.length > 0) {
+    const order = documentOrder(conv.proposedValues).map((p) => p.candidateId);
+    aboutValues.sort((a, b) => order.indexOf(a.item.content.candidateId) - order.indexOf(b.item.content.candidateId));
+    return question(aboutValues[0]);
+  }
+
+  const values = documentOrder(conv.proposedValues.filter((pv) => pv.state !== 'replaced' && !isWritten(conv, pv)));
+  const deferred = new Set(includeSkipped ? [] : opts.deferred ?? []);
+  const askable = (pv: ProposedValueView): boolean => !deferred.has(pv.candidateId) &&
+    (pv.state === 'open' || (includeSkipped && pv.state === 'skipped')) && rowBlock(conv, pv, engines, blockOpts) == null;
+  const check = values.find((pv) => pv.item.content.status === 'check' && askable(pv));
+  if (check != null) return { kind: 'value', key: itemKey(check.item), value: check };
+
+  const clear = values.filter((pv) => pv.item.content.status === 'clear' && askable(pv));
+  if (opts.batchDeclined !== true && clear.length >= (opts.batchMin ?? 3)) {
+    const batch = documentOrder(batchCandidates(conv, engines, blockOpts).filter((pv) => clear.includes(pv)));
+    if (batch.length >= (opts.batchMin ?? 3)) {
+      return { kind: 'batch', key: 'batch:' + batch.map((pv) => itemKey(pv.item)).join(','), values: batch };
+    }
+  }
+  if (clear.length > 0) return { kind: 'value', key: itemKey(clear[0].item), value: clear[0] };
+
+  if (opts.summaryAcknowledged === true) return null;
+  const keptAside = values.filter((pv) => pv.state === 'open' && LINE_STATUSES.has(pv.item.content.status));
+  const waiting: Array<{ value: ProposedValueView; block: RowBlock }> = [];
+  for (const pv of values) {
+    if (pv.state !== 'open' || LINE_STATUSES.has(pv.item.content.status)) continue;
+    const block = rowBlock(conv, pv, engines, blockOpts);
+    if (block != null) waiting.push({ value: pv, block });
+  }
+  const skipped = includeSkipped
+    ? []
+    : values.filter((pv) => (pv.state === 'skipped' || (pv.state === 'open' && deferred.has(pv.candidateId))) && rowBlock(conv, pv, engines, blockOpts) == null);
+  const unanswerable = conv.questions.filter((q) => !q.answerable && q.state === 'open');
+  if (keptAside.length + waiting.length + skipped.length + unanswerable.length === 0) return null;
+  const ids = [...keptAside, ...waiting.map((w) => w.value), ...skipped].map((pv) => itemKey(pv.item)).concat(unanswerable.map((q) => itemKey(q.item)));
+  return { kind: 'summary', key: 'summary:' + ids.join(','), keptAside, waiting, skipped, unanswerable };
+}
+
+/** Where one document's conversation stands, for "28 values · 1 question · 9 answered" (derived, never from `counts`) */
+export interface ConversationProgress {
+  values: number;
+  questions: number;
+  answered: number;
+  /** values waiting for the contact (a re-proposal after her choice) */
+  waitingOnContact: number;
+  keptAside: number;
+}
+
+/** "28 values · 1 question · 9 answered", each part left out when zero */
+export function progressText (p: ConversationProgress): string {
+  const parts: string[] = [];
+  if (p.values > 0) parts.push(p.values === 1 ? tx('progress.valuesOne') : tx('progress.values', { n: p.values }));
+  if (p.questions > 0) parts.push(p.questions === 1 ? tx('progress.questionsOne') : tx('progress.questions', { n: p.questions }));
+  if (p.answered > 0) parts.push(tx('progress.answered', { n: p.answered }));
+  return parts.join(' · ');
+}
+
+export function conversationProgress (conv: DocumentConversation, engines: readonly string[], opts: RowBlockOptions = {}): ConversationProgress {
+  const values = conv.proposedValues.filter((pv) => pv.state !== 'replaced');
+  let answered = 0;
+  let waitingOnContact = 0;
+  let keptAside = 0;
+  for (const pv of values) {
+    if (isWritten(conv, pv) || (pv.state !== 'open' && pv.state !== 'skipped')) answered += 1;
+    else if (LINE_STATUSES.has(pv.item.content.status)) keptAside += 1;
+    else if (rowBlock(conv, pv, engines, opts) === 'awaiting-reproposal') waitingOnContact += 1;
+  }
+  answered += conv.questions.filter((q) => q.state === 'answered').length;
+  return { values: values.length, questions: conv.questions.length, answered, waitingOnContact, keptAside };
+}

@@ -28,7 +28,10 @@ bubbles. Touch targets are 44 px.
 
 | Component | Renders | CONVERSATION.md |
 |---|---|---|
-| `DocumentConversationCard` | one document's conversation: state, notices, questions, proposed values, actions | everything with the same `about` |
+| `useDocumentConversations` (hook) | reads every relationship's conversation and answers it (no UI) | all of it, the person's side |
+| `nextStep` + `ConversationStepBubble` | what she answers next, as the contact's last bubble with quick replies (one by one) | the document's `question` and `proposed-value` events |
+| `DocumentStatusBubble` | a document in the thread: its state, progress, notices, "See everything" | alert `task-status`, `notice` |
+| `DocumentConversationCard` | one document's conversation at once (the "See everything" overview): state, notices, questions, proposed values, actions | everything with the same `about` |
 | `TaskStatusLine` | the state of the contact's work | alert `task-status` (`status`, `counts`, `errorCode`), R4, R8 |
 | `ContactWorkingIndicator` + `isWorking` | "HDS Reader is reading “Lab report”…" with moving dots, like a typing indicator | alert `task-status` `received` / `reading` |
 | `NoticeBubble` | a notice from the contact | alert `notice` (`code`: `no-result-found`, `several-sampling-dates`, `typed-text-not-read`, `x-…`), R6, R12 |
@@ -38,9 +41,55 @@ bubbles. Touch targets are 44 px.
 | `AnchoredDocumentView` | her document zoomed and highlighted where a value (or the identity) is printed | `anchor` (= `clientData.hdsSourceAnchor`) |
 | `ConversationAnswerBubble` | one of her answers, in words, on her side | event `answer` (`action`, `written`, `timePrecision`, `basis`) |
 
+## One by one: `useDocumentConversations`, `nextStep`, `ConversationStepBubble`, `DocumentStatusBubble`
+
+perki: "The questions should appear like if I was chatting with someone, one by one, with proposals of action I can
+just click." A thread shows each document as a `DocumentStatusBubble` (its state, "6 values · 1 question · 4
+answered", "See everything" opening the `DocumentConversationCard` overview), her answers as her bubbles
+(`answerRuns` folds a run of confirmations into "You confirmed 12 values"), and **one** `ConversationStepBubble` as the
+contact's last bubble: the next step.
+
+```tsx
+const { documents } = useDocumentConversations(connection, relationships, {
+  alertEventsKey,            // changes when an alert arrives
+  documentAlerts,            // hds-lib listDocumentAlerts per relationship, each with its `stream` (R11)
+  provisionStreams,          // create the items' model streams before a value is written
+  onGranted                  // her app granted a relationship its conversation children: read the relationships again
+});
+const doc = documents[0];
+const status = doc.status?.hds?.status ?? null;
+const step = nextStep(doc.conversation, doc.engines, { status, ...choices });   // null: nothing to answer
+{step && <ConversationStepBubble key={step.key} step={step} conversation={doc.conversation}
+  progress={conversationProgress(doc.conversation, doc.engines, { status })} contactName='HDS Reader' title='Lab report'
+  sourceOf={sourceOf} actions={doc.actions}
+  onDeclineBatch={() => choose({ batchDeclined: true })}
+  onLater={(id) => choose({ deferred: [...deferred, id] })}
+  onAcknowledgeSummary={() => choose({ summaryAcknowledged: true })}
+  onReviewSkipped={() => choose({ deferred: [], includeSkipped: true })} />}
+```
+
+**The order of steps** (`nextStep`, a pure function of the conversation: leaving and coming back shows the same step):
+`is-this-yours` (nothing is written before it, R3) → the document's `which-date` → the questions about one value (a
+`choose` brings a re-proposal while she goes on) → the values to `check` (one at a time, on the document) → the values
+read clearly as **one batch turn** ("22 values were read clearly", the list to see, "Confirm the 22" / "One by one";
+`batchMin` 3, `Infinity` for strictly one by one; never a value to check or one asked about) → the clear values one by
+one → one **summary**: kept aside or unmapped ("Ask for it"), waiting for the contact (a re-proposal, an engine not
+vouched…), set aside ("Review the N set aside"), questions this version cannot answer; "OK" closes it. While the
+contact still works (`received`, `reading`) there is no step, only `ContactWorkingIndicator`.
+
+**A value step**: "I read **Ferritine 48 ng/mL (30 - 400)**. Save it as Ferritin: 48 µg/L?", "See it on the
+document" (open from the start for a value to check), Confirm · Correct (the item's field, inline) · Already in my
+record · Later. **"Later" writes nothing** (`onLater` → `StepOptions.deferred`): an answer `skip` would let the
+contact delete the value once its work is `done` (R10), so the value stays open, the contact waits, and the summary
+brings it back. The step's `shownAt` is when it first showed (R3).
+
+**Typed text**: a message typed while a step waits stays a plain chat message (the contract has no comment on an
+answer yet); the host shows "A message does not answer the question above." under its message box
+(`conversationText('composerHint')`).
+
 ## `DocumentConversationCard`
 
-One document's conversation with a contact. It shows the state of the work and its notices; `is-this-yours` first
+One document's conversation with a contact, all at once (the overview behind "See everything"). It shows the state of the work and its notices; `is-this-yours` first
 (nothing is confirmable before she says the document is hers, when the contact asked); the document's questions; the
 values read, each with its printed line and what would be saved. A value opens "Can you confirm this value is XYZ?" on
 `AnchoredDocumentView`, then Confirm, Correct, or "Already in my record". "Confirm the N values read clearly" covers

@@ -58,6 +58,8 @@ export function NoticeBubble ({ code, contactName, timeText, className, bubbleCl
 
 export interface ConversationAnswerBubbleProps {
   answer: ConversationItem;
+  /** A run of value confirmations shown as one bubble (`answerRuns`): "You confirmed 12 values" */
+  run?: ConversationItem[];
   /** Her document's conversation, to say what the answer was about */
   conversation?: DocumentConversation | null;
   locale?: string;
@@ -70,9 +72,12 @@ export interface ConversationAnswerBubbleProps {
 }
 
 /** One of her answers, on her side of the conversation (a value she confirmed opens its entry) */
-export function ConversationAnswerBubble ({ answer, conversation, locale, timeText, onOpenValue, className, bubbleClassName }: ConversationAnswerBubbleProps) {
+export function ConversationAnswerBubble ({ answer, run, conversation, locale, timeText, onOpenValue, className, bubbleClassName }: ConversationAnswerBubbleProps) {
   const written: Array<{ eventId: string }> = Array.isArray(answer.content.written) ? answer.content.written : [];
-  const text = answerText(answer, conversation ?? null, locale);
+  const confirmed = (run ?? []).reduce((n, a) => n + (Array.isArray(a.content.candidateIds) ? a.content.candidateIds.length : 1), 0);
+  const text = run != null && run.length > 1
+    ? (confirmed === 1 ? tx('answer.confirmOne') : tx('answer.confirm', { n: confirmed }))
+    : answerText(answer, conversation ?? null, locale);
   const first = written[0]?.eventId;
   return (
     <div className={cx('flex justify-end', className)}>

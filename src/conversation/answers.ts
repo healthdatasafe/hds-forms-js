@@ -29,6 +29,31 @@ export function questionAnswerText (code: string, a: Record<string, any>, locale
   return tx('answer.unknown');
 }
 
+/** A confirmation of proposed values (it wrote them), not an answer to a question */
+const isValueConfirm = (a: ConversationItem): boolean => a.content.action === 'confirm' && Array.isArray(a.content.written);
+
+/**
+ * Her answers in order, a run of `minRun` or more value confirmations in a row folded into one group (one bubble:
+ * "You confirmed 12 values"); every other answer alone. One by one, each confirmation is its own answer.
+ */
+export function answerRuns (answers: ConversationItem[], minRun: number = 3): ConversationItem[][] {
+  const sorted = [...answers].sort((a, b) => a.created - b.created);
+  const out: ConversationItem[][] = [];
+  let run: ConversationItem[] = [];
+  const flush = (): void => {
+    if (run.length >= minRun) out.push(run);
+    else for (const a of run) out.push([a]);
+    run = [];
+  };
+  for (const a of sorted) {
+    if (isValueConfirm(a)) { run.push(a); continue; }
+    flush();
+    out.push([a]);
+  }
+  flush();
+  return out;
+}
+
 /** The clientData a correction carries: the proposal's, without the flag and interpretation, and its range only in the same unit */
 export function correctedClientData (proposal: { type: string; clientData?: Record<string, unknown> }, type: string): Record<string, unknown> {
   const out: Record<string, unknown> = { ...(proposal.clientData ?? {}) };
