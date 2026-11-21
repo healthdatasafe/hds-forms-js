@@ -8,6 +8,8 @@ export interface SourceAnchor {
   attachmentId: string;
   page: number;
   bbox?: AnchorBox;
+  /** The document event the value was read from (data-model 4.25.0); older anchors name it only in `clientData.related` */
+  eventId?: string;
 }
 
 /** A document event's attachment, as Pryv lists it */
@@ -24,7 +26,22 @@ export function readSourceAnchor (clientData: unknown): SourceAnchor | null {
   const a = (clientData as { hdsSourceAnchor?: unknown } | null | undefined)?.hdsSourceAnchor as Partial<SourceAnchor> | undefined;
   if (a == null || typeof a.attachmentId !== 'string' || a.attachmentId === '') return null;
   if (typeof a.page !== 'number' || !Number.isInteger(a.page) || a.page < 1) return null;
-  return isUsableBox(a.bbox) ? { attachmentId: a.attachmentId, page: a.page, bbox: a.bbox } : { attachmentId: a.attachmentId, page: a.page };
+  const anchor: SourceAnchor = isUsableBox(a.bbox) ? { attachmentId: a.attachmentId, page: a.page, bbox: a.bbox } : { attachmentId: a.attachmentId, page: a.page };
+  if (typeof a.eventId === 'string' && a.eventId !== '') anchor.eventId = a.eventId;
+  return anchor;
+}
+
+/**
+ * The document a value was read from: its anchor's `eventId` (data-model 4.25.0), else, for a value written before,
+ * the one event its `clientData.related` names (PROVENANCE.md); null when neither says it unambiguously.
+ */
+export function anchorDocumentId (clientData: unknown): string | null {
+  const anchor = readSourceAnchor(clientData);
+  if (anchor?.eventId != null) return anchor.eventId;
+  const related = (clientData as { related?: Record<string, unknown> } | null | undefined)?.related;
+  if (related == null || typeof related !== 'object') return null;
+  const ids = Object.keys(related).filter((k) => related[k] === true);
+  return ids.length === 1 ? ids[0] : null;
 }
 
 /** A PDF or a picture, from the attachment's type, else its file name; null for anything else */

@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.37.0] - 2026-11-21
+
+### Added
+
+- **The conversation one by one** (plan 128, perki: "like chatting with someone, one by one, with proposals of action
+  I can just click"), for any contact and any HDS app:
+  - `nextStep(conversation, engines, options)`: what she answers next about a document, a pure function of the
+    conversation: `is-this-yours` → the document's date → questions about one value → values to check → the values read
+    clearly as one batch turn, once every question and value to check is answered (perki: "X items have been found
+    with high level of confidence, do you want to review them one by one?", "No, save them all" / "Yes, one by one";
+    never a value to check, never one her record holds) → the clear values one by one → a summary (kept aside, waiting
+    for the contact, set aside, unanswerable, already in her record with "Add anyway"). `conversationProgress`,
+    `progressText` ("28 values · 1 question · 9 answered · 3 already in your record", counted also over what the
+    contact deleted at `done`), `documentOrder` (the order the document prints).
+  - **Values her record already holds** (hds-lib 2.61.0, `basis: existing-value`): `useDocumentConversations` runs
+    `autoMarkDuplicates` once the contact waits for her answers and for each new value (`checking` meanwhile: no step
+    yet; a value found stays so until the conversation read again shows it answered), `alreadyInRecord`, "Add anyway"
+    in the summary and the overview; her app's answer reads "Your app found 5 values already in your record", not "You
+    said…".
+  - A cumulative report (values of several sampling days): each value says its day and printed time ("Would be saved
+    as Ferritin: 12 ng/mL, sampled 5 November 2020, 08:30"), `valueDayText`; a one-day report does not.
+  - `anchorOn(anchor, about)`: an anchor naming another document (`eventId`) is ignored (R11). `is-this-yours` with no
+    printed identity shows the document at once, on the header block the contact anchored.
+  - `<ConversationStepBubble>`: the step as the contact's last bubble with quick replies (Confirm · Correct · Already in
+    my record · Later; the options of a question; the batch; the summary), the document on the value, `shownAt` from
+    when it first showed. "Later" (`onLater`) writes nothing: a `skip` would let the contact delete the value once its
+    work is done (R10).
+  - `<DocumentStatusBubble>`: a document in the thread: its state, progress, notices, "See everything" (the
+    `DocumentConversationCard` overview).
+  - `useDocumentConversations(connection, relationships, options)`: the person's side of every relationship's
+    conversation (read, settle per document, R11, answer through hds-lib with the item streams created first, the
+    conversation children granted when a contact talks with none, `is-this-yours` answered on a profile match), moved
+    here from hds-webapp so any HDS app gets the whole behaviour.
+  - `answerRuns`: a run of single confirmations as one bubble ("You confirmed 12 values").
+  - `QuestionCard variant='plain'`; `ValueLine`, `ValueReview`, `useConversationRun`, `blockText` shared by the card
+    and the step.
+  - `readSourceAnchor` reads the anchor's `eventId` (data-model 4.25.0); `anchorDocumentId(clientData)`: the anchor's
+    document, else the one event `related` names.
+  - hds-lib 2.61.0.
+- **`docs/CONVERSATION-COMPONENTS.md`**: every conversation component, what it renders, the CONVERSATION.md kind and
+  fields it maps to, props, texts and examples, for any HDS app on either side of a conversation.
+
 ## [0.36.0] - 2026-11-21
 
 ### Added

@@ -253,7 +253,14 @@ Permissions follow Pryv's shape (`streamId`, `level`, optional `name` / `default
 
 Displays a compact table of recurring entries. Used internally by `HDSFormSection` but also exported for custom layouts.
 
-### `hds-forms/conversation` — `<AnchoredDocumentView>`
+### `hds-forms/conversation` — the standard conversation
+
+Every item of the standard conversation between a person and a contact (data-model `CONVERSATION.md`: questions,
+proposed values with confirm / correct, her answers, the contact's status, notices and working indicator, the zoomed
+document) is a component here, for any HDS app on either side of a conversation. What each renders, the kind and fields
+it maps to, props, texts and examples: **[docs/CONVERSATION-COMPONENTS.md](docs/CONVERSATION-COMPONENTS.md)**.
+
+#### `<AnchoredDocumentView>`
 
 The person's own document, zoomed onto where a value is printed and highlighted, for "can you confirm this value?"
 (HDS Reader). Zoom out to the whole page and back to the value with one button; pinch, drag, + / −.

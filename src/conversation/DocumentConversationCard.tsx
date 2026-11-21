@@ -1,28 +1,16 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { ConversationAlert, DocumentConversation, ProposedValueView, ValueCorrection } from 'hds-lib';
-import { AnchoredDocumentView, type AnchoredDocumentSource } from './AnchoredDocumentView';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ConversationAlert, DocumentConversation, ProposedValueView } from 'hds-lib';
+import type { AnchoredDocumentSource } from './AnchoredDocumentView';
 import type { PdfJsLike } from './pdfjs';
-import { itemLabel, noticeText, printedText, proposalText, reasonText, tx } from './labels';
-import type { ConversationTextKey } from './conversationTexts';
+import { noticeText, tx, valueDayText } from './labels';
 import { QuestionCard, type QuestionAnswer } from './QuestionCard';
-import { ValueCorrectionEditor } from './ValueCorrectionEditor';
 import { TaskStatusLine } from './ConversationBubbles';
-import { batchCandidates, isWritten, rowBlock, shownAtOf, type RowBlock } from './rowBlock';
-import { btn, card, cx, muted, small } from './ui';
+import { batchCandidates, isWritten, rowBlock, shownAtOf } from './rowBlock';
+import { ValueLine, ValueReview } from './ValueParts';
+import { useConversationRun, type ConversationActions } from './conversationRun';
+import { btn, card, cx, muted } from './ui';
 
-/** What an action came to: done (some candidates may have been refused, each with hds-lib's reason) or failed */
-export type ConversationOutcome = { ok: true; refused?: Array<{ candidateId: string; reason: string }> } | { ok: false; reason: string };
-
-/**
- * What the host does when she answers (hds-lib `cmcConversation`): each call gets the card's `shownAt` (R3: an answer
- * binds to what was shown) and resolves once the host read the conversation again.
- */
-export interface ConversationActions {
-  confirm (candidateIds: string[], shownAt: number): Promise<ConversationOutcome>;
-  correct (candidateId: string, correction: ValueCorrection, shownAt: number): Promise<ConversationOutcome>;
-  dismiss (candidateIds: string[], action: 'skip' | 'request-item' | 'duplicate', shownAt: number): Promise<ConversationOutcome>;
-  answer (questionId: string, answer: QuestionAnswer, shownAt: number): Promise<ConversationOutcome>;
-}
+export type { ConversationOutcome, ConversationActions } from './conversationRun';
 
 export interface DocumentConversationCardProps {
   /** hds-lib `conversationOf(items, about)` */
@@ -52,32 +40,6 @@ export interface DocumentConversationCardProps {
   surfaceClassName?: string;
 }
 
-const STATE_TEXT: Record<string, ConversationTextKey> = {
-  confirmed: 'state.confirmed',
-  corrected: 'state.corrected',
-  skipped: 'state.skipped',
-  requested: 'state.requested',
-  duplicate: 'state.duplicate',
-  replaced: 'state.replaced'
-};
-
-function blockText (block: RowBlock, contactName: string): string {
-  const key = `block.${block}`;
-  if (block === 'answered' || block === 'replaced') return '';
-  return tx((key in BLOCK_KEYS ? key : 'block.unknown') as ConversationTextKey, { name: contactName });
-}
-const BLOCK_KEYS: Record<string, true> = {
-  'block.identity-open': true,
-  'block.still-reading': true,
-  'block.unit-missing': true,
-  'block.not-mine': true,
-  'block.no-date': true,
-  'block.question-open': true,
-  'block.awaiting-reproposal': true,
-  'block.engine-not-vouched': true,
-  'block.status': true
-};
-
 /**
  * One document's conversation with a contact, for any relationship: the state of the work, its notices, the
  * questions with their context, and the values read from the document. A value opens "Can you confirm this value is
@@ -91,8 +53,7 @@ export function DocumentConversationCard ({
   locale, loadPdfJs, pdfOptions, className, surfaceClassName
 }: DocumentConversationCardProps) {
   const shownAt = useMemo(() => shownAtOf(conv), [conv]);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const { busy, message, setMessage, run } = useConversationRun();
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState(false);
 
@@ -108,24 +69,7 @@ export function DocumentConversationCard ({
       setCorrecting(false);
       setMessage(tx('updated'));
     }
-  }, [reviewing, reviewedKey]);
-
-  const run = async (key: string, fn: () => Promise<ConversationOutcome>, after?: () => void): Promise<void> => {
-    if (busy != null) return;
-    setBusy(key);
-    setMessage(null);
-    try {
-      const out = await fn();
-      const refused = 'refused' in out ? out.refused ?? [] : [];
-      if ('reason' in out) setMessage(out.reason === 'changed-since-shown' ? tx('updated') : tx('failed'));
-      else if (refused.length > 0) setMessage(refused.some((r) => r.reason === 'changed-since-shown') ? tx('updated') : tx('failed'));
-      else after?.();
-    } catch {
-      setMessage(tx('failed'));
-    } finally {
-      setBusy(null);
-    }
-  };
+  }, [reviewing, reviewedKey, setMessage]);
 
   const can = actions != null && busy == null;
   const workStatus = status?.hds?.status as string | undefined;
@@ -187,7 +131,7 @@ export function DocumentConversationCard ({
               const open = reviewing === pv.candidateId && !written;
               return (
                 <li key={pv.item.id} className='rounded-md border border-gray-200 p-3 dark:border-gray-700' data-candidate={pv.candidateId}>
-                  <ValueLine pv={pv} block={block} written={written} contactName={contactName} />
+                  <ValueLine pv={pv} block={block} written={written} contactName={contactName} day={valueDayText(pv, conv.proposedValues, locale)} />
                   {!open && !written && (pv.state === 'open' || pv.state === 'skipped') && actions != null && (
                     <div className='mt-2 flex flex-wrap gap-2'>
                       {block == null && <button type='button' className={btn.outline} disabled={!can} onClick={() => { setReviewing(pv.candidateId); setCorrecting(false); setMessage(null); }}>{tx('review')}</button>}
@@ -196,6 +140,11 @@ export function DocumentConversationCard ({
                         <button type='button' className={btn.outline} disabled={!can} onClick={() => run('r:' + pv.candidateId, () => actions.dismiss([pv.candidateId], 'request-item', shownAt))}>{tx('requestItem')}</button>
                       )}
                       {pv.state === 'open' && <button type='button' className={btn.ghost} disabled={!can} onClick={() => run('s:' + pv.candidateId, () => actions.dismiss([pv.candidateId], 'skip', shownAt))}>{tx('skip')}</button>}
+                    </div>
+                  )}
+                  {!written && pv.state === 'duplicate' && block == null && actions != null && (
+                    <div className='mt-2 flex flex-wrap gap-2'>
+                      <button type='button' className={btn.outline} disabled={!can} onClick={() => run('a:' + pv.candidateId, () => actions.confirm([pv.candidateId], shownAt))}>{tx('addAnyway')}</button>
                     </div>
                   )}
                   {open && (
@@ -231,74 +180,5 @@ export function DocumentConversationCard ({
         </div>
       )}
     </section>
-  );
-}
-
-/** A value read from the document: the line as printed, what would be saved, and its state or why it waits */
-function ValueLine ({ pv, block, written, contactName }: { pv: ProposedValueView; block: RowBlock | null; written: boolean; contactName: string }) {
-  const c = pv.item.content;
-  const proposed = c.proposal != null ? proposalText(c.proposal) : null;
-  const item = c.proposal != null ? itemLabel(c.proposal.itemKey) : null;
-  const stateKey = written && pv.state !== 'corrected' ? STATE_TEXT.confirmed : STATE_TEXT[pv.state];
-  let note: ReactNode = null;
-  if (stateKey != null && pv.state !== 'skipped') note = <p className='mt-1 text-xs font-semibold text-primary-700 dark:text-primary-300'>{tx(stateKey)}</p>;
-  else if (c.status === 'kept-aside' || c.status === 'unmapped') note = <p className={cx(small, 'mt-1')}>{reasonText(c.reason)}</p>;
-  else if (block != null) {
-    const text = block === 'status' ? (c.status === 'unit-missing' ? tx('block.unit-missing') : reasonText(c.reason)) : blockText(block, contactName);
-    if (text !== '') note = <p className={cx(small, 'mt-1')}>{text}</p>;
-  } else if (c.status === 'check') note = <p className='mt-1 text-xs font-medium text-amber-700 dark:text-amber-400'>{tx('checkThis')}</p>;
-  return (
-    <div>
-      <p className='text-sm'><span className='sr-only'>{tx('printedAs')}: </span><span className='font-semibold'>{printedText(c.printed)}</span></p>
-      {proposed != null && item != null && <p className={cx(small, 'mt-1')}>{tx('wouldSave', { item, value: proposed })}</p>}
-      {note}
-      {pv.state === 'skipped' && <p className={cx(small, 'mt-1')}>{tx('state.skipped')}</p>}
-    </div>
-  );
-}
-
-interface ValueReviewProps {
-  pv: ProposedValueView;
-  sourceOf: (attachmentId?: string) => AnchoredDocumentSource | null;
-  busy: boolean;
-  correcting: boolean;
-  onConfirm: () => void;
-  onCorrect: () => void;
-  onSubmitCorrection: (c: ValueCorrection) => void;
-  onCancelCorrection: () => void;
-  onDuplicate: () => void;
-  onClose: () => void;
-  loadPdfJs?: () => Promise<PdfJsLike>;
-  pdfOptions?: Record<string, unknown>;
-}
-
-/** "Can you confirm this value is XYZ?": her document on the value's anchor, then Confirm, Correct, or already saved */
-function ValueReview ({ pv, sourceOf, busy, correcting, onConfirm, onCorrect, onSubmitCorrection, onCancelCorrection, onDuplicate, onClose, loadPdfJs, pdfOptions }: ValueReviewProps) {
-  const c = pv.item.content;
-  const value = (c.proposal != null ? proposalText(c.proposal) : null) ?? printedText(c.printed);
-  const anchor = c.anchor ?? null;
-  return (
-    <div className='mt-3 space-y-2'>
-      <p className='text-sm font-semibold'>{tx('confirmQuestion', { value })}</p>
-      <AnchoredDocumentView
-        source={sourceOf(anchor?.attachmentId)}
-        anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : null}
-        label={printedText(c.printed)}
-        loadPdfJs={loadPdfJs}
-        pdfOptions={pdfOptions}
-      >
-        {!correcting && (
-          <div className='flex flex-wrap gap-2'>
-            <button type='button' className={btn.primary} disabled={busy} onClick={onConfirm}>{tx('confirm')}</button>
-            <button type='button' className={btn.outline} disabled={busy} onClick={onCorrect}>{tx('correct')}</button>
-            <button type='button' className={btn.ghost} disabled={busy} onClick={onDuplicate}>{tx('duplicate')}</button>
-            <button type='button' className={btn.ghost} disabled={busy} onClick={onClose}>{tx('close')}</button>
-          </div>
-        )}
-      </AnchoredDocumentView>
-      {correcting && c.proposal != null && (
-        <ValueCorrectionEditor proposal={c.proposal} busy={busy} onSubmit={onSubmitCorrection} onCancel={onCancelCorrection} />
-      )}
-    </div>
   );
 }

@@ -48,9 +48,27 @@ export function isWritten (conv: DocumentConversation, pv: ProposedValueView): b
   return pv.state === 'confirmed' || pv.state === 'corrected' || Object.prototype.hasOwnProperty.call(conv.writtenCandidates ?? {}, pv.candidateId);
 }
 
-/** The candidates "Confirm all" covers: confirmable now, read clearly (`clear`, not `check`), no question about them */
+/**
+ * The candidates "Confirm all" covers: confirmable now, read clearly (`clear`, not `check`), no question about them;
+ * never one already in her record (`duplicate`: only her "Add anyway" adds it)
+ */
 export function batchCandidates (conv: DocumentConversation, engines: readonly string[], opts: RowBlockOptions = {}): ProposedValueView[] {
-  return conv.proposedValues.filter((pv) => pv.item.content.status === 'clear' && rowBlock(conv, pv, engines, opts) == null);
+  return conv.proposedValues.filter((pv) => pv.item.content.status === 'clear' && pv.state !== 'duplicate' && rowBlock(conv, pv, engines, opts) == null);
+}
+
+/** The values her record already holds (an answer `duplicate`, hers or her app's `basis: existing-value`), not added since */
+export function alreadyInRecord (conv: DocumentConversation): ProposedValueView[] {
+  return conv.proposedValues.filter((pv) => pv.state === 'duplicate' && !isWritten(conv, pv));
+}
+
+/**
+ * A conversation item's anchor, when it is on the document the item is about (R11): an anchor naming another document
+ * (`eventId`, data-model 4.25.0) is ignored; one without `eventId` is on `about`.
+ */
+export function anchorOn<A extends { eventId?: string }> (anchor: A | null | undefined, about: string | null | undefined): A | null {
+  if (anchor == null) return null;
+  if (typeof anchor.eventId === 'string' && about != null && anchor.eventId !== about) return null;
+  return anchor;
 }
 
 /**
