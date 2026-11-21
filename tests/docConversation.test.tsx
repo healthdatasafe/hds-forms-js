@@ -228,6 +228,12 @@ describe('[DOC] the document step and her note', () => {
     expect(onOpen).toHaveBeenCalled();
   });
 
+  it('the `ready` notice (4.27.0) says the contact can read her documents, with the host\'s detail line', async () => {
+    await render(<conv.NoticeBubble code='ready' contactName='HDS Reader' detail='Reads lab reports.' />);
+    expect(container.textContent).toContain('HDS Reader can read your documents: share one in this conversation');
+    expect(container.textContent).toContain('Reads lab reports.');
+  });
+
   it('every text has its en and fr', () => {
     const missing = Object.entries(conv.CONVERSATION_TEXTS as Record<string, { en?: string; fr?: string }>)
       .filter(([, t]) => !t.en || !t.fr).map(([k]) => k);

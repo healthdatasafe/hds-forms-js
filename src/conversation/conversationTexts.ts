@@ -86,6 +86,8 @@ export const CONVERSATION_TEXTS = {
   'notice.no-result-found': { en: '{name} found no result it could read in this document. Nothing is proposed.', fr: '{name} n’a trouvé aucun résultat lisible dans ce document. Rien n’est proposé.' },
   'notice.several-sampling-dates': { en: 'This document prints results for several sampling days, one column per day. {name} cannot yet tell which value was taken on which day, so it proposes nothing from it.', fr: 'Ce document imprime des résultats de plusieurs jours de prélèvement, une colonne par jour. {name} ne sait pas encore quelle valeur a été prise quel jour : il n’en propose donc rien.' },
   'notice.typed-text-not-read': { en: '{name} does not read typed messages. Send a document instead.', fr: '{name} ne lit pas les messages écrits. Envoyez plutôt un document.' },
+  // 4.27.0, CONVERSATION.md "Rendering `ready`" (its own wording)
+  'notice.ready': { en: '{name} can read your documents: share one in this conversation', fr: '{name} peut lire vos documents : partagez-en un dans cette conversation' },
   'notice.note-not-read': { en: '{name} does not read notes.', fr: '{name} ne lit pas les notes.' },
   // a document's date and kind (proposed-document, 4.26.0)
   'question.which-document-kind': { en: 'What kind of document is this?', fr: 'De quel type de document s’agit-il ?' },
