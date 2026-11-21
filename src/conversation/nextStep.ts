@@ -1,3 +1,4 @@
+import { cmcConversation } from 'hds-lib';
 import type { DocumentConversation, ProposedValueView, QuestionView } from 'hds-lib';
 import { alreadyInRecord, batchCandidates, isWritten, rowBlock, type RowBlock, type RowBlockOptions } from './rowBlock';
 import { tx } from './labels';
@@ -10,6 +11,8 @@ import { tx } from './labels';
  */
 export type ConversationStep =
   | { kind: 'question'; key: string; question: QuestionView; about: ProposedValueView | null }
+  /** A proposed document (4.26.0): the document's date and kind, `pending` the fields still waiting on it */
+  | { kind: 'document'; key: string; proposed: ProposedDocumentView; pending: DocumentField[] }
   | { kind: 'value'; key: string; value: ProposedValueView }
   | { kind: 'batch'; key: string; values: ProposedValueView[] }
   | {
@@ -37,7 +40,16 @@ export interface StepOptions extends RowBlockOptions {
    * value once its work is `done`, R10), so the value stays open and the contact waits; it comes back from the summary.
    */
   deferred?: readonly string[];
+  /**
+   * The document event (`about`), to know which of its fields still wait (`hdsDocumentPending`, 4.26.0): without it, no
+   * proposed document is a step
+   */
+  document?: { type?: string; trashed?: boolean; time?: number; content?: any; clientData?: Record<string, any> } | null;
 }
+
+type ProposedDocumentView = cmcConversation.ProposedDocumentView;
+type DocumentField = cmcConversation.DocumentField;
+const DOCUMENT_CODES = new Set(['which-document-kind', 'which-document-date']);
 
 const SETTLED = new Set(['awaiting-answers', 'done']);
 const LINE_STATUSES = new Set(['kept-aside', 'unmapped']);
@@ -79,9 +91,20 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
 
   const identity = conv.questions.find((q) => q.code === 'is-this-yours' && openQuestion(q, includeSkipped));
   if (identity != null) return question(identity);
+  const deferred = new Set(includeSkipped ? [] : opts.deferred ?? []);
+  // the document itself (4.26.0): its kind and date asked, then the contact's proposal of both
+  const proposed = (conv.proposedDocuments ?? []).find((pd) => !deferred.has(pd.candidateId) &&
+    (pd.state === 'open' || (includeSkipped && pd.state === 'skipped')) && cmcConversation.documentProposalRefusal(pd, opts.document, conv) == null);
+  const docQuestion = conv.questions.find((q) => DOCUMENT_CODES.has(q.code) && openQuestion(q, includeSkipped) &&
+    (proposed == null || q.item.content.candidateId === proposed.candidateId));
+  if (docQuestion != null && proposed != null) return { kind: 'question', key: itemKey(docQuestion.item), question: docQuestion, about: null };
+  if (proposed != null) {
+    const pending = cmcConversation.pendingFieldsOf(opts.document);
+    return { kind: 'document', key: itemKey(proposed.item), proposed, pending };
+  }
   const documentDate = conv.questions.find((q) => q.code === 'which-date' && q.item.content.candidateId == null && openQuestion(q, includeSkipped));
   if (documentDate != null) return question(documentDate);
-  const aboutValues = conv.questions.filter((q) => q.item.content.candidateId != null && openQuestion(q, includeSkipped));
+  const aboutValues = conv.questions.filter((q) => q.item.content.candidateId != null && !DOCUMENT_CODES.has(q.code) && openQuestion(q, includeSkipped));
   if (aboutValues.length > 0) {
     const order = documentOrder(conv.proposedValues).map((p) => p.candidateId);
     aboutValues.sort((a, b) => order.indexOf(a.item.content.candidateId) - order.indexOf(b.item.content.candidateId));
@@ -89,7 +112,6 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
   }
 
   const values = documentOrder(conv.proposedValues.filter((pv) => pv.state !== 'replaced' && !isWritten(conv, pv)));
-  const deferred = new Set(includeSkipped ? [] : opts.deferred ?? []);
   const askable = (pv: ProposedValueView): boolean => !deferred.has(pv.candidateId) &&
     (pv.state === 'open' || (includeSkipped && pv.state === 'skipped')) && rowBlock(conv, pv, engines, blockOpts) == null;
   const check = values.find((pv) => pv.item.content.status === 'check' && askable(pv));
@@ -185,6 +207,8 @@ export function conversationProgress (conv: DocumentConversation, engines: reado
     else if (LINE_STATUSES.has(pv.item.content.status)) keptAside += 1;
     else if (rowBlock(conv, pv, engines, opts) === 'awaiting-reproposal') waitingOnContact += 1;
   }
-  answered += conv.questions.filter((q) => q.state === 'answered').length;
-  return { values: candidates.size, questions: conv.questions.length, answered, waitingOnContact, keptAside, alreadyInRecord: duplicates.size };
+  // the document's own questions (its kind, its date) are not about its values: as the contact's `counts`, left out
+  const questions = conv.questions.filter((q) => !DOCUMENT_CODES.has(q.code));
+  answered += questions.filter((q) => q.state === 'answered').length;
+  return { values: candidates.size, questions: questions.length, answered, waitingOnContact, keptAside, alreadyInRecord: duplicates.size };
 }

@@ -31,8 +31,15 @@ export interface DocumentConversationData {
    * so a value she has is never offered to save
    */
   checking: boolean;
+  /**
+   * The document event, read when the contact proposed its date and kind (4.26.0), for `nextStep`'s `document`; else
+   * null
+   */
+  document: DocumentEvent | null;
   actions: ConversationActions;
 }
+
+type DocumentEvent = { id: string; type?: string; trashed?: boolean; time?: number; content?: any; clientData?: Record<string, any> };
 
 export interface DocumentConversationsState {
   documents: DocumentConversationData[];
@@ -77,6 +84,8 @@ interface Read {
   rel: ConversationRel;
   alerts: ConversationAlert[];
   items: ConversationItem[];
+  /** The documents the contact proposed a date and kind for, by id */
+  documents: Record<string, DocumentEvent>;
 }
 
 /** hds-lib's reason on a refused call (`HDSLibError` carries it in its inner object) */
@@ -131,7 +140,16 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
             }
           }
           const items = streams != null ? await cmcConversation.listConversationItems(connection, streams) : [];
-          list.push({ rel, alerts, items });
+          // a proposed document is a step only against the document itself (which fields still wait on it)
+          const documents: Record<string, DocumentEvent> = {};
+          for (const about of new Set(items.filter((i) => i.kind === 'proposed-document').map((i) => i.about))) {
+            try {
+              documents[about] = await connection.apiOne('events.getOne', { id: about } as any, 'event') as DocumentEvent;
+            } catch (e) {
+              console.warn('[conversation] document not read:', e);
+            }
+          }
+          list.push({ rel, alerts, items, documents });
         }
         if (!cancelled) { setReads({ key: relKey, list }); setFailed(false); }
         if (granted) await grantedRef.current?.();
@@ -166,7 +184,7 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
     const answers: DocumentConversationsState['answers'] = [];
     const looseNotices: ConversationAlert[] = [];
     if (connection == null || reads == null || reads.key !== relKey) return { documents, answers, looseNotices };
-    for (const { rel, alerts, items } of reads.list) {
+    for (const { rel, alerts, items, documents: docEvents } of reads.list) {
       const fromContact = alerts.filter((a) => a.direction === 'received');
       const seesAll = cmcDocuments.sharesAllDocuments(rel.grantedPermissions);
       const allowed = (about: string): boolean => seesAll || (sharedIn.get(rel.localCollectorStreamId!)?.has(about) ?? false);
@@ -193,6 +211,7 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
           engines,
           time: times.length > 0 ? Math.min(...times) : 0,
           checking: dupKeys.some(({ k }) => !dupDone.current.has(k)),
+          document: docEvents[about] ?? null,
           actions: actionsFor(connection, rel, about, engines, reload, conversation, (ids) => provisionRef.current?.(ids) ?? Promise.resolve())
         };
         documents.push(doc);
@@ -251,6 +270,57 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
     })();
   }, [auto, connection, state.documents, reload]);
 
+  // R3, 4.26.0: a proposed document none of whose fields still waits on the document (she set them) settles itself
+  const settleTried = useRef(new Set<string>());
+  useEffect(() => {
+    if (connection == null) return;
+    const pending = state.documents.filter((d) => d.document != null && (d.conversation.proposedDocuments ?? []).some((pd) => {
+      const key = `${d.key}|${pd.item.id}:${pd.item.modified}`;
+      return pd.state === 'open' && !settleTried.current.has(key) && cmcConversation.documentProposalRefusal(pd, d.document, d.conversation) === 'nothing-pending';
+    }));
+    if (pending.length === 0) return;
+    (async () => {
+      let answered = false;
+      for (const d of pending) {
+        for (const pd of d.conversation.proposedDocuments) settleTried.current.add(`${d.key}|${pd.item.id}:${pd.item.modified}`);
+        try {
+          if ((await cmcConversation.autoSettleProposedDocuments(connection, d.rel as any, { about: d.about })).length > 0) answered = true;
+        } catch (e) {
+          console.warn('[conversation] proposed document not settled:', e);
+        }
+      }
+      if (answered) reload();
+    })();
+  }, [connection, state.documents, reload]);
+
+  // her notes (answer.note, 4.26.0) removed once the contact is done, or 24 h after on not-mine or an unshared document
+  const notesTried = useRef(new Set<string>());
+  useEffect(() => {
+    if (connection == null || reads == null) return;
+    const work: Array<{ rel: ConversationRel; about: string; unshared: boolean; ids: string[] }> = [];
+    for (const { rel, alerts, items } of reads.list) {
+      const seesAll = cmcDocuments.sharesAllDocuments(rel.grantedPermissions);
+      for (const about of new Set(items.map((i) => i.about))) {
+        const conv = cmcConversation.conversationOf(items, about);
+        if (!conv.answers.some((a) => typeof a.content.note === 'string')) continue;
+        const unshared = !seesAll && !(sharedIn.get(rel.localCollectorStreamId ?? '')?.has(about) ?? false);
+        const due = cmcConversation.notesToRemove(conv, cmcConversation.taskStatusOf(alerts, about), { unshared }).map((a) => a.id).filter((id) => !notesTried.current.has(id));
+        if (due.length > 0) work.push({ rel, about, unshared, ids: due });
+      }
+    }
+    if (work.length === 0) return;
+    (async () => {
+      for (const w of work) {
+        for (const id of w.ids) notesTried.current.add(id);
+        try {
+          await cmcConversation.removeNotes(connection, w.rel as any, { about: w.about, unshared: w.unshared });
+        } catch (e) {
+          console.warn('[conversation] notes not removed:', e);
+        }
+      }
+    })();
+  }, [connection, reads, sharedIn]);
+
   return { ...state, failed, reload };
 }
 
@@ -295,16 +365,18 @@ function actionsFor (
     }
   };
   const r = rel as any;
+  const noted = (note?: string): { note?: string } => (note != null && note !== '' ? { note } : {});
   return {
-    confirm: (candidateIds, shownAt) => call(async () => {
+    confirm: (candidateIds, shownAt, note) => call(async () => {
       await provisionFor(proposedKeys(candidateIds));
-      return await cmcConversation.acceptProposedValues(connection, r, { about, decisions: candidateIds.map((candidateId) => ({ candidateId, action: 'confirm' as const })), shownAt, engines });
+      return await cmcConversation.acceptProposedValues(connection, r, { about, decisions: candidateIds.map((candidateId) => ({ candidateId, action: 'confirm' as const })), shownAt, engines, ...noted(note) });
     }),
-    correct: (candidateId, correction, shownAt) => call(async () => {
+    correct: (candidateId, correction, shownAt, note) => call(async () => {
       await provisionFor([correction.itemKey]);
-      return await cmcConversation.acceptProposedValues(connection, r, { about, decisions: [{ candidateId, action: 'correct', correction }], shownAt, engines });
+      return await cmcConversation.acceptProposedValues(connection, r, { about, decisions: [{ candidateId, action: 'correct', correction }], shownAt, engines, ...noted(note) });
     }),
-    dismiss: (candidateIds, action, shownAt) => call(() => cmcConversation.answerProposedValues(connection, r, { about, candidateIds, action, shownAt })),
-    answer: (questionId, a, shownAt) => call(() => cmcConversation.answerQuestion(connection, r, { questionId, ...a, shownAt }))
+    dismiss: (candidateIds, action, shownAt, note) => call(() => cmcConversation.answerProposedValues(connection, r, { about, candidateIds, action, shownAt, ...noted(note) })),
+    answer: (questionId, a, shownAt, note) => call(() => cmcConversation.answerQuestion(connection, r, { questionId, ...a, shownAt, ...noted(note) })),
+    confirmDocument: (candidateId, correction, shownAt, note) => call(() => cmcConversation.acceptProposedDocument(connection, r, { about, candidateId, shownAt, ...(correction != null ? { correction } : {}), ...noted(note) }))
   };
 }

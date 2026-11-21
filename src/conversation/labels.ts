@@ -1,4 +1,4 @@
-import { eventToShortText, getHDSModel, localizeText } from 'hds-lib';
+import { cmcConversation, eventToShortText, getHDSModel, localizeText } from 'hds-lib';
 import { CONVERSATION_TEXTS, type ConversationTextKey } from './conversationTexts';
 
 /** A conversation text in the host's locale, `{var}` replaced */
@@ -50,8 +50,30 @@ export function itemLabel (itemKey: string): string | null {
   }
 }
 
-/** The specimen codes of `which-specimen` (the HDS Reader's, hds-reader-core `SPECIMENS`) */
-const SPECIMENS = new Set(['serum-plasma', 'whole-blood', 'citrated-plasma', 'rbc', 'urine', 'urine-24h', 'semen', 'csf', 'stool', 'saliva', 'other']);
+/** A specimen code of `which-specimen` by its label (CONVERSATION.md § Specimen codes, hds-lib `SPECIMEN_CODES`); `other`: ours */
+function specimenLabel (code: string): string | null {
+  const labels = (cmcConversation.SPECIMEN_CODES as Record<string, Record<string, string>> | undefined)?.[code];
+  if (labels != null) return localizeText(labels) ?? labels.en;
+  return code === 'other' ? tx('specimen.other') : null;
+}
+
+/** A document kind of the pack by its label (`documentKinds`), else null */
+export function documentKindLabel (key: string): string | null {
+  try {
+    return getHDSModel().documentKinds.label(key);
+  } catch {
+    return null;
+  }
+}
+
+/** The kinds she may pick for a document (the pack's, not deprecated), by label */
+export function documentKindOptions (): Array<{ key: string; label: string }> {
+  try {
+    return getHDSModel().documentKinds.getAll().map((k) => ({ key: k.key, label: localizeText(k.label) ?? k.key }));
+  } catch {
+    return [];
+  }
+}
 const UCUM = /^[A-Za-z0-9%µ/.*[\]{}^()'-]{1,32}$/;
 const SUPERSCRIPT: Record<string, string> = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '-': '⁻' };
 
@@ -80,7 +102,12 @@ export function optionLabel (code: string, option: string): { label: string; sel
   if (code === 'which-analyte' || code === 'which-specimen') {
     const name = itemLabel(option);
     if (name != null) return { label: name, selectable: true };
-    if (code === 'which-specimen' && SPECIMENS.has(option)) return { label: tx(`specimen.${option}` as ConversationTextKey), selectable: true };
+    const specimen = code === 'which-specimen' ? specimenLabel(option) : null;
+    if (specimen != null) return { label: specimen, selectable: true };
+  }
+  if (code === 'which-document-kind') {
+    const kind = documentKindLabel(option);
+    return kind != null ? { label: kind, selectable: true } : { label: option, selectable: false };
   }
   return { label: option, selectable: false };
 }
@@ -134,6 +161,16 @@ export function valueDayText (
   if (days.size < 2 || day == null) return null;
   const time = pv.item.content.printed?.samplingTime;
   return dayText(day, locale) + (typeof time === 'string' && time !== '' ? `, ${time}` : '');
+}
+
+/** A proposed date at its precision (PARTIAL-DATES.md): `day` "5 November 2020", `month` "November 2020", `year` "2020" */
+export function proposedDateText (time: number, precision: string | undefined, locale?: string): string {
+  const d = new Date(time * 1000);
+  try {
+    if (precision === 'year') return String(d.getUTCFullYear());
+    if (precision === 'month') return d.toLocaleDateString(locale, { year: 'numeric', month: 'long', timeZone: 'UTC' });
+  } catch { /* an unknown locale: the day below */ }
+  return dayText(d.toISOString().slice(0, 10), locale);
 }
 
 /** The day of a which-date answer as `time` (12:00 UTC) with `timePrecision: day` (PARTIAL-DATES.md) */

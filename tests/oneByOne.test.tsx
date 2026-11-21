@@ -257,11 +257,11 @@ describe('[OBO] ConversationStepBubble', () => {
     expect(container.textContent).toContain('Save it as Ferritin: 1 µg/L?');
     expect(container.textContent).toContain('About “Lab report”');
     await click(button('Confirm'));
-    expect(acts.confirm).toHaveBeenCalledWith(['a'], 100);
+    expect(acts.confirm).toHaveBeenCalledWith(['a'], 100, undefined);
     await click(button('Later'));
-    expect(acts.dismiss).toHaveBeenCalledWith(['a'], 'skip', 100);
+    expect(acts.dismiss).toHaveBeenCalledWith(['a'], 'skip', 100, undefined);
     await click(button('Already in my record'));
-    expect(acts.dismiss).toHaveBeenCalledWith(['a'], 'duplicate', 100);
+    expect(acts.dismiss).toHaveBeenCalledWith(['a'], 'duplicate', 100, undefined);
   });
 
   it('with onLater, "Later" writes nothing: the host sets the value aside', async () => {
@@ -292,7 +292,7 @@ describe('[OBO] ConversationStepBubble', () => {
     expect(container.textContent).toContain('3 items have been found with a high level of confidence. Do you want to review them one by one?');
     expect(container.querySelectorAll('details li').length).toBe(3);
     await click(button('No, save them all'));
-    expect(acts.confirm).toHaveBeenCalledWith(['a', 'b', 'c'], 100);
+    expect(acts.confirm).toHaveBeenCalledWith(['a', 'b', 'c'], 100, undefined);
     await click(button('Yes, one by one'));
     expect(onDeclineBatch).toHaveBeenCalled();
   });
@@ -304,7 +304,7 @@ describe('[OBO] ConversationStepBubble', () => {
     await render(bubble(c, conv.nextStep(c, E, ready), acts));
     expect(container.querySelector('[data-conversation-step="question"]')).not.toBeNull();
     await click(button('I do not know'));
-    expect(acts.answer).toHaveBeenCalledWith(q.id, { action: 'confirm', timePrecision: 'unknown' }, 100);
+    expect(acts.answer).toHaveBeenCalledWith(q.id, { action: 'confirm', timePrecision: 'unknown' }, 100, undefined);
   });
 
   it('the summary: kept aside with "Ask for it", the ones set aside to review, OK', async () => {
@@ -316,7 +316,7 @@ describe('[OBO] ConversationStepBubble', () => {
     const onReviewSkipped = vi.fn();
     await render(bubble(c, conv.nextStep(c, E, ready), acts, { onAcknowledgeSummary, onReviewSkipped }));
     await click(button('Ask for it'));
-    expect(acts.dismiss).toHaveBeenCalledWith(['k'], 'request-item', 100);
+    expect(acts.dismiss).toHaveBeenCalledWith(['k'], 'request-item', 100, undefined);
     await click(button('Review the one set aside'));
     expect(onReviewSkipped).toHaveBeenCalled();
     await click(button('OK'));
@@ -344,7 +344,7 @@ describe('[OBO] ConversationStepBubble', () => {
     await render(bubble(c, conv.nextStep(c, E, ready), acts));
     expect(container.textContent).toContain('1 value already in your record');
     await click(button('Add anyway'));
-    expect(acts.confirm).toHaveBeenCalledWith(['a'], 100);
+    expect(acts.confirm).toHaveBeenCalledWith(['a'], 100, undefined);
   });
 
   it('the document bubble: status, progress, "See everything" shows the overview', async () => {
