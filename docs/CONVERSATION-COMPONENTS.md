@@ -70,12 +70,25 @@ const step = nextStep(doc.conversation, doc.engines, { status, ...choices });   
 
 **The order of steps** (`nextStep`, a pure function of the conversation: leaving and coming back shows the same step):
 `is-this-yours` (nothing is written before it, R3) → the document's `which-date` → the questions about one value (a
-`choose` brings a re-proposal while she goes on) → the values to `check` (one at a time, on the document) → the values
-read clearly as **one batch turn** ("22 values were read clearly", the list to see, "Confirm the 22" / "One by one";
-`batchMin` 3, `Infinity` for strictly one by one; never a value to check or one asked about) → the clear values one by
-one → one **summary**: kept aside or unmapped ("Ask for it"), waiting for the contact (a re-proposal, an engine not
-vouched…), set aside ("Review the N set aside"), questions this version cannot answer; "OK" closes it. While the
-contact still works (`received`, `reading`) there is no step, only `ContactWorkingIndicator`.
+`choose` brings a re-proposal while she goes on) → the values to `check` (one at a time, on the document) → once all of
+those are answered, the values read clearly as **one batch turn** (perki: "22 items have been found with a high level
+of confidence. Do you want to review them one by one?", the list to see, "No, save them all" / "Yes, one by one";
+`batchMin` 3, `Infinity` for strictly one by one; never a value to check, one asked about or one her record holds) →
+the clear values one by one → one **summary**: kept aside or unmapped ("Ask for it"), waiting for the contact (a
+re-proposal, an engine not vouched…), set aside ("Review the N set aside"), questions this version cannot answer, "N
+values already in your record" ("Add anyway"); "OK" closes it. While the contact still works (`received`, `reading`)
+there is no step, only `ContactWorkingIndicator`.
+
+**Values she already has** (CONVERSATION.md § A value she already has, hds-lib 2.61.0): once the contact waits for her
+answers, `useDocumentConversations` answers `duplicate` with `basis: existing-value` for the open values her record
+holds on that day (`autoMarkDuplicates`), again for each value that arrives; meanwhile the document's `checking` is true
+and a host shows no step, so a value she has is never offered to save. They are never a step and never in the batch;
+the summary and the overview list them with "Add anyway" (a confirmation). The contact deletes them at `done`; the
+progress still counts them ("3 already in your record") from her answers.
+
+**Anchors** are read through `anchorOn(anchor, about)`: an anchor naming another document (`eventId`, data-model 4.25.0)
+is ignored (R11). `is-this-yours` without a printed identity shows the document at once, on its `context.anchor` (the
+header block).
 
 **A value step**: "I read **Ferritine 48 ng/mL (30 - 400)**. Save it as Ferritin: 48 µg/L?", "See it on the
 document" (open from the start for a value to check), Confirm · Correct (the item's field, inline) · Already in my

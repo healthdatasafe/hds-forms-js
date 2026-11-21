@@ -4,7 +4,7 @@ import { AnchoredDocumentView, type AnchoredDocumentSource } from './AnchoredDoc
 import type { PdfJsLike } from './pdfjs';
 import { itemLabel, printedText, proposalText, reasonText, tx } from './labels';
 import { ValueCorrectionEditor } from './ValueCorrectionEditor';
-import type { RowBlock } from './rowBlock';
+import { anchorOn, type RowBlock } from './rowBlock';
 import { btn, cx, small } from './ui';
 import { STATE_TEXT, blockText } from './conversationRun';
 
@@ -56,7 +56,7 @@ export interface ValueReviewProps {
 export function ValueReview ({ pv, sourceOf, busy, correcting, onConfirm, onCorrect, onSubmitCorrection, onCancelCorrection, onDuplicate, onClose, closeLabel, showQuestion = true, loadPdfJs, pdfOptions }: ValueReviewProps) {
   const c = pv.item.content;
   const value = (c.proposal != null ? proposalText(c.proposal) : null) ?? printedText(c.printed);
-  const anchor = c.anchor ?? null;
+  const anchor = anchorOn(c.anchor, c.about);
   return (
     <div className='mt-3 space-y-2'>
       {showQuestion && <p className='text-sm font-semibold'>{tx('confirmQuestion', { value })}</p>}

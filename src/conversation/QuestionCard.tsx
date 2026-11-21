@@ -5,6 +5,7 @@ import type { PdfJsLike } from './pdfjs';
 import { dayText, dayToTime, optionLabel, printedText, questionText, tx } from './labels';
 import type { ConversationTextKey } from './conversationTexts';
 import { questionAnswerText } from './answers';
+import { anchorOn } from './rowBlock';
 import { btn, cx, muted, panel, small } from './ui';
 
 /** Her answer to a question, as the host passes it to hds-lib `answerQuestion` */
@@ -46,7 +47,8 @@ const ROLES = new Set(['sampling', 'report', 'received', 'other']);
  */
 export function QuestionCard ({ question, about, contactName, sourceOf, busy = false, canUndoMatch = false, onAnswer, locale, loadPdfJs, pdfOptions, className, variant = 'panel' }: QuestionCardProps) {
   const c = question.item.content;
-  const [showDoc, setShowDoc] = useState(false);
+  // no name or birth date read: the document's header block (`context.anchor`) is what she answers on, shown at once
+  const [showDoc, setShowDoc] = useState(question.code === 'is-this-yours' && c.context?.identity == null && question.state !== 'answered');
   const [otherDay, setOtherDay] = useState('');
   const [pickingDay, setPickingDay] = useState(false);
   const dayId = useId();
@@ -56,7 +58,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
   const send = (a: QuestionAnswer): void => { if (can) onAnswer!(a); };
 
   const identity = question.code === 'is-this-yours' ? c.context?.identity ?? null : null;
-  const anchor = question.code === 'is-this-yours' ? c.context?.anchor ?? null : null;
+  const anchor = question.code === 'is-this-yours' ? anchorOn(c.context?.anchor, c.about) : null;
   const dates: Array<{ day: string; text: string; label?: string; role?: string }> = question.code === 'which-date' && Array.isArray(c.context?.dates) ? c.context.dates : [];
   const options: string[] = Array.isArray(c.options) ? c.options : [];
   const matched = answer?.action === 'confirm' && answer?.basis === 'profile-match';

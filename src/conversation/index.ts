@@ -14,7 +14,7 @@ export { ContactWorkingIndicator } from './ContactWorkingIndicator';
 export type { ContactWorkingIndicatorProps } from './ContactWorkingIndicator';
 export { isWorking, WORKING_STATUSES, WORKING_MAX_AGE_S } from './workInProgress';
 export type { TaskStatusLineProps, NoticeBubbleProps, ConversationAnswerBubbleProps } from './ConversationBubbles';
-export { rowBlock, batchCandidates, shownAtOf, isWritten } from './rowBlock';
+export { rowBlock, batchCandidates, shownAtOf, isWritten, alreadyInRecord, anchorOn } from './rowBlock';
 export type { RowBlock, RowBlockOptions } from './rowBlock';
 export { tx as conversationText, statusText, noticeText, errorText, reasonText, questionText, optionLabel, unitText, itemLabel, proposalText, printedText, dayText, dayToTime } from './labels';
 export { readSourceAnchor, anchorDocumentId, anchoredAttachment, documentKindOf } from './sourceAnchor';

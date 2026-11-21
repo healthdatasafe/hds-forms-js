@@ -36,10 +36,19 @@ export const CONVERSATION_TEXTS = {
   'step.save': { en: 'Save it as {item}: {value}?', fr: 'L’enregistrer comme {item} : {value} ?' },
   'step.check': { en: 'Please check it on the document first.', fr: 'Vérifiez-la d’abord sur le document.' },
   'step.later': { en: 'Later', fr: 'Plus tard' },
-  'step.batch': { en: '{n} values were read clearly.', fr: '{n} valeurs ont été lues clairement.' },
+  // perki: "X items have been found with high level of confidence, do you want to review them one by one?"
+  'step.batch': {
+    en: '{n} items have been found with a high level of confidence. Do you want to review them one by one?',
+    fr: '{n} éléments ont été trouvés avec un haut niveau de confiance, voulez-vous les vérifier un par un ?'
+  },
   'step.batchList': { en: 'See them', fr: 'Les voir' },
-  'step.batchConfirm': { en: 'Confirm the {n}', fr: 'Confirmer les {n}' },
-  'step.oneByOne': { en: 'One by one', fr: 'Une par une' },
+  'step.batchConfirm': { en: 'No, save them all', fr: 'Non, tout enregistrer' },
+  'step.oneByOne': { en: 'Yes, one by one', fr: 'Oui, un par un' },
+  'step.inRecord': { en: '{n} values already in your record', fr: '{n} valeurs déjà dans votre dossier' },
+  'step.inRecordOne': { en: '1 value already in your record', fr: '1 valeur déjà dans votre dossier' },
+  addAnyway: { en: 'Add anyway', fr: 'Ajouter quand même' },
+  'progress.inRecord': { en: '{n} already in your record', fr: '{n} déjà dans votre dossier' },
+  'progress.inRecordOne': { en: '1 already in your record', fr: '1 déjà dans votre dossier' },
   'step.summary': { en: 'Nothing else to answer about this document for now.', fr: 'Plus rien à répondre sur ce document pour l’instant.' },
   'step.keptAside': { en: 'Not saved', fr: 'Non enregistrées' },
   'step.waiting': { en: 'Waiting for {name}', fr: 'En attente de {name}' },

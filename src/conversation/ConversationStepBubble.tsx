@@ -6,7 +6,7 @@ import { itemLabel, noticeText, printedText, proposalText, questionText, reasonT
 import { QuestionCard } from './QuestionCard';
 import { ValueCorrectionEditor } from './ValueCorrectionEditor';
 import { TaskStatusLine } from './ConversationBubbles';
-import { shownAtOf } from './rowBlock';
+import { anchorOn, shownAtOf } from './rowBlock';
 import { blockText, useConversationRun, type ConversationActions } from './conversationRun';
 import { progressText, type ConversationProgress, type ConversationStep } from './nextStep';
 import { btn, bubbleIn, cx, small } from './ui';
@@ -85,7 +85,7 @@ export function ConversationStepBubble ({
     const c = pv.item.content;
     const item = c.proposal != null ? itemLabel(c.proposal.itemKey) : null;
     const value = c.proposal != null ? proposalText(c.proposal) : null;
-    const anchor = c.anchor ?? null;
+    const anchor = anchorOn(c.anchor, c.about);
     const docOpen = showDoc === step.key || (showDoc == null && c.status === 'check');
     // "I read {printed}." with the printed line in bold, in the sentence's own order
     const [readBefore, readAfter = ''] = tx('step.read').split('{printed}');
@@ -184,6 +184,29 @@ export function ConversationStepBubble ({
                   <span className={cx(small, 'block')}>{block === 'status' && pv.item.content.status === 'unit-missing' ? tx('block.unit-missing') : block === 'status' ? reasonText(pv.item.content.reason) : blockText(block, contactName)}</span>
                 </li>
               ))}
+            </ul>
+          </div>
+        )}
+        {step.alreadyInRecord.length > 0 && (
+          <div data-already-in-record=''>
+            <p className={cx(small, 'font-semibold')}>
+              {step.alreadyInRecord.length === 1 ? tx('step.inRecordOne') : tx('step.inRecord', { n: step.alreadyInRecord.length })}
+            </p>
+            <ul className='mt-1 space-y-1'>
+              {step.alreadyInRecord.map((pv) => {
+                const c = pv.item.content;
+                const item = c.proposal != null ? itemLabel(c.proposal.itemKey) : null;
+                const value = c.proposal != null ? proposalText(c.proposal) : null;
+                return (
+                  <li key={pv.item.id} className='text-sm' data-candidate={pv.candidateId}>
+                    <span className='font-medium'>{printedText(c.printed)}</span>
+                    {item != null && value != null && <span className={cx(small, 'block')}>{tx('wouldSave', { item, value })}</span>}
+                    {actions != null && (
+                      <button type='button' className={btn.link} disabled={!can} onClick={() => run('a' + pv.candidateId, () => actions.confirm([pv.candidateId], shownAt))}>{tx('addAnyway')}</button>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

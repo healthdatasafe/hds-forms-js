@@ -1,5 +1,5 @@
 import type { DocumentConversation, ProposedValueView, QuestionView } from 'hds-lib';
-import { batchCandidates, isWritten, rowBlock, type RowBlock, type RowBlockOptions } from './rowBlock';
+import { alreadyInRecord, batchCandidates, isWritten, rowBlock, type RowBlock, type RowBlockOptions } from './rowBlock';
 import { tx } from './labels';
 
 /**
@@ -12,7 +12,16 @@ export type ConversationStep =
   | { kind: 'question'; key: string; question: QuestionView; about: ProposedValueView | null }
   | { kind: 'value'; key: string; value: ProposedValueView }
   | { kind: 'batch'; key: string; values: ProposedValueView[] }
-  | { kind: 'summary'; key: string; keptAside: ProposedValueView[]; waiting: Array<{ value: ProposedValueView; block: RowBlock }>; skipped: ProposedValueView[]; unanswerable: QuestionView[] };
+  | {
+    kind: 'summary';
+    key: string;
+    keptAside: ProposedValueView[];
+    waiting: Array<{ value: ProposedValueView; block: RowBlock }>;
+    skipped: ProposedValueView[];
+    unanswerable: QuestionView[];
+    /** Values her record already holds ("Add anyway" adds one; the contact deletes them once its work is done) */
+    alreadyInRecord: ProposedValueView[];
+  };
 
 export interface StepOptions extends RowBlockOptions {
   /** The fewest values read clearly that make a batch step (default 3); `Infinity`: strictly one by one */
@@ -106,9 +115,10 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
     ? []
     : values.filter((pv) => (pv.state === 'skipped' || (pv.state === 'open' && deferred.has(pv.candidateId))) && rowBlock(conv, pv, engines, blockOpts) == null);
   const unanswerable = conv.questions.filter((q) => !q.answerable && q.state === 'open');
-  if (keptAside.length + waiting.length + skipped.length + unanswerable.length === 0) return null;
-  const ids = [...keptAside, ...waiting.map((w) => w.value), ...skipped].map((pv) => itemKey(pv.item)).concat(unanswerable.map((q) => itemKey(q.item)));
-  return { kind: 'summary', key: 'summary:' + ids.join(','), keptAside, waiting, skipped, unanswerable };
+  const inRecord = documentOrder(alreadyInRecord(conv));
+  if (keptAside.length + waiting.length + skipped.length + unanswerable.length + inRecord.length === 0) return null;
+  const ids = [...keptAside, ...waiting.map((w) => w.value), ...skipped, ...inRecord].map((pv) => itemKey(pv.item)).concat(unanswerable.map((q) => itemKey(q.item)));
+  return { kind: 'summary', key: 'summary:' + ids.join(','), keptAside, waiting, skipped, unanswerable, alreadyInRecord: inRecord };
 }
 
 /** Where one document's conversation stands, for "28 values · 1 question · 9 answered" (derived, never from `counts`) */
@@ -119,6 +129,8 @@ export interface ConversationProgress {
   /** values waiting for the contact (a re-proposal after her choice) */
   waitingOnContact: number;
   keptAside: number;
+  /** values her record already holds (not counted in `answered`) */
+  alreadyInRecord: number;
 }
 
 /** "28 values · 1 question · 9 answered", each part left out when zero */
@@ -127,19 +139,46 @@ export function progressText (p: ConversationProgress): string {
   if (p.values > 0) parts.push(p.values === 1 ? tx('progress.valuesOne') : tx('progress.values', { n: p.values }));
   if (p.questions > 0) parts.push(p.questions === 1 ? tx('progress.questionsOne') : tx('progress.questions', { n: p.questions }));
   if (p.answered > 0) parts.push(tx('progress.answered', { n: p.answered }));
+  if (p.alreadyInRecord > 0) parts.push(p.alreadyInRecord === 1 ? tx('progress.inRecordOne') : tx('progress.inRecord', { n: p.alreadyInRecord }));
   return parts.join(' · ');
 }
 
+/**
+ * Counted over the document's candidates, also those the contact deleted once its work was done (R10): her answers on
+ * her `sent` child still name them, so "28 values" stays 28 after the clean-up.
+ */
 export function conversationProgress (conv: DocumentConversation, engines: readonly string[], opts: RowBlockOptions = {}): ConversationProgress {
-  const values = conv.proposedValues.filter((pv) => pv.state !== 'replaced');
+  const present = new Map(conv.proposedValues.filter((pv) => pv.state !== 'replaced').map((pv) => [pv.candidateId, pv]));
+  const answeredBy = new Map<string, string>();
+  const duplicates = new Set<string>();
+  for (const a of conv.answers) {
+    const ids: unknown = a.content.candidateIds;
+    if (!Array.isArray(ids)) continue;
+    for (const id of ids) {
+      if (typeof id !== 'string') continue;
+      answeredBy.set(id, String(a.content.action));
+      if (a.content.action === 'duplicate') duplicates.add(id);
+    }
+  }
+  const written = new Set(Object.keys(conv.writtenCandidates ?? {}));
+  for (const pv of present.values()) {
+    if (pv.state === 'duplicate') duplicates.add(pv.candidateId);
+    if (isWritten(conv, pv)) written.add(pv.candidateId);
+  }
+  for (const id of written) duplicates.delete(id);
+  const candidates = new Set([...present.keys(), ...answeredBy.keys(), ...written]);
   let answered = 0;
   let waitingOnContact = 0;
   let keptAside = 0;
-  for (const pv of values) {
-    if (isWritten(conv, pv) || (pv.state !== 'open' && pv.state !== 'skipped')) answered += 1;
+  for (const id of candidates) {
+    if (duplicates.has(id)) continue;
+    if (written.has(id)) { answered += 1; continue; }
+    const pv = present.get(id);
+    if (pv == null) { if (answeredBy.has(id) && answeredBy.get(id) !== 'skip') answered += 1; continue; }
+    if (pv.state !== 'open' && pv.state !== 'skipped') answered += 1;
     else if (LINE_STATUSES.has(pv.item.content.status)) keptAside += 1;
     else if (rowBlock(conv, pv, engines, opts) === 'awaiting-reproposal') waitingOnContact += 1;
   }
   answered += conv.questions.filter((q) => q.state === 'answered').length;
-  return { values: values.length, questions: conv.questions.length, answered, waitingOnContact, keptAside };
+  return { values: candidates.size, questions: conv.questions.length, answered, waitingOnContact, keptAside, alreadyInRecord: duplicates.size };
 }

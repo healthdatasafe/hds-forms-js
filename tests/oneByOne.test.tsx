@@ -135,6 +135,37 @@ describe('[OBO] nextStep: what she answers next', () => {
     expect(conv.nextStep(of([b, batch]), E, ready)).toBeNull();
   });
 
+  it('the batch comes only once every question and every value to check is answered', () => {
+    const k = pv('k', { ...at(4), status: 'check' });
+    const date = question('which-date', { context: { dates: [{ day: '2026-11-18', text: '18.11.2026' }] } });
+    let items: any[] = [pv('a', at(1)), pv('b', at(2)), pv('c', at(3)), k, date];
+    expect(conv.nextStep(of(items), E, ready)).toMatchObject({ kind: 'question' });
+    items = [...items, answer(date, 'confirm', { time: 1, timePrecision: 'day' }, 300)];
+    expect(conv.nextStep(of(items), E, ready)).toMatchObject({ kind: 'value', value: { candidateId: 'k' } });
+    items = [...items, answer(k, 'confirm', { candidateIds: ['k'], written: [{ candidateId: 'k', eventId: 'v' }] }, 301)];
+    expect(conv.nextStep(of(items), E, ready)).toMatchObject({ kind: 'batch' });
+  });
+
+  it('a value her record holds is never in the batch nor a step: the summary lists it, to add anyway', () => {
+    const a = pv('a', at(1));
+    const items = [a, pv('b', at(2)), pv('c', at(3)), pv('d', at(4)), answer(a, 'duplicate', { candidateIds: ['a'], basis: 'existing-value' })];
+    const batch = conv.nextStep(of(items), E, ready) as any;
+    expect(batch.values.map((v: any) => v.candidateId)).toEqual(['b', 'c', 'd']);
+    expect(conv.batchCandidates(of(items), E, ready).map((v: any) => v.candidateId)).toEqual(['b', 'c', 'd']);
+    const s = conv.nextStep(of(items), E, { ...ready, batchDeclined: true, deferred: ['b', 'c', 'd'] }) as any;
+    expect(s.kind).toBe('summary');
+    expect(s.alreadyInRecord.map((v: any) => v.candidateId)).toEqual(['a']);
+    // only values her record holds: still a summary, so she can add one anyway
+    expect(conv.nextStep(of([a, answer(a, 'duplicate', { candidateIds: ['a'] })]), E, ready)).toMatchObject({ kind: 'summary' });
+  });
+
+  it('an anchor on another document is ignored (R11); one without eventId is on its document', () => {
+    expect(conv.anchorOn({ page: 1, eventId: 'other' }, DOC)).toBeNull();
+    expect(conv.anchorOn({ page: 1, eventId: DOC }, DOC)).toEqual({ page: 1, eventId: DOC });
+    expect(conv.anchorOn({ page: 2 }, DOC)).toEqual({ page: 2 });
+    expect(conv.anchorOn(null, DOC)).toBeNull();
+  });
+
   it('the key changes with what the step shows (ids and modified)', () => {
     const a = pv('a');
     const k1 = (conv.nextStep(of([a]), E, ready) as any).key;
@@ -146,8 +177,17 @@ describe('[OBO] nextStep: what she answers next', () => {
     const a = pv('a');
     const q = question('is-this-yours');
     const c = of([a, pv('b'), pv('k', { status: 'kept-aside', reason: 'no-item', proposal: undefined }), q, answer(q, 'confirm'), answer(a, 'confirm', { candidateIds: ['a'], written: [{ candidateId: 'a', eventId: 'v' }] })]);
-    expect(conv.conversationProgress(c, E, ready)).toMatchObject({ values: 3, questions: 1, answered: 2, keptAside: 1 });
-    expect(conv.progressText({ values: 28, questions: 1, answered: 9, waitingOnContact: 0, keptAside: 0 })).toBe('28 values · 1 question · 9 answered');
+    expect(conv.conversationProgress(c, E, ready)).toMatchObject({ values: 3, questions: 1, answered: 2, keptAside: 1, alreadyInRecord: 0 });
+    expect(conv.progressText({ values: 28, questions: 1, answered: 9, waitingOnContact: 0, keptAside: 0, alreadyInRecord: 3 })).toBe('28 values · 1 question · 9 answered · 3 already in your record');
+  });
+
+  it('progress keeps counting what the contact deleted once done (R10): written and already in her record', () => {
+    const a = pv('a');
+    const d = pv('d');
+    const items = [pv('k', { status: 'kept-aside', reason: 'no-item', proposal: undefined }),
+      answer(a, 'confirm', { candidateIds: ['a', 'b'], written: [{ candidateId: 'a', eventId: 'v1' }, { candidateId: 'b', eventId: 'v2' }] }),
+      answer(d, 'duplicate', { candidateIds: ['d'], basis: 'existing-value' })];
+    expect(conv.conversationProgress(of(items), E, ready)).toMatchObject({ values: 4, answered: 2, keptAside: 1, alreadyInRecord: 1 });
   });
 });
 
@@ -236,11 +276,11 @@ describe('[OBO] ConversationStepBubble', () => {
     const acts = actions();
     const onDeclineBatch = vi.fn();
     await render(bubble(c, conv.nextStep(c, E, ready), acts, { onDeclineBatch }));
-    expect(container.textContent).toContain('3 values were read clearly.');
+    expect(container.textContent).toContain('3 items have been found with a high level of confidence. Do you want to review them one by one?');
     expect(container.querySelectorAll('details li').length).toBe(3);
-    await click(button('Confirm the 3'));
+    await click(button('No, save them all'));
     expect(acts.confirm).toHaveBeenCalledWith(['a', 'b', 'c'], 100);
-    await click(button('One by one'));
+    await click(button('Yes, one by one'));
     expect(onDeclineBatch).toHaveBeenCalled();
   });
 
@@ -270,11 +310,21 @@ describe('[OBO] ConversationStepBubble', () => {
     expect(onAcknowledgeSummary).toHaveBeenCalled();
   });
 
+  it('the summary: the values her record already holds, each to add anyway', async () => {
+    const a = pv('a', { printed: { label: 'Ferritine', value: '48', unit: 'ng/mL' } });
+    const c = of([a, answer(a, 'duplicate', { candidateIds: ['a'], basis: 'existing-value' })]);
+    const acts = actions();
+    await render(bubble(c, conv.nextStep(c, E, ready), acts));
+    expect(container.textContent).toContain('1 value already in your record');
+    await click(button('Add anyway'));
+    expect(acts.confirm).toHaveBeenCalledWith(['a'], 100);
+  });
+
   it('the document bubble: status, progress, "See everything" shows the overview', async () => {
     const status = { alertEventId: 's', kind: 'task-status', hds: { kind: 'task-status', about: DOC, status: 'awaiting-answers', attempt: 1 }, time: 1, direction: 'received', from: null } as any;
     const onToggle = vi.fn();
     await render(
-      <conv.DocumentStatusBubble title='Lab report' status={status} contactName='Dr Test' progress={{ values: 28, questions: 1, answered: 9, waitingOnContact: 0, keptAside: 0 }} expanded onToggle={onToggle}>
+      <conv.DocumentStatusBubble title='Lab report' status={status} contactName='Dr Test' progress={{ values: 28, questions: 1, answered: 9, waitingOnContact: 0, keptAside: 0, alreadyInRecord: 0 }} expanded onToggle={onToggle}>
         <p>overview</p>
       </conv.DocumentStatusBubble>
     );

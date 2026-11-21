@@ -8,9 +8,17 @@
   I can just click"), for any contact and any HDS app:
   - `nextStep(conversation, engines, options)`: what she answers next about a document, a pure function of the
     conversation: `is-this-yours` → the document's date → questions about one value → values to check → the values read
-    clearly as one batch turn ("Confirm the 22" / "One by one"; never a value to check) → the clear values one by one →
-    a summary (kept aside, waiting for the contact, set aside, unanswerable). `conversationProgress`, `progressText`
-    ("28 values · 1 question · 9 answered"), `documentOrder` (the order the document prints).
+    clearly as one batch turn, once every question and value to check is answered (perki: "X items have been found
+    with high level of confidence, do you want to review them one by one?", "No, save them all" / "Yes, one by one";
+    never a value to check, never one her record holds) → the clear values one by one → a summary (kept aside, waiting
+    for the contact, set aside, unanswerable, already in her record with "Add anyway"). `conversationProgress`,
+    `progressText` ("28 values · 1 question · 9 answered · 3 already in your record", counted also over what the
+    contact deleted at `done`), `documentOrder` (the order the document prints).
+  - **Values her record already holds** (hds-lib 2.61.0, `basis: existing-value`): `useDocumentConversations` runs
+    `autoMarkDuplicates` once the contact waits for her answers and for each new value (`checking` meanwhile: no step
+    yet), `alreadyInRecord`, "Add anyway" in the summary and the overview.
+  - `anchorOn(anchor, about)`: an anchor naming another document (`eventId`) is ignored (R11). `is-this-yours` with no
+    printed identity shows the document at once, on the header block the contact anchored.
   - `<ConversationStepBubble>`: the step as the contact's last bubble with quick replies (Confirm · Correct · Already in
     my record · Later; the options of a question; the batch; the summary), the document on the value, `shownAt` from
     when it first showed. "Later" (`onLater`) writes nothing: a `skip` would let the contact delete the value once its
@@ -26,6 +34,7 @@
     and the step.
   - `readSourceAnchor` reads the anchor's `eventId` (data-model 4.25.0); `anchorDocumentId(clientData)`: the anchor's
     document, else the one event `related` names.
+  - hds-lib 2.61.0.
 - **`docs/CONVERSATION-COMPONENTS.md`**: every conversation component, what it renders, the CONVERSATION.md kind and
   fields it maps to, props, texts and examples, for any HDS app on either side of a conversation.
 

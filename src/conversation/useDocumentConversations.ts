@@ -26,6 +26,11 @@ export interface DocumentConversationData {
   engines: string[];
   /** Where it sits in a thread: the contact's first alert or item about the document */
   time: number;
+  /**
+   * Her app is still checking which values her record already holds (`autoMarkDuplicates`): a host shows no step yet,
+   * so a value she has is never offered to save
+   */
+  checking: boolean;
   actions: ConversationActions;
 }
 
@@ -50,6 +55,22 @@ export interface DocumentConversationsOptions {
   onGranted?: () => Promise<void> | void;
   /** Answer `is-this-yours` itself on a profile match (R3, `basis: profile-match`); default true */
   autoConfirmIdentity?: boolean;
+  /** Mark the proposed values her record already holds (R3, `basis: existing-value`); default true */
+  autoMarkDuplicates?: boolean;
+}
+
+const SETTLED = new Set(['awaiting-answers', 'done']);
+
+/**
+ * What her app checks before she sees a step, for a document once the contact waits for her answers: whether her
+ * record holds its open values. One key per open value (and `is-this-yours` state): a value that arrives, or the
+ * identity answered, is checked again; her own answers are not.
+ */
+function duplicateKeys (d: { key: string; status: ConversationAlert | null; conversation: DocumentConversation }): string[] {
+  if (!SETTLED.has(String(d.status?.hds?.status ?? ''))) return [];
+  const conv = d.conversation;
+  if (conv.identity === 'open' || conv.identity === 'not-mine') return [];
+  return conv.proposedValues.filter((p) => p.state === 'open').map((p) => `${d.key}|${conv.identity}|${p.item.id}:${p.item.modified}`);
 }
 
 interface Read {
@@ -125,6 +146,11 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
   }, [connection, relKey, opts.alertEventsKey, version, reload]);
 
   // R11: the documents each relationship may talk about: shared in it now, or every one when its grant reads them all
+  const autoDuplicates = opts.autoMarkDuplicates !== false;
+  const dupTried = useRef(new Set<string>());
+  const dupDone = useRef(new Set<string>());
+  const [checked, setChecked] = useState(0);
+
   const sharedIn = useMemo(() => {
     const out = new Map<string, Set<string>>();
     for (const a of opts.documentAlerts) {
@@ -154,15 +180,19 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
         const conversation = cmcConversation.conversationOf(items, about);
         const mine = fromContact.filter((a) => a.hds.about === about);
         const times = [...mine.map((a) => a.time), ...conversation.received.map((i) => i.created)];
+        const key = `${rel.accessId}:${about}`;
+        const status = cmcConversation.taskStatusOf(alerts, about);
+        const dupKeys = autoDuplicates ? duplicateKeys({ key, status, conversation }) : [];
         const doc: DocumentConversationData = {
-          key: `${rel.accessId}:${about}`,
+          key,
           rel,
           about,
           conversation,
-          status: cmcConversation.taskStatusOf(alerts, about),
+          status,
           notices: mine.filter((a) => a.kind === 'notice'),
           engines,
           time: times.length > 0 ? Math.min(...times) : 0,
+          checking: dupKeys.some((k) => !dupDone.current.has(k)),
           actions: actionsFor(connection, rel, about, engines, reload, conversation, (ids) => provisionRef.current?.(ids) ?? Promise.resolve())
         };
         documents.push(doc);
@@ -170,7 +200,30 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
       }
     }
     return { documents, answers, looseNotices };
-  }, [connection, reads, relKey, sharedIn, reload]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `checked` re-reads dupDone (a ref) after a check
+  }, [connection, reads, relKey, sharedIn, reload, autoDuplicates, checked]);
+
+  useEffect(() => {
+    if (!autoDuplicates || connection == null) return;
+    const pending = state.documents
+      .map((d) => ({ d, keys: duplicateKeys(d).filter((k) => !dupTried.current.has(k)) }))
+      .filter((x) => x.keys.length > 0);
+    if (pending.length === 0) return;
+    (async () => {
+      let answered = false;
+      for (const { d, keys } of pending) {
+        for (const k of keys) dupTried.current.add(k);
+        try {
+          if (await cmcConversation.autoMarkDuplicates(connection, d.rel as any, { about: d.about, engines: d.engines }) != null) answered = true;
+        } catch (e) {
+          console.warn('[conversation] values already in her record not checked:', e);
+        }
+        for (const k of keys) dupDone.current.add(k);
+      }
+      setChecked((v) => v + 1);
+      if (answered) reload();
+    })();
+  }, [autoDuplicates, connection, state.documents, reload]);
 
   const autoTried = useRef(new Set<string>());
   const auto = opts.autoConfirmIdentity !== false;

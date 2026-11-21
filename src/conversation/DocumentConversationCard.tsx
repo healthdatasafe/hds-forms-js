@@ -142,6 +142,11 @@ export function DocumentConversationCard ({
                       {pv.state === 'open' && <button type='button' className={btn.ghost} disabled={!can} onClick={() => run('s:' + pv.candidateId, () => actions.dismiss([pv.candidateId], 'skip', shownAt))}>{tx('skip')}</button>}
                     </div>
                   )}
+                  {!written && pv.state === 'duplicate' && block == null && actions != null && (
+                    <div className='mt-2 flex flex-wrap gap-2'>
+                      <button type='button' className={btn.outline} disabled={!can} onClick={() => run('a:' + pv.candidateId, () => actions.confirm([pv.candidateId], shownAt))}>{tx('addAnyway')}</button>
+                    </div>
+                  )}
                   {open && (
                     <ValueReview
                       pv={pv} sourceOf={sourceOf} busy={busy != null} correcting={correcting} loadPdfJs={loadPdfJs} pdfOptions={pdfOptions}
