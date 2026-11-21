@@ -100,6 +100,36 @@ brings it back. The step's `shownAt` is when it first showed (R3).
 answer yet); the host shows "A message does not answer the question above." under its message box
 (`conversationText('composerHint')`).
 
+## A document's date and kind, her note, a document's values (4.26.0)
+
+**Proposed document** (`proposed-document`, CONVERSATION.md § A document's date and kind). A document shared into a
+chat waits for its date and kind (`clientData.hdsDocumentPending`, written by her app at import: hds-webapp's
+`ImportPopup pendingFields`). The contact proposes both; `nextStep(conv, engines, { …, document })` (the document event,
+`DocumentConversationData.document`) gives `{ kind: 'document', proposed, pending }` right after `is-this-yours` (its
+`which-document-kind` / `which-document-date` questions first, as question steps). The bubble: "This looks like a
+Laboratory report from 18 November 2026. Save that on the document?" (only the pending fields; `check`: "I am not sure
+of the date." and the document on its anchor); Confirm → `actions.confirmDocument(candidateId, undefined, shownAt)`;
+Change → `DocumentFieldsEditor` → `confirmDocument(candidateId, { documentKind? , time?, timePrecision? }, shownAt)`
+(only what she changed); Later writes nothing. `useDocumentConversations` answers `skip` (`basis: not-pending`) for a
+proposal with nothing left to apply; that answer gets no bubble. A host reads her documents again after an answer with
+`applied`.
+
+**Her note** (`answer.note`, at most `NOTE_MAX_LENGTH` characters). While a step waits, what she writes in the chat line
+is a note: the host passes it as `note` (with `onClearNote`, `onNoteAsMessage` for "Send as a message instead"); the
+bubble shows "Your note: “…” · goes with your answer" and the reply she taps carries it (every `ConversationActions`
+method takes a trailing `note`). `ConversationAnswerBubble` shows it under her answer; `answerRuns` never folds it. A
+contact that reads no notes says so once (`notice` `note-not-read`: "{name} does not read notes."). The hook removes
+the note once the contact's work is `done` (hds-lib `removeNotes`).
+
+**A document's values.** `documentValuesOf(document, events)` → `{ source, matched }`: `source`, written from it
+(`clientData.related` + a `sourceKey` of the document, or its `hdsDocumentValues` index); `matched`, values of hers it
+also prints, found already in her record (`hdsPrintedIn`). `DocumentValuesList({ values, onOpenValue?, dayText? })`:
+"Read from this document (n)", "Also printed here (n)" — "already in your record, not from this document"; nothing when
+both are empty.
+
+**Specimen labels** come from hds-lib `SPECIMEN_CODES` (en, fr, es); document kinds from the pack
+(`documentKindLabel`, `documentKindOptions`).
+
 ## `DocumentConversationCard`
 
 One document's conversation with a contact, all at once (the overview behind "See everything"). It shows the state of the work and its notices; `is-this-yours` first

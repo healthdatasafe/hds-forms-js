@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.38.0] - 2026-11-21
+
+### Added (plan 135, data-model 4.26.0, hds-lib 2.62.0)
+
+- **A document's date and kind, one by one.** `nextStep` gives a `document` step right after `is-this-yours` (its
+  `which-document-kind` / `which-document-date` questions first) when the contact proposed them and a field still
+  waits on the document (`StepOptions.document`, hds-lib `documentProposalRefusal`). `ConversationStepBubble`: "This
+  looks like a Laboratory report from 18 November 2026. Save that on the document?", Confirm · Change
+  (`DocumentFieldsEditor`: the pack's kinds, a day, "I do not know the date"; only what she changed is sent) · Later.
+  `ConversationActions.confirmDocument` (hds-lib `acceptProposedDocument`). Her answers: "You confirmed the document's
+  date and kind"; her app's `not-pending` skip shows no bubble.
+- **Her note** (`answer.note`): every action takes a trailing `note`; `ConversationStepBubble` shows a draft (`note`,
+  `onClearNote`, `onNoteAsMessage`) and sends it with the reply she taps; `ConversationAnswerBubble` shows it; a noted
+  answer is never folded into a run; notice `note-not-read`.
+- **`useDocumentConversations`**: reads the document event when the contact proposed its date and kind
+  (`DocumentConversationData.document`); `autoSettleProposedDocuments` when nothing is left to apply; `removeNotes`
+  once the contact is done (or 24 h after on not-mine / unshared); `note` and `confirmDocument` in its actions.
+- **A document's values:** `documentValuesOf(document, events)` (source: `related` + `sourceKey`, or
+  `hdsDocumentValues`; matched: `hdsPrintedIn`) and `DocumentValuesList` ("Read from this document (n)", "Also printed
+  here (n)" — "already in your record, not from this document").
+- Specimen labels from hds-lib `SPECIMEN_CODES`; document kinds by the pack's label (`documentKindLabel`,
+  `documentKindOptions`); `proposedDateText`.
+- `conversationProgress` leaves the document's own questions out of `questions`.
+- hds-lib 2.62.0.
+
 ## [0.37.0] - 2026-11-21
 
 ### Added
