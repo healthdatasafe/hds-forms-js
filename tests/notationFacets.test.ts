@@ -7,7 +7,7 @@ import { registry } from 'hds-feminine-cycle-ui';
 import { compatible, choices, toggle, resolve, selectionOf, pickedValue, type Selection } from '../src/schema/notationFacets';
 import { buildNotation, itemValuesOf, candidateOf, recordOf, storedAnnotations, withAnnotations, type NotationModel } from '../src/schema/methodNotation';
 
-const fixture = (): any => JSON.parse(readFileSync(new URL('./fixtures/creighton-v0.json', import.meta.url), 'utf-8'));
+const fixture = (): any => JSON.parse(readFileSync(new URL('./fixtures/creighton-v1.json', import.meta.url), 'utf-8'));
 const rep = registry.get('creighton')!;
 const MUCUS = 'body-vulva-mucus-inspect';
 const BLEEDING = 'body-vulva-bleeding';

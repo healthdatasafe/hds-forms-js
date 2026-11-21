@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from 'react';
-import creightonFixture from './fixtures/creighton-v0.json';
+import creightonFixture from './fixtures/creighton-v1.json';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 /**
- * Plan 134 B4: the Creighton three-row entry, built from the generated definition (tests/fixtures/creighton-v0.json).
+ * Plan 134 B4: the Creighton three-row entry, built from the generated definition (tests/fixtures/creighton-v1.json).
  */
 const creighton: any = structuredClone(creightonFixture);
 const femm = {
