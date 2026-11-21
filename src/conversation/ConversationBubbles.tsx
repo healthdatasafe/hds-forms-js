@@ -36,6 +36,11 @@ export function TaskStatusLine ({ status, errorCode, counts, contactName, classN
 export interface NoticeBubbleProps {
   code: string;
   contactName: string;
+  /**
+   * A second line from the host: for `ready`, the vouched app's description (APP-DESCRIPTION.md § The rule; never an
+   * unvouched manifest's)
+   */
+  detail?: string | null;
   /** The time as the host writes it in its bubbles */
   timeText?: string;
   className?: string;
@@ -44,12 +49,13 @@ export interface NoticeBubbleProps {
 }
 
 /** A notice from the contact (a code, never text from the contact: R6, R12), on its side of the conversation */
-export function NoticeBubble ({ code, contactName, timeText, className, bubbleClassName }: NoticeBubbleProps) {
+export function NoticeBubble ({ code, contactName, detail, timeText, className, bubbleClassName }: NoticeBubbleProps) {
   return (
-    <div className={cx('flex justify-start', className)}>
+    <div className={cx('flex justify-start', className)} data-notice={code}>
       <div className={bubbleClassName ?? bubbleIn}>
         <span className='sr-only'>{tx('fromContact', { name: contactName })}: </span>
         {noticeText(code, contactName)}
+        {detail != null && detail !== '' && <span className='mt-1 block text-sm text-gray-600 dark:text-gray-400'>{detail}</span>}
         {timeText != null && <span className='float-right mt-1.5 ml-3 text-xs leading-none text-gray-500'>{timeText}</span>}
       </div>
     </div>

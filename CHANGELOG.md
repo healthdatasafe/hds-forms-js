@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.0] - 2026-11-21
+
+### Added (plan 135, data-model 4.27.0)
+
+- Notice `ready`: "{name} can read your documents: share one in this conversation" (CONVERSATION.md "Rendering
+  `ready`"); `NoticeBubble detail` for the host's second line (the vouched app's description).
+
 ## [0.40.0] - 2026-11-21
 
 ### Added (plan 135, HDS3's live run on demo)
