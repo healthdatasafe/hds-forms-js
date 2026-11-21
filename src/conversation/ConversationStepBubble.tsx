@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cmcConversation } from 'hds-lib';
 import type { ConversationAlert, DocumentConversation, ProposedValueView } from 'hds-lib';
 import { DocumentFieldsEditor } from './DocumentFieldsEditor';
@@ -46,6 +46,11 @@ export interface ConversationStepBubbleProps {
   onClearNote?: () => void;
   /** "Send as a message instead": the host posts the note as a plain chat message */
   onNoteAsMessage?: () => void;
+  /**
+   * The host's own send button pressed while this step waits (D-1): each new value sends the note alone, as the chip's
+   * "Send the note alone" does (the host has shown the warning)
+   */
+  noteAloneSignal?: number;
   locale?: string;
   loadPdfJs?: () => Promise<PdfJsLike>;
   pdfOptions?: Record<string, unknown>;
@@ -64,7 +69,7 @@ export interface ConversationStepBubbleProps {
  */
 export function ConversationStepBubble ({
   step, conversation, progress, contactName, title, sourceOf, actions, onDeclineBatch, onLater, onAcknowledgeSummary, onReviewSkipped,
-  note, onClearNote, onNoteAsMessage, locale, loadPdfJs, pdfOptions, className, bubbleClassName
+  note, onClearNote, onNoteAsMessage, noteAloneSignal, locale, loadPdfJs, pdfOptions, className, bubbleClassName
 }: ConversationStepBubbleProps) {
   const noteArg = note != null && note.trim() !== '' ? note.trim().slice(0, cmcConversation.NOTE_MAX_LENGTH) : undefined;
   // what she saw, when this step first showed: a step whose items change gets a new key, and a new shownAt
@@ -92,6 +97,14 @@ export function ConversationStepBubble ({
     }
     return null;
   })();
+
+  // the host's send button: the note alone, once per new signal value
+  const signalSeen = useRef(noteAloneSignal);
+  useEffect(() => {
+    if (noteAloneSignal == null || noteAloneSignal === signalSeen.current) return;
+    signalSeen.current = noteAloneSignal;
+    sendNoteAlone?.();
+  }, [noteAloneSignal, sendNoteAlone]);
 
   let body: ReactNode = null;
   if (step.kind === 'question') {
@@ -161,7 +174,7 @@ export function ConversationStepBubble ({
     const kind = step.pending.includes('kind') && typeof p.documentKind === 'string' ? (documentKindLabel(p.documentKind) ?? p.documentKind) : null;
     const date = step.pending.includes('time') && typeof p.time === 'number' ? proposedDateText(p.time, p.timePrecision, locale) : null;
     const anchor = anchorOn(c.anchor, c.about);
-    const docOpen = showDoc === step.key || (showDoc == null && c.status === 'check' && anchor != null);
+    const docOpen = showDoc === step.key || (showDoc == null && c.status === 'check');
     const text = kind != null && date != null
       ? tx('document.proposal', { kind, date })
       : kind != null ? tx('document.proposalKind', { kind }) : date != null ? tx('document.proposalDate', { date }) : null;
@@ -170,13 +183,18 @@ export function ConversationStepBubble ({
       <div className='space-y-2' data-proposed-document={pd.candidateId}>
         {c.status === 'check' && <p className='text-xs font-medium text-amber-700 dark:text-amber-400'>{tx('document.unsure')}</p>}
         {text != null && <p className='text-sm font-semibold'>{text}</p>}
-        {anchor != null && (
-          <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>
-            {docOpen ? tx('hideDocument') : tx('seeOnDocument')}
-          </button>
-        )}
-        {docOpen && anchor != null && (
-          <AnchoredDocumentView source={sourceOf(anchor.attachmentId)} anchor={{ page: anchor.page, bbox: anchor.bbox }} label={date ?? ''} loadPdfJs={loadPdfJs} pdfOptions={pdfOptions} />
+        {/* where the date is printed (its anchor), else the document from its first page */}
+        <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>
+          {docOpen ? tx('hideDocument') : anchor != null ? tx('seeOnDocument') : tx('seeDocument')}
+        </button>
+        {docOpen && (
+          <AnchoredDocumentView
+            source={sourceOf(anchor?.attachmentId)}
+            anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : { page: 1 }}
+            label={date ?? title}
+            loadPdfJs={loadPdfJs}
+            pdfOptions={pdfOptions}
+          />
         )}
         {correcting === step.key && confirmDocument != null
           ? (
@@ -341,6 +359,8 @@ export interface DocumentStatusBubbleProps {
   contactName: string;
   /** The title opens the whole document (the host's viewer) */
   onOpenDocument?: () => void;
+  /** The values her app saved from it (`writtenCandidates`): once the work is `done`, "6 values saved · See them" */
+  saved?: number;
   /** "See everything": the host shows its overview (`DocumentConversationCard`) as `children` while expanded */
   expanded?: boolean;
   onToggle?: () => void;
@@ -353,7 +373,8 @@ export interface DocumentStatusBubbleProps {
  * One document in the conversation, from the contact: its title, the state of the work, its notices, where it stands
  * ("28 values · 1 question · 9 answered"), and "See everything" (every question and value of the document at once).
  */
-export function DocumentStatusBubble ({ title, status, notices = [], progress, contactName, onOpenDocument, expanded = false, onToggle, children, className, bubbleClassName }: DocumentStatusBubbleProps) {
+export function DocumentStatusBubble ({ title, status, notices = [], progress, contactName, onOpenDocument, saved = 0, expanded = false, onToggle, children, className, bubbleClassName }: DocumentStatusBubbleProps) {
+  const done = status?.hds?.status === 'done';
   return (
     <div className={cx('flex justify-start', className)} data-document-status=''>
       <div className={cx(bubbleClassName ?? bubbleIn, expanded ? 'w-full max-w-full' : '')}>
@@ -364,6 +385,12 @@ export function DocumentStatusBubble ({ title, status, notices = [], progress, c
         <TaskStatusLine status={(status?.hds?.status as string | undefined) ?? null} errorCode={status?.hds?.errorCode} contactName={contactName} />
         {progress != null && progressText(progress) !== '' && <p className={small}>{progressText(progress)}</p>}
         {notices.map((n) => <p key={n.alertEventId} className='mt-1 text-sm'>{noticeText(String(n.hds.code), contactName)}</p>)}
+        {done && saved > 0 && (
+          <p className='mt-1 text-sm font-medium' data-closing-line=''>
+            {saved === 1 ? tx('done.savedOne') : tx('done.saved', { n: saved })}
+            {onOpenDocument != null && <> · <button type='button' className={btn.link} onClick={onOpenDocument}>{tx('done.seeThem')}</button></>}
+          </p>
+        )}
         {onToggle != null && (
           <button type='button' className={btn.link} aria-expanded={expanded} onClick={onToggle}>{expanded ? tx('hideEverything') : tx('seeEverything')}</button>
         )}

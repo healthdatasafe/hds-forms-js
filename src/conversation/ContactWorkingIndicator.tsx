@@ -21,11 +21,14 @@ export interface ContactWorkingIndicatorProps {
 export function ContactWorkingIndicator ({ contactName, status, documentTitle, className, bubbleClassName }: ContactWorkingIndicatorProps) {
   const vars = { name: contactName, title: documentTitle ?? '' };
   const doc = documentTitle != null && documentTitle !== '';
-  const text = status === 'received'
-    ? tx(doc ? 'working.received' : 'working.receivedNoTitle', vars)
-    : status === 'reading'
-      ? tx(doc ? 'working.reading' : 'working.readingNoTitle', vars)
-      : tx(doc ? 'working.other' : 'working.otherNoTitle', vars);
+  // `sent`: her app's own state, between her share and the contact's first task-status (no webhook: 1-2 minutes)
+  const text = status === 'sent'
+    ? tx(doc ? 'working.sent' : 'working.sentNoTitle', vars)
+    : status === 'received'
+      ? tx(doc ? 'working.received' : 'working.receivedNoTitle', vars)
+      : status === 'reading'
+        ? tx(doc ? 'working.reading' : 'working.readingNoTitle', vars)
+        : tx(doc ? 'working.other' : 'working.otherNoTitle', vars);
   return (
     <div className={cx('flex justify-start', className)} data-working-indicator=''>
       <div className={cx(bubbleClassName ?? bubbleIn, 'inline-flex items-center gap-2')} role='status' aria-live='polite'>
