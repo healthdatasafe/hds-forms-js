@@ -13,6 +13,14 @@
   shows as working for ever; `awaiting-answers`, `done`, `error` or a newer status remove it. No data-model change:
   the contract's statuses already say it. en, fr.
 
+### Fixed
+
+- **"Is this document about you?" with no printed identity showed only the two buttons** (perki's live test): when the
+  contact read no name or birth date (the question then carries no `context.identity`), the card now says so and
+  offers "See the document" (her own document, its first page, zoomable); with an identity but no anchor, "See it on
+  the document" opens the first page too. With both, unchanged: the printed name and birth date, and the document
+  zoomed and highlighted on them.
+
 ## [0.35.1] - 2026-11-21
 
 ### Added

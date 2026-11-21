@@ -185,6 +185,16 @@ describe('[CONV-UI] DocumentConversationCard', () => {
     expect(a.answer).toHaveBeenCalledWith(q.id, { action: 'confirm' }, 100);
   });
 
+  it('is-this-yours without a printed identity says so and still opens the document (its first page)', async () => {
+    const q = question('is-this-yours');
+    await render(card(of([pv('c1'), q])));
+    expect(container.textContent).toContain('No name or birth date could be read on the document');
+    expect(container.textContent).not.toContain('Name printed');
+    await click(button('See the document'));
+    expect(container.querySelector('[role="region"]')).not.toBeNull();
+    expect(button('Yes, it is mine')).not.toBeNull();
+  });
+
   it('a profile match says so and keeps "Not mine" until the work is done', async () => {
     const q = question('is-this-yours', { context: { identity: { name: 'X' } } });
     const c = of([pv('c1'), q, answer(q, 'confirm', { basis: 'profile-match' })]);

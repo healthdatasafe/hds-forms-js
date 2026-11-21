@@ -58,6 +58,8 @@ export const CONVERSATION_TEXTS = {
   printedName: { en: 'Name printed', fr: 'Nom imprimé' },
   printedBirth: { en: 'Birth date printed', fr: 'Date de naissance imprimée' },
   seeOnDocument: { en: 'See it on the document', fr: 'Le voir sur le document' },
+  seeDocument: { en: 'See the document', fr: 'Voir le document' },
+  identityNotRead: { en: 'No name or birth date could be read on the document: check on the document whether it is about you.', fr: 'Aucun nom ni date de naissance n’a pu être lu sur le document : vérifiez sur le document s’il vous concerne.' },
   hideDocument: { en: 'Hide the document', fr: 'Masquer le document' },
   mine: { en: 'Yes, it is mine', fr: 'Oui, c’est le mien' },
   notMine: { en: 'Not mine', fr: 'Pas le mien' },
