@@ -92,6 +92,9 @@ describe('[DOC] nextStep: a proposed document', () => {
     const c = of([pv('a'), d, kindQ]);
     expect(conv.nextStep(c, E, ready)).toMatchObject({ kind: 'question', question: { code: 'which-document-kind' }, about: null });
     expect(conv.conversationProgress(c, E, ready).questions).toBe(0);
+    // her answer on the proposed document is not about a value
+    const corrected = of([pv('a'), d, answer(d, 'correct', { candidateIds: ['d1'], applied: ['time'] })]);
+    expect(conv.conversationProgress(corrected, E, ready)).toMatchObject({ values: 1, answered: 0 });
     expect(conv.optionLabel('which-document-kind', 'laboratory-report')).toEqual({ label: 'Laboratory report', selectable: true });
     expect(conv.optionLabel('which-document-kind', 'x-unknown').selectable).toBe(false);
   });

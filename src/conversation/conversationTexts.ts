@@ -204,7 +204,7 @@ export const CONVERSATION_TEXTS = {
   'answer.confirm': { en: 'You confirmed {n} values', fr: 'Vous avez confirmé {n} valeurs' },
   'answer.confirmOne': { en: 'You confirmed a value', fr: 'Vous avez confirmé une valeur' },
   'answer.correct': { en: 'You corrected a value', fr: 'Vous avez corrigé une valeur' },
-  'answer.skip': { en: 'You skipped', fr: 'Vous avez passé' },
+  'answer.skip': { en: 'You set it aside', fr: 'Vous l’avez mis de côté' },
   'answer.duplicate': { en: 'You said it is already in your record', fr: 'Vous avez dit que c’est déjà dans votre dossier' },
   'answer.duplicateAuto': { en: 'Your app found {n} values already in your record', fr: 'Votre app a trouvé {n} valeurs déjà dans votre dossier' },
   'answer.duplicateAutoOne': { en: 'Your app found a value already in your record', fr: 'Votre app a trouvé une valeur déjà dans votre dossier' },

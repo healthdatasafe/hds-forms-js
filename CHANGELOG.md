@@ -11,6 +11,12 @@
 - A test fails on a conversation text missing its en or fr.
 - hds-lib 2.63.0.
 
+### Fixed
+
+- `conversationProgress` no longer counts her answer on a proposed document (`applied`, `not-pending`, its candidate) as
+  a value ("14 values" for 13).
+- Her `skip` reads "You set it aside" (was "You skipped").
+
 ## [0.38.0] - 2026-11-21
 
 ### Added (plan 135, data-model 4.26.0, hds-lib 2.62.0)
