@@ -351,6 +351,20 @@ describe('[CONV-UI] bubbles and texts', () => {
     expect(container.textContent).not.toContain('1 questions');
     expect(container.textContent).toContain('Dr Test found no result it could read in this document.');
   });
+  it('data-model 4.24.0 codes: the notice several-sampling-dates and the error reading-failed have their own words', async () => {
+    expect(conv.noticeText('several-sampling-dates', 'Dr Test')).toContain('several sampling days');
+    expect(conv.errorText('reading-failed', 'Dr Test')).toBe('Dr Test could not read this document yet. It tries again by itself: you have nothing to do.');
+    lang = 'fr';
+    expect(conv.noticeText('several-sampling-dates', 'Dr Test')).toContain('plusieurs jours de prélèvement');
+    expect(conv.errorText('reading-failed', 'Dr Test')).toContain('réessaie de lui-même');
+    lang = 'en';
+    const status = { alertEventId: 'e1', kind: 'task-status', hds: { kind: 'task-status', about: DOC, status: 'error', errorCode: 'reading-failed', attempt: 1 }, time: 1, direction: 'received', from: null };
+    const notice = { alertEventId: 'n1', kind: 'notice', hds: { kind: 'notice', code: 'several-sampling-dates', about: DOC }, time: 1, direction: 'received', from: null };
+    await render(card(of([]), actions(), { status, notices: [notice] }));
+    expect(container.textContent).toContain('It tries again by itself');
+    expect(container.textContent).toContain('one column per day');
+    expect(container.textContent).not.toContain('cannot show yet');
+  });
   it('option labels: an item key by its name, yes / no, a specimen code', () => {
     expect(conv.optionLabel('which-analyte', 'body-blood-serum-ferritin')).toEqual({ label: 'Ferritin', selectable: true });
     expect(conv.optionLabel('which-analyte', 'nope')).toEqual({ label: 'nope', selectable: false });

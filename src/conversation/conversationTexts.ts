@@ -30,11 +30,13 @@ export const CONVERSATION_TEXTS = {
   'status.questions': { en: '{n} questions', fr: '{n} questions' },
   'status.questionsOne': { en: '1 question', fr: '1 question' },
   'error.no-attachment': { en: 'The document has no file {name} can read.', fr: 'Le document n’a pas de fichier que {name} peut lire.' },
+  'error.reading-failed': { en: '{name} could not read this document yet. It tries again by itself: you have nothing to do.', fr: '{name} n’a pas encore pu lire ce document. Il réessaie de lui-même : vous n’avez rien à faire.' },
   'error.write-failed': { en: '{name} could not save its questions in your account.', fr: '{name} n’a pas pu enregistrer ses questions dans votre compte.' },
   'error.unknown': { en: '{name} could not finish this document.', fr: '{name} n’a pas pu terminer ce document.' },
 
   // notices
   'notice.no-result-found': { en: '{name} found no result it could read in this document. Nothing is proposed.', fr: '{name} n’a trouvé aucun résultat lisible dans ce document. Rien n’est proposé.' },
+  'notice.several-sampling-dates': { en: 'This document prints results for several sampling days, one column per day. {name} cannot yet tell which value was taken on which day, so it proposes nothing from it.', fr: 'Ce document imprime des résultats de plusieurs jours de prélèvement, une colonne par jour. {name} ne sait pas encore quelle valeur a été prise quel jour : il n’en propose donc rien.' },
   'notice.typed-text-not-read': { en: '{name} does not read typed messages. Send a document instead.', fr: '{name} ne lit pas les messages écrits. Envoyez plutôt un document.' },
   'notice.unknown': { en: '{name} sent a message this app cannot show yet.', fr: '{name} a envoyé un message que cette app ne sait pas encore montrer.' },
 

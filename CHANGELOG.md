@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.35.1] - 2026-11-21
+
+### Added
+
+- **The conversation's two data-model 4.24.0 codes in words** (en, fr), instead of the generic text for an unknown
+  code (R8): the notice `several-sampling-dates` (a cumulative report, one column per sampling day: the contact
+  proposes nothing from it) and the `task-status` error `reading-failed` (the contact could not read the document
+  yet and tries again by itself; she has nothing to do).
+
 ## [0.35.0] - 2026-11-21 (plan 128 P2; with plans 131 and 134, merged before it)
 
 ### Added
