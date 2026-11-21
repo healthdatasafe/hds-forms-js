@@ -12,14 +12,22 @@ export interface TaskStatusLineProps {
   className?: string;
 }
 
+/** "5 values, 1 question": what waits for her, each count left out when zero */
+function countsText (counts: { proposed?: number; questions?: number }): string {
+  const parts: string[] = [];
+  const v = counts.proposed ?? 0;
+  const q = counts.questions ?? 0;
+  if (v > 0) parts.push(v === 1 ? tx('status.valuesOne') : tx('status.values', { n: v }));
+  if (q > 0) parts.push(q === 1 ? tx('status.questionsOne') : tx('status.questions', { n: q }));
+  return parts.join(', ');
+}
+
 /** The state of the contact's work on one document */
 export function TaskStatusLine ({ status, errorCode, counts, contactName, className }: TaskStatusLineProps) {
   return (
     <p className={cx(small, className)} role='status'>
       <span className='font-medium'>{statusText(status)}</span>
-      {status === 'awaiting-answers' && counts != null && (counts.proposed ?? 0) + (counts.questions ?? 0) > 0 && (
-        <> · {tx('status.counts', { proposed: counts.proposed ?? 0, questions: counts.questions ?? 0 })}</>
-      )}
+      {status === 'awaiting-answers' && counts != null && countsText(counts) !== '' && <> · {countsText(counts)}</>}
       {status === 'error' && <span className='mt-1 block text-red-700 dark:text-red-400'>{errorText(errorCode, contactName)}</span>}
     </p>
   );

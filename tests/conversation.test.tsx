@@ -347,7 +347,8 @@ describe('[CONV-UI] bubbles and texts', () => {
   });
   it('the status line and the notice bubble', async () => {
     await render(<><conv.TaskStatusLine status='awaiting-answers' counts={{ proposed: 3, questions: 1 }} contactName='Dr Test' /><conv.NoticeBubble code='no-result-found' contactName='Dr Test' /></>);
-    expect(container.textContent).toContain('Waiting for your answers · 3 values, 1 questions');
+    expect(container.textContent).toContain('Waiting for your answers · 3 values, 1 question');
+    expect(container.textContent).not.toContain('1 questions');
     expect(container.textContent).toContain('Dr Test found no result it could read in this document.');
   });
   it('option labels: an item key by its name, yes / no, a specimen code', () => {
