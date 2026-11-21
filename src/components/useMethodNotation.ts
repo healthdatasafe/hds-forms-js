@@ -31,12 +31,13 @@ const NONE: MethodNotation = { status: 'none', covers: [], writes: [] };
  */
 export function useMethodNotation (itemKeys: string[]): MethodNotation {
   const keysId = itemKeys.join('\n');
+  // read at each render: a method chosen while the form is open ("remember it?") takes over at the host's next render
+  const methodId = readPreferredMethod(NOTATION_MUCUS_ITEM, NOTATION_CONVERTER);
   const [state, setState] = useState<MethodNotation>({ status: 'loading', covers: [], writes: [] });
   useEffect(() => {
     let live = true;
     (async () => {
       try {
-        const methodId = readPreferredMethod(NOTATION_MUCUS_ITEM, NOTATION_CONVERTER);
         if (!methodId || !registry.has(methodId)) { if (live) setState(NONE); return; }
         const engine = await getHDSModel().converters.ensureEngine(NOTATION_CONVERTER);
         const methodDef = engine.getMethodDef(methodId);
@@ -49,6 +50,6 @@ export function useMethodNotation (itemKeys: string[]): MethodNotation {
       }
     })();
     return () => { live = false; };
-  }, [keysId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [keysId, methodId]); // eslint-disable-line react-hooks/exhaustive-deps
   return state;
 }
