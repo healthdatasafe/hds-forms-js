@@ -19,6 +19,8 @@
     yet; a value found stays so until the conversation read again shows it answered), `alreadyInRecord`, "Add anyway"
     in the summary and the overview; her app's answer reads "Your app found 5 values already in your record", not "You
     said…".
+  - A cumulative report (values of several sampling days): each value says its day and printed time ("Would be saved
+    as Ferritin: 12 ng/mL, sampled 5 November 2020, 08:30"), `valueDayText`; a one-day report does not.
   - `anchorOn(anchor, about)`: an anchor naming another document (`eventId`) is ignored (R11). `is-this-yours` with no
     printed identity shows the document at once, on the header block the contact anchored.
   - `<ConversationStepBubble>`: the step as the contact's last bubble with quick replies (Confirm · Correct · Already in

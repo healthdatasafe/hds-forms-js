@@ -118,6 +118,24 @@ export function dayText (day: string, locale?: string): string {
   }
 }
 
+/**
+ * The sampling day of a proposed value ("5 November 2020, 08:30"), only when its document's values were taken on
+ * several days (a cumulative report): there, "Ferritine 12" and "Ferritine 30" differ by their day alone. Null for a
+ * one-day document or a value with no day yet.
+ */
+export function valueDayText (
+  pv: { item: { content: Record<string, any> } },
+  values: ReadonlyArray<{ state?: string; item: { content: Record<string, any> } }>,
+  locale?: string
+): string | null {
+  const dayOf = (c: Record<string, any>): string | null => typeof c.proposal?.time === 'number' ? new Date(c.proposal.time * 1000).toISOString().slice(0, 10) : null;
+  const days = new Set(values.filter((v) => v.state !== 'replaced').map((v) => dayOf(v.item.content)).filter((d): d is string => d != null));
+  const day = dayOf(pv.item.content);
+  if (days.size < 2 || day == null) return null;
+  const time = pv.item.content.printed?.samplingTime;
+  return dayText(day, locale) + (typeof time === 'string' && time !== '' ? `, ${time}` : '');
+}
+
 /** The day of a which-date answer as `time` (12:00 UTC) with `timePrecision: day` (PARTIAL-DATES.md) */
 export function dayToTime (day: string): number {
   return Date.parse(day + 'T12:00:00Z') / 1000;

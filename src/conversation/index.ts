@@ -16,7 +16,7 @@ export { isWorking, WORKING_STATUSES, WORKING_MAX_AGE_S } from './workInProgress
 export type { TaskStatusLineProps, NoticeBubbleProps, ConversationAnswerBubbleProps } from './ConversationBubbles';
 export { rowBlock, batchCandidates, shownAtOf, isWritten, alreadyInRecord, anchorOn } from './rowBlock';
 export type { RowBlock, RowBlockOptions } from './rowBlock';
-export { tx as conversationText, statusText, noticeText, errorText, reasonText, questionText, optionLabel, unitText, itemLabel, proposalText, printedText, dayText, dayToTime } from './labels';
+export { tx as conversationText, statusText, noticeText, errorText, reasonText, questionText, optionLabel, unitText, itemLabel, proposalText, printedText, dayText, dayToTime, valueDayText } from './labels';
 export { readSourceAnchor, anchorDocumentId, anchoredAttachment, documentKindOf } from './sourceAnchor';
 export { ConversationStepBubble, DocumentStatusBubble } from './ConversationStepBubble';
 export type { ConversationStepBubbleProps, DocumentStatusBubbleProps } from './ConversationStepBubble';

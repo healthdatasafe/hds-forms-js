@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ConversationAlert, DocumentConversation, ProposedValueView } from 'hds-lib';
 import type { AnchoredDocumentSource } from './AnchoredDocumentView';
 import type { PdfJsLike } from './pdfjs';
-import { noticeText, tx } from './labels';
+import { noticeText, tx, valueDayText } from './labels';
 import { QuestionCard, type QuestionAnswer } from './QuestionCard';
 import { TaskStatusLine } from './ConversationBubbles';
 import { batchCandidates, isWritten, rowBlock, shownAtOf } from './rowBlock';
@@ -131,7 +131,7 @@ export function DocumentConversationCard ({
               const open = reviewing === pv.candidateId && !written;
               return (
                 <li key={pv.item.id} className='rounded-md border border-gray-200 p-3 dark:border-gray-700' data-candidate={pv.candidateId}>
-                  <ValueLine pv={pv} block={block} written={written} contactName={contactName} />
+                  <ValueLine pv={pv} block={block} written={written} contactName={contactName} day={valueDayText(pv, conv.proposedValues, locale)} />
                   {!open && !written && (pv.state === 'open' || pv.state === 'skipped') && actions != null && (
                     <div className='mt-2 flex flex-wrap gap-2'>
                       {block == null && <button type='button' className={btn.outline} disabled={!can} onClick={() => { setReviewing(pv.candidateId); setCorrecting(false); setMessage(null); }}>{tx('review')}</button>}

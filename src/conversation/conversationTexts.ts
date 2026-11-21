@@ -34,6 +34,7 @@ export const CONVERSATION_TEXTS = {
   'step.about': { en: 'About “{title}”', fr: 'À propos de « {title} »' },
   'step.read': { en: 'I read {printed}.', fr: 'J’ai lu {printed}.' },
   'step.save': { en: 'Save it as {item}: {value}?', fr: 'L’enregistrer comme {item} : {value} ?' },
+  'step.saveOn': { en: 'Save it as {item}: {value}, sampled {day}?', fr: 'L’enregistrer comme {item} : {value}, prélevé le {day} ?' },
   'step.check': { en: 'Please check it on the document first.', fr: 'Vérifiez-la d’abord sur le document.' },
   'step.later': { en: 'Later', fr: 'Plus tard' },
   // perki: "X items have been found with high level of confidence, do you want to review them one by one?"
@@ -127,6 +128,7 @@ export const CONVERSATION_TEXTS = {
   proposedTitle: { en: 'Values read from your document', fr: 'Valeurs lues dans votre document' },
   printedAs: { en: 'Printed', fr: 'Imprimé' },
   wouldSave: { en: 'Would be saved as {item}: {value}', fr: 'Serait enregistré comme {item} : {value}' },
+  wouldSaveOn: { en: 'Would be saved as {item}: {value}, sampled {day}', fr: 'Serait enregistré comme {item} : {value}, prélevé le {day}' },
   checkThis: { en: 'Please check this one on the document', fr: 'Vérifiez celle-ci sur le document' },
   confirmQuestion: { en: 'Can you confirm this value is {value}?', fr: 'Pouvez-vous confirmer que cette valeur est {value} ?' },
   review: { en: 'Check on the document', fr: 'Vérifier sur le document' },

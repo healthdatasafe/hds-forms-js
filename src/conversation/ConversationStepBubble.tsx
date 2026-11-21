@@ -1,8 +1,8 @@
 import { useRef, useState, type ReactNode } from 'react';
-import type { ConversationAlert, DocumentConversation } from 'hds-lib';
+import type { ConversationAlert, DocumentConversation, ProposedValueView } from 'hds-lib';
 import { AnchoredDocumentView, type AnchoredDocumentSource } from './AnchoredDocumentView';
 import type { PdfJsLike } from './pdfjs';
-import { itemLabel, noticeText, printedText, proposalText, questionText, reasonText, tx } from './labels';
+import { itemLabel, noticeText, printedText, proposalText, questionText, reasonText, tx, valueDayText } from './labels';
 import { QuestionCard } from './QuestionCard';
 import { ValueCorrectionEditor } from './ValueCorrectionEditor';
 import { TaskStatusLine } from './ConversationBubbles';
@@ -63,6 +63,11 @@ export function ConversationStepBubble ({
   const [showDoc, setShowDoc] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState<string | null>(null);
   const can = actions != null && busy == null;
+  // a cumulative report: each value says its day, "Ferritine 12" and "Ferritine 30" differ by it alone
+  const saveText = (pv: ProposedValueView, item: string, value: string, plain: 'step.save' | 'wouldSave', on: 'step.saveOn' | 'wouldSaveOn'): string => {
+    const day = valueDayText(pv, conversation.proposedValues, locale);
+    return day != null ? tx(on, { item, value, day }) : tx(plain, { item, value });
+  };
 
   let body: ReactNode = null;
   if (step.kind === 'question') {
@@ -92,7 +97,7 @@ export function ConversationStepBubble ({
     body = (
       <div className='space-y-2'>
         <p className='text-sm'>{readBefore}<span className='font-semibold'>{printedText(c.printed)}</span>{readAfter}</p>
-        {item != null && value != null && <p className='text-sm font-semibold'>{tx('step.save', { item, value })}</p>}
+        {item != null && value != null && <p className='text-sm font-semibold'>{saveText(pv, item, value, 'step.save', 'step.saveOn')}</p>}
         {c.status === 'check' && <p className='text-xs font-medium text-amber-700 dark:text-amber-400'>{tx('step.check')}</p>}
         <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>
           {docOpen ? tx('hideDocument') : tx('seeOnDocument')}
@@ -140,7 +145,7 @@ export function ConversationStepBubble ({
               return (
                 <li key={pv.item.id} data-candidate={pv.candidateId}>
                   <span className='font-medium'>{printedText(c.printed)}</span>
-                  {item != null && value != null && <span className={cx(small, 'block')}>{tx('wouldSave', { item, value })}</span>}
+                  {item != null && value != null && <span className={cx(small, 'block')}>{saveText(pv, item, value, 'wouldSave', 'wouldSaveOn')}</span>}
                 </li>
               );
             })}
@@ -200,7 +205,7 @@ export function ConversationStepBubble ({
                 return (
                   <li key={pv.item.id} className='text-sm' data-candidate={pv.candidateId}>
                     <span className='font-medium'>{printedText(c.printed)}</span>
-                    {item != null && value != null && <span className={cx(small, 'block')}>{tx('wouldSave', { item, value })}</span>}
+                    {item != null && value != null && <span className={cx(small, 'block')}>{saveText(pv, item, value, 'wouldSave', 'wouldSaveOn')}</span>}
                     {actions != null && (
                       <button type='button' className={btn.link} disabled={!can} onClick={() => run('a' + pv.candidateId, () => actions.confirm([pv.candidateId], shownAt))}>{tx('addAnyway')}</button>
                     )}

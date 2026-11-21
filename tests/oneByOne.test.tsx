@@ -181,6 +181,19 @@ describe('[OBO] nextStep: what she answers next', () => {
     expect(conv.progressText({ values: 28, questions: 1, answered: 9, waitingOnContact: 0, keptAside: 0, alreadyInRecord: 3 })).toBe('28 values · 1 question · 9 answered · 3 already in your record');
   });
 
+  it('progress: a value re-proposed after her answer counts once', () => {
+    const old = pv('g', { proposal: undefined, status: 'unit-missing' });
+    const unit = question('which-unit', { candidateId: 'g', options: ['mmol/L'] });
+    const neu = pv('g2', { replaces: 'g', status: 'check' });
+    const items = [old, pv('f'), unit, answer(unit, 'choose', { option: 'mmol/L', candidateIds: ['g'] }), neu];
+    const c = of(items);
+    expect(c.proposedValues.find((p: any) => p.candidateId === 'g')?.state).toBe('replaced');
+    expect(conv.conversationProgress(c, E, ready).values).toBe(2);
+    // once done, the contact deleted every value (R10): her answers alone, the unit answer counts no value
+    const after = of([answer(unit, 'choose', { option: 'mmol/L', candidateIds: ['g'] }), answer(neu, 'confirm', { candidateIds: ['g2', 'f'], written: [{ candidateId: 'g2', eventId: 'v1' }, { candidateId: 'f', eventId: 'v2' }] })]);
+    expect(conv.conversationProgress(after, E, ready)).toMatchObject({ values: 2, answered: 2 });
+  });
+
   it('progress keeps counting what the contact deleted once done (R10): written and already in her record', () => {
     const a = pv('a');
     const d = pv('d');
@@ -308,6 +321,20 @@ describe('[OBO] ConversationStepBubble', () => {
     expect(onReviewSkipped).toHaveBeenCalled();
     await click(button('OK'));
     expect(onAcknowledgeSummary).toHaveBeenCalled();
+  });
+
+  it('a cumulative report: each value says its sampling day (and printed time); a one-day report does not', async () => {
+    const t = (day: string) => ({ itemKey: 'ferritin', type: 'concentration/ug-l', content: 1, time: Date.parse(day + 'T12:00:00Z') / 1000, clientData: { hdsTimePrecision: 'day' } });
+    const a = pv('a', { ...at(1), proposal: t('2020-11-05'), printed: { label: 'Ferritine', value: '12', samplingTime: '08:30' } });
+    const b = pv('b', { ...at(2), proposal: t('2021-01-14'), printed: { label: 'Ferritine', value: '30' } });
+    const c = pv('c', { ...at(3), proposal: t('2021-02-18'), printed: { label: 'Ferritine', value: '41' } });
+    const multi = of([a, b, c]);
+    expect(conv.valueDayText(multi.proposedValues[0], multi.proposedValues, 'en')).toBe('November 5, 2020, 08:30');
+    await render(bubble(multi, conv.nextStep(multi, E, ready)));
+    expect(container.textContent).toContain('Would be saved as Ferritin: 1 µg/L, sampled January 14, 2021');
+    expect(container.textContent).toContain('sampled November 5, 2020, 08:30');
+    const one = of([pv('x', at(1)), pv('y', at(2))]);
+    expect(conv.valueDayText(one.proposedValues[0], one.proposedValues, 'en')).toBeNull();
   });
 
   it('the summary: the values her record already holds, each to add anyway', async () => {

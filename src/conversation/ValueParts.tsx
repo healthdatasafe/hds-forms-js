@@ -11,7 +11,14 @@ import { STATE_TEXT, blockText } from './conversationRun';
 export type { ConversationOutcome, ConversationActions } from './conversationRun';
 
 /** A value read from the document: the line as printed, what would be saved, and its state or why it waits */
-export function ValueLine ({ pv, block, written, contactName }: { pv: ProposedValueView; block: RowBlock | null; written: boolean; contactName: string }) {
+export function ValueLine ({ pv, block, written, contactName, day = null }: {
+  pv: ProposedValueView;
+  block: RowBlock | null;
+  written: boolean;
+  contactName: string;
+  /** Its sampling day, on a document of several days (`valueDayText`) */
+  day?: string | null;
+}) {
   const c = pv.item.content;
   const proposed = c.proposal != null ? proposalText(c.proposal) : null;
   const item = c.proposal != null ? itemLabel(c.proposal.itemKey) : null;
@@ -26,7 +33,7 @@ export function ValueLine ({ pv, block, written, contactName }: { pv: ProposedVa
   return (
     <div>
       <p className='text-sm'><span className='sr-only'>{tx('printedAs')}: </span><span className='font-semibold'>{printedText(c.printed)}</span></p>
-      {proposed != null && item != null && <p className={cx(small, 'mt-1')}>{tx('wouldSave', { item, value: proposed })}</p>}
+      {proposed != null && item != null && <p className={cx(small, 'mt-1')}>{day != null ? tx('wouldSaveOn', { item, value: proposed, day }) : tx('wouldSave', { item, value: proposed })}</p>}
       {note}
       {pv.state === 'skipped' && <p className={cx(small, 'mt-1')}>{tx('state.skipped')}</p>}
     </div>

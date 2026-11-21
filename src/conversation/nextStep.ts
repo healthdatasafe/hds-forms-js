@@ -41,6 +41,7 @@ export interface StepOptions extends RowBlockOptions {
 
 const SETTLED = new Set(['awaiting-answers', 'done']);
 const LINE_STATUSES = new Set(['kept-aside', 'unmapped']);
+const VALUE_ACTIONS = new Set(['correct', 'skip', 'duplicate', 'request-item']);
 const itemKey = (i: { id: string; modified: number }): string => `${i.id}:${i.modified}`;
 
 /** Values in the order the document prints them: page, then the line's top; without an anchor, as they came */
@@ -154,6 +155,9 @@ export function conversationProgress (conv: DocumentConversation, engines: reado
   for (const a of conv.answers) {
     const ids: unknown = a.content.candidateIds;
     if (!Array.isArray(ids)) continue;
+    // only her answers on the values themselves; an answer to a question about one (`choose`, a date) settles no value
+    const onValues = VALUE_ACTIONS.has(String(a.content.action)) || (a.content.action === 'confirm' && Array.isArray(a.content.written));
+    if (!onValues) continue;
     for (const id of ids) {
       if (typeof id !== 'string') continue;
       answeredBy.set(id, String(a.content.action));
@@ -166,7 +170,9 @@ export function conversationProgress (conv: DocumentConversation, engines: reado
     if (isWritten(conv, pv)) written.add(pv.candidateId);
   }
   for (const id of written) duplicates.delete(id);
-  const candidates = new Set([...present.keys(), ...answeredBy.keys(), ...written]);
+  // a value re-proposed under a new candidate counts once: its replaced candidate (named by her answer about it) not
+  const replaced = new Set(conv.proposedValues.filter((pv) => pv.state === 'replaced' && !present.has(pv.candidateId)).map((pv) => pv.candidateId));
+  const candidates = new Set([...present.keys(), ...answeredBy.keys(), ...written].filter((id) => !replaced.has(id)));
   let answered = 0;
   let waitingOnContact = 0;
   let keptAside = 0;
