@@ -354,7 +354,19 @@ describe('[CONV-UI] bubbles and texts', () => {
     expect(conv.optionLabel('which-analyte', 'body-blood-serum-ferritin')).toEqual({ label: 'Ferritin', selectable: true });
     expect(conv.optionLabel('which-analyte', 'nope')).toEqual({ label: 'nope', selectable: false });
     expect(conv.optionLabel('is-fasting', 'yes')).toEqual({ label: 'Yes', selectable: true });
-    expect(conv.optionLabel('which-specimen', 'serum')).toEqual({ label: 'Serum', selectable: true });
+    expect(conv.optionLabel('which-specimen', 'serum-plasma')).toEqual({ label: 'Serum or plasma', selectable: true });
+    expect(conv.optionLabel('which-specimen', 'whole-blood')).toEqual({ label: 'Whole blood', selectable: true });
+    expect(conv.optionLabel('which-specimen', 'plasma-of-mars').selectable).toBe(false);
+  });
+  it('unit codes as people read them; the answer keeps the code', () => {
+    expect(conv.optionLabel('which-unit', '1')).toEqual({ label: 'No unit (a ratio)', selectable: true });
+    expect(conv.unitText('10*6/mL')).toBe('10⁶/mL');
+    expect(conv.unitText('10*9/L')).toBe('10⁹/L');
+    expect(conv.unitText('/uL')).toBe('/µL');
+    expect(conv.unitText('umol/L')).toBe('µmol/L');
+    expect(conv.unitText('ug/L')).toBe('µg/L');
+    expect(conv.unitText('mmol/L')).toBe('mmol/L');
+    expect(conv.unitText('U/L')).toBe('U/L');
   });
   it('every text has its French', () => {
     for (const [key, t] of Object.entries(CONVERSATION_TEXTS)) expect((t as any).fr, key).toBeTruthy();

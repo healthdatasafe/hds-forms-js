@@ -50,8 +50,21 @@ export function itemLabel (itemKey: string): string | null {
   }
 }
 
-const SPECIMENS = new Set(['serum', 'plasma', 'blood', 'urine']);
+/** The specimen codes of `which-specimen` (the HDS Reader's, hds-reader-core `SPECIMENS`) */
+const SPECIMENS = new Set(['serum-plasma', 'whole-blood', 'citrated-plasma', 'rbc', 'urine', 'urine-24h', 'semen', 'csf', 'stool', 'saliva', 'other']);
 const UCUM = /^[A-Za-z0-9%µ/.*[\]{}^()'-]{1,32}$/;
+const SUPERSCRIPT: Record<string, string> = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', '-': '⁻' };
+
+/**
+ * A UCUM unit code as people read it: `1` (a ratio, no unit) in words, `10*6/mL` as 10⁶/mL, the micro prefix `u` as µ
+ * (`uL`, `umol/L`, `ug`). The code itself is what an answer carries.
+ */
+export function unitText (code: string): string {
+  if (code === '1') return tx('unit.ratio');
+  return code
+    .replace(/10\*(-?\d+)/g, (_m, n: string) => '10' + [...n].map((ch) => SUPERSCRIPT[ch] ?? ch).join(''))
+    .replace(/(^|[/.(])u(?=(mol|g|L|l|IU|U|kat)\b)/g, '$1µ');
+}
 
 /**
  * An option of a choice question, as she reads it, and whether she may pick it (R8: an option code this version
@@ -63,7 +76,7 @@ export function optionLabel (code: string, option: string): { label: string; sel
     if (option === 'yes' || option === 'no') return { label: tx(option), selectable: true };
     return { label: option, selectable: false };
   }
-  if (code === 'which-unit') return { label: option, selectable: UCUM.test(option) };
+  if (code === 'which-unit') return UCUM.test(option) ? { label: unitText(option), selectable: true } : { label: option, selectable: false };
   if (code === 'which-analyte' || code === 'which-specimen') {
     const name = itemLabel(option);
     if (name != null) return { label: name, selectable: true };

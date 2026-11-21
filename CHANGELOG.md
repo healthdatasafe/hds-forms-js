@@ -29,8 +29,10 @@
   - **`<TaskStatusLine>`, `<NoticeBubble>`, `<ConversationAnswerBubble>`**: the state of the work, a notice (a code,
     never text from the contact), one of her answers in words (it still says what it answered once the contact deleted
     the question). Hosts give the bubbles and the card their own surface (`bubbleClassName`, `surfaceClassName`).
+  - Option labels: the HDS Reader's specimen codes (`serum-plasma`, `whole-blood`, … `other`), UCUM units as people
+    read them (`1` "no unit (a ratio)", `10*6/mL` → 10⁶/mL, `uL` → µL: `unitText`), item keys by their name.
   - Pure helpers: `rowBlock` (why a value cannot be confirmed now), `batchCandidates`, `isWritten`, `shownAtOf`,
-    `answerText`, `optionLabel`, `statusText`, `noticeText`, `reasonText`, `questionText`, `proposalText`,
+    `answerText`, `optionLabel`, `unitText`, `statusText`, `noticeText`, `reasonText`, `questionText`, `proposalText`,
     `printedText`, `correctedClientData`. Every text in English and French (`CONVERSATION_TEXTS`, `localizeText`).
 
 ### Changed — conversation

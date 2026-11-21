@@ -13,7 +13,7 @@ export { TaskStatusLine, NoticeBubble, ConversationAnswerBubble } from './Conver
 export type { TaskStatusLineProps, NoticeBubbleProps, ConversationAnswerBubbleProps } from './ConversationBubbles';
 export { rowBlock, batchCandidates, shownAtOf, isWritten } from './rowBlock';
 export type { RowBlock, RowBlockOptions } from './rowBlock';
-export { tx as conversationText, statusText, noticeText, errorText, reasonText, questionText, optionLabel, itemLabel, proposalText, printedText, dayText, dayToTime } from './labels';
+export { tx as conversationText, statusText, noticeText, errorText, reasonText, questionText, optionLabel, unitText, itemLabel, proposalText, printedText, dayText, dayToTime } from './labels';
 export { readSourceAnchor, anchoredAttachment, documentKindOf } from './sourceAnchor';
 export type { SourceAnchor, DocumentAttachment, DocumentKind } from './sourceAnchor';
 export { fitPage, frameBox, clampView, zoomAt, panBy, isUsableBox, MAX_SCALE, MIN_LINE_PX } from './anchorFrame';
