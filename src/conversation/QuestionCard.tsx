@@ -70,15 +70,18 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
           {identity.birthDate != null && <><dt className='text-gray-600 dark:text-gray-400'>{tx('printedBirth')}</dt><dd className='font-medium'>{String(identity.birthDate)}</dd></>}
         </dl>
       )}
-      {anchor != null && sourceOf != null && (
+      {/* the contact read no name or birth date (CONVERSATION.md: then the question carries no identity): she checks on
+          the document itself */}
+      {question.code === 'is-this-yours' && identity == null && <p className={cx(small, 'mt-1')}>{tx('identityNotRead')}</p>}
+      {question.code === 'is-this-yours' && sourceOf != null && (
         <>
           <button type='button' className={btn.link} aria-expanded={showDoc} onClick={() => setShowDoc((s) => !s)}>
-            {showDoc ? tx('hideDocument') : tx('seeOnDocument')}
+            {showDoc ? tx('hideDocument') : anchor != null ? tx('seeOnDocument') : tx('seeDocument')}
           </button>
           {showDoc && (
             <AnchoredDocumentView
-              source={sourceOf(anchor.attachmentId)}
-              anchor={{ page: anchor.page, bbox: anchor.bbox }}
+              source={sourceOf(anchor?.attachmentId)}
+              anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : { page: 1 }}
               label={tx('printedName')}
               loadPdfJs={loadPdfJs}
               pdfOptions={pdfOptions}

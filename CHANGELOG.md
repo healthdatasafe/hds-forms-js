@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.36.0] - 2026-11-21
+
+### Added
+
+- **`<ContactWorkingIndicator>`: the conversation's standard "working" indicator** (plan 128, perki's request), as a
+  typing indicator from the contact: three moving dots and what it does ("HDS Reader is reading “Lab report”…", "…
+  received your document and is starting on it…", "… is working…" for a status this version does not know), on the
+  contact's side, announced politely to screen readers, the dots still for reduced motion. `isWorking(status, nowS)`
+  says when to show it: the document's latest `task-status` (R4) is `received` or `reading` (or unknown, R8: in
+  progress) and less than `WORKING_MAX_AGE_S` (30 min) old, so a contact that stopped without a last status never
+  shows as working for ever; `awaiting-answers`, `done`, `error` or a newer status remove it. No data-model change:
+  the contract's statuses already say it. en, fr.
+
+### Fixed
+
+- **"Is this document about you?" with no printed identity showed only the two buttons** (perki's live test): when the
+  contact read no name or birth date (the question then carries no `context.identity`), the card now says so and
+  offers "See the document" (her own document, its first page, zoomable); with an identity but no anchor, "See it on
+  the document" opens the first page too. With both, unchanged: the printed name and birth date, and the document
+  zoomed and highlighted on them.
+
 ## [0.35.1] - 2026-11-21
 
 ### Added
