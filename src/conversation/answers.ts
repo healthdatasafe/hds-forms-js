@@ -14,6 +14,11 @@ export function answerText (answer: ConversationItem, conv: DocumentConversation
     const n = Array.isArray(c.candidateIds) ? c.candidateIds.length : 1;
     return n === 1 ? tx('answer.confirmOne') : tx('answer.confirm', { n });
   }
+  // her app's own answer (R3, `basis: existing-value`), not hers: it says what her app found
+  if (c.action === 'duplicate' && c.basis === 'existing-value') {
+    const n = Array.isArray(c.candidateIds) ? c.candidateIds.length : 1;
+    return n === 1 ? tx('answer.duplicateAutoOne') : tx('answer.duplicateAuto', { n });
+  }
   const key = `answer.${String(c.action)}`;
   return ['answer.correct', 'answer.skip', 'answer.duplicate', 'answer.request-item', 'answer.not-mine'].includes(key) ? tx(key as 'answer.skip') : tx('answer.unknown');
 }

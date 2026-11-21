@@ -16,7 +16,9 @@
     contact deleted at `done`), `documentOrder` (the order the document prints).
   - **Values her record already holds** (hds-lib 2.61.0, `basis: existing-value`): `useDocumentConversations` runs
     `autoMarkDuplicates` once the contact waits for her answers and for each new value (`checking` meanwhile: no step
-    yet), `alreadyInRecord`, "Add anyway" in the summary and the overview.
+    yet; a value found stays so until the conversation read again shows it answered), `alreadyInRecord`, "Add anyway"
+    in the summary and the overview; her app's answer reads "Your app found 5 values already in your record", not "You
+    said…".
   - `anchorOn(anchor, about)`: an anchor naming another document (`eventId`) is ignored (R11). `is-this-yours` with no
     printed identity shows the document at once, on the header block the contact anchored.
   - `<ConversationStepBubble>`: the step as the contact's last bubble with quick replies (Confirm · Correct · Already in

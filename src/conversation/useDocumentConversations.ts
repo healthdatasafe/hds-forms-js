@@ -66,11 +66,11 @@ const SETTLED = new Set(['awaiting-answers', 'done']);
  * record holds its open values. One key per open value (and `is-this-yours` state): a value that arrives, or the
  * identity answered, is checked again; her own answers are not.
  */
-function duplicateKeys (d: { key: string; status: ConversationAlert | null; conversation: DocumentConversation }): string[] {
+function duplicateKeys (d: { key: string; status: ConversationAlert | null; conversation: DocumentConversation }): Array<{ k: string; candidateId: string }> {
   if (!SETTLED.has(String(d.status?.hds?.status ?? ''))) return [];
   const conv = d.conversation;
   if (conv.identity === 'open' || conv.identity === 'not-mine') return [];
-  return conv.proposedValues.filter((p) => p.state === 'open').map((p) => `${d.key}|${conv.identity}|${p.item.id}:${p.item.modified}`);
+  return conv.proposedValues.filter((p) => p.state === 'open').map((p) => ({ k: `${d.key}|${conv.identity}|${p.item.id}:${p.item.modified}`, candidateId: p.candidateId }));
 }
 
 interface Read {
@@ -192,7 +192,7 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
           notices: mine.filter((a) => a.kind === 'notice'),
           engines,
           time: times.length > 0 ? Math.min(...times) : 0,
-          checking: dupKeys.some((k) => !dupDone.current.has(k)),
+          checking: dupKeys.some(({ k }) => !dupDone.current.has(k)),
           actions: actionsFor(connection, rel, about, engines, reload, conversation, (ids) => provisionRef.current?.(ids) ?? Promise.resolve())
         };
         documents.push(doc);
@@ -206,19 +206,23 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
   useEffect(() => {
     if (!autoDuplicates || connection == null) return;
     const pending = state.documents
-      .map((d) => ({ d, keys: duplicateKeys(d).filter((k) => !dupTried.current.has(k)) }))
+      .map((d) => ({ d, keys: duplicateKeys(d).filter(({ k }) => !dupTried.current.has(k)) }))
       .filter((x) => x.keys.length > 0);
     if (pending.length === 0) return;
     (async () => {
       let answered = false;
       for (const { d, keys } of pending) {
-        for (const k of keys) dupTried.current.add(k);
+        for (const { k } of keys) dupTried.current.add(k);
+        let matched = new Set<string>();
         try {
-          if (await cmcConversation.autoMarkDuplicates(connection, d.rel as any, { about: d.about, engines: d.engines }) != null) answered = true;
+          const res = await cmcConversation.autoMarkDuplicates(connection, d.rel as any, { about: d.about, engines: d.engines });
+          if (res != null) { answered = true; matched = new Set(res.candidateIds); }
         } catch (e) {
           console.warn('[conversation] values already in her record not checked:', e);
         }
-        for (const k of keys) dupDone.current.add(k);
+        // a value found in her record stays "checking" until the conversation read again shows it answered (then it is
+        // no longer open, so no longer checked): no step offers it meanwhile
+        for (const { k, candidateId } of keys) if (!matched.has(candidateId)) dupDone.current.add(k);
       }
       setChecked((v) => v + 1);
       if (answered) reload();

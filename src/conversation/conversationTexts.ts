@@ -173,6 +173,8 @@ export const CONVERSATION_TEXTS = {
   'answer.correct': { en: 'You corrected a value', fr: 'Vous avez corrigé une valeur' },
   'answer.skip': { en: 'You skipped', fr: 'Vous avez passé' },
   'answer.duplicate': { en: 'You said it is already in your record', fr: 'Vous avez dit que c’est déjà dans votre dossier' },
+  'answer.duplicateAuto': { en: 'Your app found {n} values already in your record', fr: 'Votre app a trouvé {n} valeurs déjà dans votre dossier' },
+  'answer.duplicateAutoOne': { en: 'Your app found a value already in your record', fr: 'Votre app a trouvé une valeur déjà dans votre dossier' },
   'answer.request-item': { en: 'You asked for it', fr: 'Vous l’avez demandé' },
   'answer.not-mine': { en: 'You said the document is not yours', fr: 'Vous avez dit que le document n’est pas le vôtre' },
   'answer.choose': { en: 'You answered: {option}', fr: 'Vous avez répondu : {option}' },
