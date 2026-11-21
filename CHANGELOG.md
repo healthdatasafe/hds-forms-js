@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.40.0] - 2026-11-21
+
+### Added (plan 135, HDS3's live run on demo)
+
+- `ConversationStepBubble noteAloneSignal`: the host's own send button, pressed while a step waits, sends the note alone
+  (D-1; the host shows the warning first). With the host passing what she types as `note`, the note rides on the reply
+  she taps without her pressing send.
+- A proposed document without an anchor shows "See the document" (its first page); with one, "See it on the document".
+- `DocumentStatusBubble saved`: once the work is `done`, "6 values saved · See them" (opens the document).
+- `ContactWorkingIndicator status='sent'`: "Sent “X” to HDS Reader. Waiting for HDS Reader to start…", her app's state
+  between her share and the contact's first task-status.
+
+### Fixed
+
+- `is-this-yours`: the printed birth date reads as a date in her language ("December 20, 1959") when it is a day
+  (`birthDay`, or an ISO date printed), else as printed.
+
 ## [0.39.0] - 2026-11-21
 
 ### Added (plan 135, hds-lib 2.63.0)
