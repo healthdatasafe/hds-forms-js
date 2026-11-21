@@ -5,7 +5,8 @@ import backloop from 'vite-plugin-backloop.dev';
 import path from 'path';
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss(), ...(mode !== 'raw' ? [backloop('forms')] : [])],
+  // DEV_PORT: base 5173 plus the workspace offset, set by `_local` ws-run.js.
+  plugins: [react(), tailwindcss(), ...(mode !== 'raw' ? [backloop('forms', Number(process.env.DEV_PORT) || 5173)] : [])],
   resolve: {
     alias: {
       'hds-forms': path.resolve(__dirname, '../src')

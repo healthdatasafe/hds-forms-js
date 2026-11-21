@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.35.0] - 2026-11-21
+## [0.35.0] - 2026-11-21 (plan 128 P2; with plans 131 and 134, merged before it)
 
 ### Added
 
@@ -33,10 +33,28 @@
     `answerText`, `optionLabel`, `statusText`, `noticeText`, `reasonText`, `questionText`, `proposalText`,
     `printedText`, `correctedClientData`. Every text in English and French (`CONVERSATION_TEXTS`, `localizeText`).
 
-### Changed
+### Changed — conversation
 
 - `hds-lib` 2.49.0 → 2.59.0 (the conversation types and helpers).
 - `AnchoredDocumentView`'s zoom buttons follow the library's tokens and dark mode.
+
+### Added — notation picker for a charting method (Creighton: sticker, number, letters)
+
+- `useMethodNotation(itemKeys)` and `MethodNotationPicker`: the person's charting method enters several items as one
+  record (mucus and bleeding). Each `onChange` patch has one entry per item the picker writes, all `undefined` while
+  the picks are incomplete; `NotationState` says whether the record is empty, valid, and how it is written ("L 6C").
+- The picker is a facet filter over the method's records (`schema/notationFacets.ts`, `schema/methodNotation.ts`):
+  a choice that leads to no record is not shown, a tap on a picked choice releases it. Everything comes from the
+  model data: the offered codes and their `parts`, the method's `notation` rows and words (data-model), the sticker
+  and bleeding letters (hds-feminine-cycle-ui spec). A change in the model's generator changes the choices with no
+  code change.
+- Stable styling hooks: `data-hds-notation-row`, `data-hds-notation-choice`, `data-hds-notation-record`.
+
+### Changed
+
+- `Convertible`: for a method whose definition carries `notation` (Creighton), its rows replace the stamp grid for
+  the mucus field. An incomplete or cleared pick clears the value. Other methods keep the stamp grid.
+- (plan 131) `Convertible` reads `{ mucus }` and case-folded values; options not offered are hidden.
 
 ## [0.34.0] - 2026-11-20
 

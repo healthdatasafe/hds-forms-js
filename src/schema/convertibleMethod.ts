@@ -53,6 +53,35 @@ export function initialConvertibleMethod ({ preferred, sourceKey, methodIds }: {
   return '';
 }
 
+/**
+ * A stored observation of a single-component method as one of its option values.
+ * - Bridges store it as `{ <field>: value }` (e.g. `{ mucus: '10KL' }`): the value is unwrapped.
+ * - A case-insensitive method (Creighton) may hold another spelling (`'6ck'`): the option's own value is returned.
+ * Anything else (multi-component, unknown value) comes back unchanged.
+ */
+export function canonicalObservation (methodDef: any, data: any): any {
+  const components: any[] = methodDef?.components || [];
+  if (components.length !== 1) return data;
+  const field = components[0].field;
+  const value = data !== null && typeof data === 'object' && field in data ? data[field] : data;
+  const options: any[] = components[0].options || [];
+  const exact = options.find((o: any) => o.value === value);
+  if (exact) return exact.value;
+  if (methodDef.caseInsensitive && typeof value === 'string') {
+    const folded = options.find((o: any) => typeof o.value === 'string' && o.value.toUpperCase() === value.toUpperCase());
+    if (folded) return folded.value;
+  }
+  return value;
+}
+
+/**
+ * Options a picker shows: those the method offers (`offer: false` hides one: Creighton incomplete codes, plan 131), plus the
+ * stored value when it is a hidden one, so an existing entry still reads as selected.
+ */
+export function offeredOptions (options: any[] | undefined, current: any): any[] {
+  return (options || []).filter((o: any) => o.offer !== false || o.value === current);
+}
+
 /** Localized label of an observation in a method ("Creamy"); falls back to the raw value. */
 export function observationLabel (methodDef: any, data: any): string {
   const components: any[] = methodDef?.components || [];
@@ -60,6 +89,7 @@ export function observationLabel (methodDef: any, data: any): string {
     const opt = comp?.options?.find((o: any) => o.value === v);
     return opt?.label ? (localizeText(opt.label) || String(v)) : String(v);
   };
+  if (components.length === 1) data = canonicalObservation(methodDef, data);
   if (components.length === 1 && (data == null || typeof data !== 'object')) return labelOf(components[0], data);
   if (components.length > 1 && data && typeof data === 'object') {
     return components

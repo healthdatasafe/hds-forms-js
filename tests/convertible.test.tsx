@@ -22,7 +22,15 @@ const methodDefs: Record<string, any> = {
   creighton: {
     methodId: 'creighton',
     name: { en: 'Creighton' },
-    components: [{ field: 'mucus', options: [{ value: '8C', label: { en: '8C — Cloudy' } }, { value: '10KL', label: { en: '10KL — Stretchy, clear' } }] }]
+    caseInsensitive: true,
+    components: [{
+      field: 'mucus',
+      options: [
+        { value: '8', label: { en: '8 — Tacky' }, offer: false },
+        { value: '8C', label: { en: '8C — Cloudy' } },
+        { value: '10KL', label: { en: '10KL — Stretchy, clear' } }
+      ]
+    }]
   },
   mira: {
     methodId: 'mira',
@@ -64,7 +72,7 @@ vi.mock('../src/components/StampGridPicker', () => ({
 }));
 
 const { Convertible } = await import('../src/components/fields/Convertible');
-const { preferredMethodKeys, readPreferredMethod, initialConvertibleMethod, observationLabel } = await import('../src/schema/convertibleMethod');
+const { preferredMethodKeys, readPreferredMethod, initialConvertibleMethod, observationLabel, canonicalObservation, offeredOptions } = await import('../src/schema/convertibleMethod');
 const { CERVICAL_FLUID_METHOD_KEY, CERVICAL_FLUID_METHOD_LEGACY_KEY } = await import('hds-lib');
 
 const MIRA_VALUE = { vectors: { v: 0.4 }, source: { key: 'mira', sourceData: 'creamy' } };
@@ -145,6 +153,50 @@ describe('observationLabel', () => {
   it('joins the components of a multi-component observation', () => {
     const def = { components: [{ field: 'a', options: [{ value: 1, label: { en: 'One' } }] }, { field: 'b', options: [{ value: 'x', label: { en: 'Ex' } }] }] };
     expect(observationLabel(def, { a: 1, b: 'x' })).toBe('One · Ex');
+  });
+});
+
+describe('stored observation shapes (plan 131)', () => {
+  it('unwraps the { mucus } object bridges store', () => {
+    expect(canonicalObservation(methodDefs.creighton, { mucus: '10KL' })).toBe('10KL');
+    expect(observationLabel(methodDefs.creighton, { mucus: '10KL' })).toBe('10KL — Stretchy, clear');
+  });
+  it('reads another spelling of a case-insensitive method as the option itself', () => {
+    expect(canonicalObservation(methodDefs.creighton, '10kl')).toBe('10KL');
+    expect(observationLabel(methodDefs.creighton, '8c')).toBe('8C — Cloudy');
+  });
+  it('leaves a case-sensitive method and an unknown value alone', () => {
+    expect(canonicalObservation(methodDefs.mira, 'CREAMY')).toBe('CREAMY');
+    expect(canonicalObservation(methodDefs.creighton, 'zz')).toBe('zz');
+  });
+  it('hides options not offered, unless stored', () => {
+    const options = methodDefs.creighton.components[0].options;
+    expect(offeredOptions(options, '8C').map((o: any) => o.value)).toEqual(['8C', '10KL']);
+    expect(offeredOptions(options, '8').map((o: any) => o.value)).toEqual(['8', '8C', '10KL']);
+  });
+});
+
+describe('Convertible — bridge-imported and not-offered values', () => {
+  it('selects a bridge-imported { mucus } value and labels it', async () => {
+    settings[CERVICAL_FLUID_METHOD_KEY] = 'creighton';
+    const value = { vectors: { v: 0.9 }, source: { key: 'creighton', sourceData: { mucus: '10KL' } } };
+    const c = await mount(<Convertible label='Cervical fluid' value={value} onChange={() => {}} converterEngine={converterEngine} />);
+    expect(c.querySelector('select')!.value).toBe('10KL');
+    expect(c.textContent).toContain('Source: 10KL — Stretchy, clear');
+    expect(c.textContent).not.toContain('{');
+  });
+
+  it('does not offer a not-offered code for a new entry', async () => {
+    settings[CERVICAL_FLUID_METHOD_KEY] = 'creighton';
+    const c = await mount(<Convertible label='Cervical fluid' value={undefined} onChange={() => {}} converterEngine={converterEngine} />);
+    expect(Array.from(c.querySelector('select')!.options).map(o => o.value)).toEqual(['', '8C', '10KL']);
+  });
+
+  it('still shows a stored not-offered code as selected', async () => {
+    settings[CERVICAL_FLUID_METHOD_KEY] = 'creighton';
+    const value = { vectors: { v: 0.5 }, source: { key: 'creighton', sourceData: '8' } };
+    const c = await mount(<Convertible label='Cervical fluid' value={value} onChange={() => {}} converterEngine={converterEngine} />);
+    expect(c.querySelector('select')!.value).toBe('8');
   });
 });
 
