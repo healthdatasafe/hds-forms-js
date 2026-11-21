@@ -30,6 +30,13 @@ export const CONVERSATION_TEXTS = {
   'status.questions': { en: '{n} questions', fr: '{n} questions' },
   'status.questionsOne': { en: '1 question', fr: '1 question' },
   'error.no-attachment': { en: 'The document has no file {name} can read.', fr: 'Le document n’a pas de fichier que {name} peut lire.' },
+  // the working indicator (a typing indicator for the contact's work on a document)
+  'working.received': { en: '{name} received “{title}” and is starting on it…', fr: '{name} a reçu « {title} » et s’y met…' },
+  'working.receivedNoTitle': { en: '{name} received your document and is starting on it…', fr: '{name} a reçu votre document et s’y met…' },
+  'working.reading': { en: '{name} is reading “{title}”…', fr: '{name} lit « {title} »…' },
+  'working.readingNoTitle': { en: '{name} is reading your document…', fr: '{name} lit votre document…' },
+  'working.other': { en: '{name} is working on “{title}”…', fr: '{name} travaille sur « {title} »…' },
+  'working.otherNoTitle': { en: '{name} is working…', fr: '{name} travaille…' },
   'error.reading-failed': { en: '{name} could not read this document yet. It tries again by itself: you have nothing to do.', fr: '{name} n’a pas encore pu lire ce document. Il réessaie de lui-même : vous n’avez rien à faire.' },
   'error.write-failed': { en: '{name} could not save its questions in your account.', fr: '{name} n’a pas pu enregistrer ses questions dans votre compte.' },
   'error.unknown': { en: '{name} could not finish this document.', fr: '{name} n’a pas pu terminer ce document.' },

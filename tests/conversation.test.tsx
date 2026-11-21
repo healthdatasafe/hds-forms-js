@@ -365,6 +365,27 @@ describe('[CONV-UI] bubbles and texts', () => {
     expect(container.textContent).toContain('one column per day');
     expect(container.textContent).not.toContain('cannot show yet');
   });
+  it('isWorking: received and reading (and an unknown status, R8) are work in progress; the rest, or a stale one, is not', () => {
+    const at = (status: string, time = 1000) => ({ hds: { kind: 'task-status', status }, time });
+    for (const s of ['received', 'reading', 'something-new']) expect(conv.isWorking(at(s), 1060), s).toBe(true);
+    for (const s of ['awaiting-answers', 'done', 'error']) expect(conv.isWorking(at(s), 1060), s).toBe(false);
+    expect(conv.isWorking(null, 1060)).toBe(false);
+    expect(conv.isWorking(at('reading'), 1000 + conv.WORKING_MAX_AGE_S)).toBe(false);
+    expect(conv.isWorking(at('reading'), 1000 + 60, 30)).toBe(false);
+  });
+  it('the working indicator says who does what on which document, politely announced, dots still for reduced motion', async () => {
+    await render(<conv.ContactWorkingIndicator contactName='HDS Reader' status='reading' documentTitle='Lab report' />);
+    const status = container.querySelector('[role="status"]')!;
+    expect(status.getAttribute('aria-live')).toBe('polite');
+    expect(status.textContent).toBe('HDS Reader is reading “Lab report”…');
+    expect(container.querySelectorAll('.motion-safe\\:animate-bounce').length).toBe(3);
+    act(() => root!.unmount());
+    root = null;
+    lang = 'fr';
+    await render(<><conv.ContactWorkingIndicator contactName='Lecteur HDS' status='received' /><conv.ContactWorkingIndicator contactName='Dr Test' status='new-thing' documentTitle='Bilan' /></>);
+    expect(container.textContent).toContain('Lecteur HDS a reçu votre document et s’y met…');
+    expect(container.textContent).toContain('Dr Test travaille sur « Bilan »…');
+  });
   it('option labels: an item key by its name, yes / no, a specimen code', () => {
     expect(conv.optionLabel('which-analyte', 'body-blood-serum-ferritin')).toEqual({ label: 'Ferritin', selectable: true });
     expect(conv.optionLabel('which-analyte', 'nope')).toEqual({ label: 'nope', selectable: false });
