@@ -1,0 +1,367 @@
+// @vitest-environment happy-dom
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import type { Root } from 'react-dom/client';
+
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
+/**
+ * The person's side of a standard conversation (data-model 4.22.0 CONVERSATION.md): hds-lib's real `conversationOf`
+ * settles the fixtures; the model, the value text and R9's pack check are faked (the pack is not loaded here).
+ */
+let lang: 'en' | 'fr' = 'en';
+const ITEMS: Record<string, any> = {
+  'body-blood-serum-ferritin': { key: 'body-blood-serum-ferritin', data: { type: 'number', label: { en: 'Ferritin', fr: 'Ferritine' }, streamId: 'body-blood-serum-ferritin', eventType: 'concentration/ug-l' } },
+  'body-blood-serum-glucose-fasting': { key: 'body-blood-serum-glucose-fasting', data: { type: 'number', label: { en: 'Fasting glucose' }, streamId: 'g', variations: { eventType: { options: [{ value: 'concentration/mmol-l', label: { en: 'mmol/L' } }, { value: 'concentration/mg-dl', label: { en: 'mg/dL' } }] } } } }
+};
+
+vi.mock('hds-lib', async (importOriginal) => {
+  const real: any = await importOriginal();
+  return {
+    ...real,
+    localizeText: (t: any) => (typeof t === 'string' ? t : (t?.[lang] ?? t?.en ?? '')),
+    getHDSModel: () => ({ itemsDefs: { forKey: (k: string) => ITEMS[k] ?? null } }),
+    eventToShortText: (e: any) => `${e.content} (${e.type})`,
+    cmcConversation: {
+      ...real.cmcConversation,
+      // R9 as far as these fixtures need it: the pack check passes for the known items
+      checkValueProposal: (p: any) => (p?.itemKey in ITEMS && typeof p.content === 'number' ? null : 'invalid-content'),
+      proposalRefusal: (pv: any, engines: string[]) => {
+        if (pv.state === 'replaced') return 'replaced';
+        if (pv.state !== 'open' && pv.state !== 'skipped') return 'answered';
+        if (!['clear', 'check'].includes(pv.item.content.status)) return 'status';
+        if (pv.item.content.proposal == null) return 'no-proposal';
+        if (!engines.includes(pv.item.content.extraction?.engine)) return 'engine-not-vouched';
+        return null;
+      }
+    }
+  };
+});
+vi.mock('../src/components/HDSFormField', () => ({
+  HDSFormField: ({ value, onChange }: any) => <input aria-label='the value' value={String(value ?? '')} onChange={(e) => onChange(Number(e.target.value))} />
+}));
+
+const { cmcConversation } = await import('hds-lib');
+const conv = await import('../src/conversation/index');
+const { CONVERSATION_TEXTS } = conv;
+
+const DOC = 'docevent0001';
+const REC = 'conv-aaaaaaaaaaaa';
+const SENT = 'conv-bbbbbbbbbbbb';
+const EXTRACTION = { engine: 'hds-reader', engineVersion: '1', kbVersion: '1', backend: 'text-layer' };
+let seq = 0;
+
+function item (kind: 'question' | 'proposed-value' | 'answer', content: Record<string, any>, at = 100) {
+  seq += 1;
+  return { id: `ev${seq}`, streamId: kind === 'answer' ? SENT : REC, direction: kind === 'answer' ? 'sent' : 'received', kind, about: DOC, time: at, created: at, modified: at, content: { kind, about: DOC, ...content } } as any;
+}
+const pv = (candidateId: string, extra: Record<string, any> = {}) => item('proposed-value', {
+  candidateId,
+  printed: { label: 'Ferritine', value: '48', unit: 'ng/mL', refRange: '30 - 400', flag: 'H' },
+  anchor: { attachmentId: 'att1', page: 1, bbox: [8, 30, 80, 3] },
+  proposal: { itemKey: 'body-blood-serum-ferritin', type: 'concentration/ug-l', content: 48, time: 1773316800, clientData: { hdsTimePrecision: 'day', hdsFlag: 'H', hdsInterpretation: 'H', hdsRefRange: { text: '30 - 400' } } },
+  status: 'clear',
+  extraction: EXTRACTION,
+  ...extra
+});
+const question = (code: string, extra: Record<string, any> = {}) => item('question', { code, ...extra });
+const answer = (target: any, action: string, extra: Record<string, any> = {}, at = 200) => item('answer', { inReplyTo: target.id, action, ...extra }, at);
+const of = (items: any[]) => cmcConversation.conversationOf(items, DOC);
+
+let root: Root | null = null;
+let container: HTMLDivElement;
+beforeEach(() => { lang = 'en'; seq = 0; vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 404 }))); });
+afterEach(() => {
+  act(() => root?.unmount());
+  root = null;
+  container?.remove();
+  vi.unstubAllGlobals();
+});
+async function render (ui: React.ReactElement) {
+  container = document.createElement('div');
+  document.body.appendChild(container);
+  root = createRoot(container);
+  await act(async () => { root!.render(ui); });
+}
+const buttons = () => [...container.querySelectorAll('button')];
+const button = (text: string) => buttons().find((b) => b.textContent?.trim() === text) ?? null;
+async function click (el: Element | null) {
+  expect(el, 'element to click').not.toBeNull();
+  await act(async () => { (el as HTMLElement).click(); });
+}
+
+function actions () {
+  return {
+    confirm: vi.fn(async () => ({ ok: true as const })),
+    correct: vi.fn(async () => ({ ok: true as const })),
+    dismiss: vi.fn(async () => ({ ok: true as const })),
+    answer: vi.fn(async () => ({ ok: true as const }))
+  };
+}
+const statusAlert = (status: string) => ({ alertEventId: 'st-' + status, kind: 'task-status', hds: { kind: 'task-status', about: DOC, status, attempt: 1 }, time: 1, direction: 'received', from: null });
+const card = (c: any, a: any = actions(), extra: Record<string, any> = {}) => (
+  <conv.DocumentConversationCard conversation={c} status={statusAlert('awaiting-answers')} engines={['hds-reader']} title='Lab report' contactName='Dr Test' sourceOf={() => ({ url: 'https://x.backloop.dev/doc.png', kind: 'image' })} actions={a} {...extra} />
+);
+
+describe('[CONV-UI] rowBlock: when a value can be confirmed', () => {
+  it('a clear value with a date and nothing waiting: confirmable', () => {
+    const v = pv('c1');
+    const c = of([v]);
+    expect(conv.rowBlock(c, c.proposedValues[0], ['hds-reader'])).toBeNull();
+  });
+  it('the engine is not vouched for this relationship (R9): not confirmable', () => {
+    const c = of([pv('c1')]);
+    expect(conv.rowBlock(c, c.proposedValues[0], [])).toBe('engine-not-vouched');
+  });
+  it('is-this-yours asked and not answered: nothing is confirmable', () => {
+    const c = of([pv('c1'), question('is-this-yours', { context: { identity: { name: 'DUPONT Marie' } } })]);
+    expect(conv.rowBlock(c, c.proposedValues[0], ['hds-reader'])).toBe('identity-open');
+  });
+  it('is-this-yours answered not-mine: blocked for good', () => {
+    const q = question('is-this-yours');
+    const c = of([pv('c1'), q, answer(q, 'not-mine')]);
+    expect(conv.rowBlock(c, c.proposedValues[0], ['hds-reader'])).toBe('not-mine');
+  });
+  it('an open question about the value, then a choose waiting for the re-proposal', () => {
+    const v = pv('c1');
+    const q = question('which-unit', { candidateId: 'c1', options: ['mmol/L', 'mg/dL'] });
+    const open = of([v, q]);
+    expect(conv.rowBlock(open, open.proposedValues[0], ['hds-reader'])).toBe('question-open');
+    const chosen = of([v, q, answer(q, 'choose', { option: 'mmol/L', candidateIds: ['c1'] })]);
+    expect(conv.rowBlock(chosen, chosen.proposedValues[0], ['hds-reader'])).toBe('awaiting-reproposal');
+  });
+  it('no proposal time and no which-date answer: no date; the document day answers it', () => {
+    const v = pv('c1', { proposal: { itemKey: 'body-blood-serum-ferritin', type: 'concentration/ug-l', content: 48 } });
+    const q = question('which-date', { context: { dates: [{ day: '2026-11-18', text: '18.11.2026' }] } });
+    const before = of([v, q]);
+    expect(conv.rowBlock(before, before.proposedValues[0], ['hds-reader'])).toBe('no-date');
+    const after = of([v, q, answer(q, 'confirm', { time: 1795000000, timePrecision: 'day' })]);
+    expect(conv.rowBlock(after, after.proposedValues[0], ['hds-reader'])).toBeNull();
+  });
+  it('batch: clear and confirmable only (never a value to check, never one asked about)', () => {
+    const c = of([pv('c1'), pv('c2', { status: 'check' }), pv('c3'), question('is-fasting', { candidateId: 'c3', options: ['yes', 'no'] })]);
+    expect(conv.batchCandidates(c, ['hds-reader']).map((p: any) => p.candidateId)).toEqual(['c1']);
+  });
+  it('nothing is confirmable while the contact still reads (its questions may still come); waiting for answers or done: it is', () => {
+    const c = of([pv('c1')]);
+    for (const status of [null, 'received', 'reading', 'error', 'something-new']) {
+      expect(conv.rowBlock(c, c.proposedValues[0], ['hds-reader'], { status }), String(status)).toBe('still-reading');
+    }
+    for (const status of ['awaiting-answers', 'done']) expect(conv.rowBlock(c, c.proposedValues[0], ['hds-reader'], { status })).toBeNull();
+  });
+  it('a value an answer wrote stays written while the contact deletes what was answered (R10)', () => {
+    const a = pv('c1');
+    const b = pv('c2');
+    const batch = answer(a, 'confirm', { candidateIds: ['c1', 'c2'], written: [{ candidateId: 'c1', eventId: 'v1' }, { candidateId: 'c2', eventId: 'v2' }] });
+    // the contact deleted c1, the event the batch answer replied to: hds-lib no longer counts the answer for c2
+    const c = of([b, batch]);
+    expect(c.proposedValues[0].state).toBe('open');
+    expect(conv.isWritten(c, c.proposedValues[0])).toBe(true);
+    expect(conv.rowBlock(c, c.proposedValues[0], ['hds-reader'])).toBe('answered');
+    expect(conv.batchCandidates(c, ['hds-reader'])).toEqual([]);
+  });
+  it('shownAt is the latest modified of what the card shows (the server clock)', () => {
+    const a = pv('c1');
+    const b = pv('c2');
+    b.modified = 150;
+    expect(conv.shownAtOf(of([a, b]))).toBe(150);
+  });
+});
+
+describe('[CONV-UI] DocumentConversationCard', () => {
+  it('is-this-yours shows the printed name and birth date; values wait for it; "Yes, it is mine" answers it', async () => {
+    const q = question('is-this-yours', { context: { identity: { name: 'DUPONT Marie', birthDate: '14.03.1985' }, anchor: { attachmentId: 'att1', page: 1, bbox: [6, 8, 40, 4] } } });
+    const a = actions();
+    await render(card(of([pv('c1'), pv('c2'), q]), a));
+    expect(container.textContent).toContain('DUPONT Marie');
+    expect(container.textContent).toContain('14.03.1985');
+    expect(container.textContent).toContain('Answer whether this document is yours first.');
+    expect(button('Confirm')).toBeNull();
+    expect(button('Confirm the 2 values read clearly')).toBeNull();
+    await click(button('See it on the document'));
+    expect(container.querySelector('[role="region"]')).not.toBeNull();
+    await click(button('Yes, it is mine'));
+    expect(a.answer).toHaveBeenCalledWith(q.id, { action: 'confirm' }, 100);
+  });
+
+  it('a profile match says so and keeps "Not mine" until the work is done', async () => {
+    const q = question('is-this-yours', { context: { identity: { name: 'X' } } });
+    const c = of([pv('c1'), q, answer(q, 'confirm', { basis: 'profile-match' })]);
+    const a = actions();
+    await render(card(c, a));
+    expect(container.textContent).toContain('Matched to your profile');
+    await click(button('Not mine'));
+    expect(a.answer).toHaveBeenCalledWith(q.id, { action: 'not-mine' }, 100);
+  });
+
+  it('which-date: a printed date answers with its day at 12:00 UTC; "I do not know" with unknown', async () => {
+    const q = question('which-date', { context: { dates: [{ day: '2026-11-18', text: '18.11.2026', label: 'Prélevé le', role: 'sampling' }] } });
+    const a = actions();
+    await render(card(of([q]), a));
+    const date = buttons().find((b) => b.textContent?.includes('18.11.2026'));
+    expect(date?.textContent).toContain('Prélevé le');
+    await click(date!);
+    expect(a.answer).toHaveBeenLastCalledWith(q.id, { action: 'confirm', time: Date.parse('2026-11-18T12:00:00Z') / 1000, timePrecision: 'day' }, 100);
+    await click(button('I do not know'));
+    expect(a.answer).toHaveBeenLastCalledWith(q.id, { action: 'confirm', timePrecision: 'unknown' }, 100);
+  });
+
+  it('a choice question offers its options (an unknown option not selectable) and names the value it is about', async () => {
+    const v = pv('c1', { status: 'unit-missing', proposal: undefined });
+    const q = question('which-unit', { candidateId: 'c1', options: ['mmol/L', 'not a unit!'] });
+    const a = actions();
+    await render(card(of([v, q]), a));
+    expect(container.textContent).toContain('About: Ferritine 48 ng/mL');
+    expect(button('not a unit!')?.disabled).toBe(true);
+    await click(button('mmol/L'));
+    expect(a.answer).toHaveBeenCalledWith(q.id, { action: 'choose', option: 'mmol/L' }, 100);
+  });
+
+  it('an unknown or third-party question is shown, not answerable (R8)', async () => {
+    await render(card(of([question('x-acme-mood', { options: ['a'] })])));
+    expect(container.textContent).toContain('Dr Test asks a question this app cannot answer yet.');
+    expect(button('a')).toBeNull();
+    expect(button('Skip')).toBeNull();
+  });
+
+  it('"Check on the document" shows her document on the value, then Confirm sends that value with shownAt', async () => {
+    const a = actions();
+    await render(card(of([pv('c1', { status: 'check' })]), a));
+    expect(container.textContent).toContain('Please check this one on the document');
+    expect(button('Confirm')).toBeNull();
+    await click(button('Check on the document'));
+    expect(container.textContent).toContain('Can you confirm this value is 48 (concentration/ug-l)?');
+    expect(container.querySelector('[role="region"]')).not.toBeNull();
+    await click(button('Confirm'));
+    expect(a.confirm).toHaveBeenCalledWith(['c1'], 100);
+  });
+
+  it('Correct opens the item\'s field prefilled; the correction drops the printed flag and keeps the range in the same unit', async () => {
+    const a = actions();
+    await render(card(of([pv('c1')]), a));
+    await click(button('Check on the document'));
+    await click(button('Correct'));
+    const input = container.querySelector('input[aria-label="the value"]') as HTMLInputElement;
+    expect(input.value).toBe('48');
+    await act(async () => {
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      set.call(input, '52');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await click(button('Save'));
+    expect(a.correct).toHaveBeenCalledWith('c1', {
+      itemKey: 'body-blood-serum-ferritin', type: 'concentration/ug-l', content: 52, clientData: { hdsTimePrecision: 'day', hdsRefRange: { text: '30 - 400' } }
+    }, 100);
+  });
+
+  it('confirms the values read clearly in one tap', async () => {
+    const a = actions();
+    await render(card(of([pv('c1'), pv('c2'), pv('c3', { status: 'check' })]), a));
+    await click(button('Confirm the 2 values read clearly'));
+    expect(a.confirm).toHaveBeenCalledWith(['c1', 'c2'], 100);
+  });
+
+  it('a value the contact cannot propose says why and offers no confirm (R9); skip stays', async () => {
+    const a = actions();
+    await render(card(of([pv('c1')]), a, { engines: [] }));
+    expect(container.textContent).toContain('Dr Test cannot propose values to save yet.');
+    expect(button('Confirm')).toBeNull();
+    await click(button('Skip'));
+    expect(a.dismiss).toHaveBeenCalledWith(['c1'], 'skip', 100);
+  });
+
+  it('a kept-aside value says why, and can be asked for', async () => {
+    const a = actions();
+    await render(card(of([pv('c1', { status: 'kept-aside', reason: 'no-item', requestKey: 'body-blood-serum-lipase', proposal: undefined })]), a));
+    expect(container.textContent).toContain('Not saved: this test has no place in your record yet.');
+    await click(button('Ask for it'));
+    expect(a.dismiss).toHaveBeenCalledWith(['c1'], 'request-item', 100);
+  });
+
+  it('a value saved shows it; a replaced one is shown through its replacement', async () => {
+    const old = pv('c1', { status: 'unit-missing', proposal: undefined });
+    const q = question('which-unit', { candidateId: 'c1', options: ['mmol/L'] });
+    const c = of([old, q, answer(q, 'choose', { option: 'mmol/L', candidateIds: ['c1'] }, 150), pv('c2', { replaces: 'c1' }), (() => { const v = pv('c3'); return v; })()]);
+    const done = of([...c.received, ...c.answers, answer(c.proposedValues[2].item, 'confirm', { candidateIds: ['c3'], written: [{ candidateId: 'c3', eventId: 'val1' }] }, 300)]);
+    await render(card(done));
+    expect(container.querySelectorAll('[data-candidate]').length).toBe(2);
+    expect(container.textContent).toContain('Saved in your record');
+    expect(container.textContent).toContain('You answered: mmol/L');
+  });
+
+  it('a refused answer says the value changed meanwhile', async () => {
+    const a = actions();
+    a.confirm.mockResolvedValueOnce({ ok: true, refused: [{ candidateId: 'c1', reason: 'changed-since-shown' }] } as any);
+    await render(card(of([pv('c1')]), a));
+    await click(button('Confirm'));
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe('This was updated meanwhile: look at it again.');
+  });
+
+  it('while the contact reads, its values are listed, not confirmable', async () => {
+    await render(card(of([pv('c1'), pv('c2')]), actions(), { status: statusAlert('reading') }));
+    expect(container.textContent).toContain('Dr Test is still reading this document.');
+    expect(button('Confirm')).toBeNull();
+    expect(button('Confirm the 2 values read clearly')).toBeNull();
+  });
+
+  it('R8: an unknown status reads as in progress, an unknown notice and error get generic texts', async () => {
+    const status = { alertEventId: 'a1', kind: 'task-status', hds: { kind: 'task-status', about: DOC, status: 'thinking', attempt: 1 }, time: 1, direction: 'received', from: null };
+    const notice = { alertEventId: 'a2', kind: 'notice', hds: { kind: 'notice', code: 'x-acme-hello', about: DOC }, time: 1, direction: 'received', from: null };
+    await render(card(of([]), actions(), { status, notices: [notice] }));
+    expect(container.textContent).toContain('In progress');
+    expect(container.textContent).toContain('Dr Test sent a message this app cannot show yet.');
+  });
+
+  it('"This is not my document" answers is-this-yours when asked, else hands it to the host', async () => {
+    const a = actions();
+    const onNotMyDocument = vi.fn();
+    await render(card(of([pv('c1')]), a, { onNotMyDocument }));
+    await click(button('This is not my document'));
+    expect(onNotMyDocument).toHaveBeenCalled();
+    expect(a.answer).not.toHaveBeenCalled();
+  });
+
+  it('read-only without actions', async () => {
+    await render(card(of([pv('c1'), question('which-date', { context: { dates: [{ day: '2026-11-18', text: '18.11.2026' }] } })]), null));
+    expect(button('Confirm')).toBeNull();
+    expect(buttons().every((b) => b.disabled || !b.textContent?.includes('18.11.2026'))).toBe(true);
+  });
+});
+
+describe('[CONV-UI] bubbles and texts', () => {
+  it('her answers in words', () => {
+    const v = pv('c1');
+    const q = question('which-date', {});
+    const c = of([v, q]);
+    expect(conv.answerText(answer(v, 'confirm', { candidateIds: ['c1', 'c2'] }), c)).toBe('You confirmed 2 values');
+    expect(conv.answerText(answer(v, 'correct', { candidateIds: ['c1'] }), c)).toBe('You corrected a value');
+    expect(conv.answerText(answer(q, 'confirm', { timePrecision: 'unknown' }), c)).toBe('You do not know the day of the sample');
+    expect(conv.answerText(answer(v, 'future-action'), c)).toBe('You answered');
+  });
+  it('her answers to questions the contact deleted since (R10) still say what they answered', () => {
+    const gone = { id: 'deleted-question' };
+    expect(conv.answerText(answer(gone, 'confirm', {}), of([]))).toBe('You said the document is yours');
+    expect(conv.answerText(answer(gone, 'confirm', { basis: 'profile-match' }), of([]))).toBe('Matched to your profile');
+    expect(conv.answerText(answer(gone, 'confirm', { time: Date.parse('2026-11-18T12:00:00Z') / 1000, timePrecision: 'day' }), of([]), 'en-US')).toBe('You gave the day of the sample: November 18, 2026');
+  });
+  it('the status line and the notice bubble', async () => {
+    await render(<><conv.TaskStatusLine status='awaiting-answers' counts={{ proposed: 3, questions: 1 }} contactName='Dr Test' /><conv.NoticeBubble code='no-result-found' contactName='Dr Test' /></>);
+    expect(container.textContent).toContain('Waiting for your answers · 3 values, 1 questions');
+    expect(container.textContent).toContain('Dr Test found no result it could read in this document.');
+  });
+  it('option labels: an item key by its name, yes / no, a specimen code', () => {
+    expect(conv.optionLabel('which-analyte', 'body-blood-serum-ferritin')).toEqual({ label: 'Ferritin', selectable: true });
+    expect(conv.optionLabel('which-analyte', 'nope')).toEqual({ label: 'nope', selectable: false });
+    expect(conv.optionLabel('is-fasting', 'yes')).toEqual({ label: 'Yes', selectable: true });
+    expect(conv.optionLabel('which-specimen', 'serum')).toEqual({ label: 'Serum', selectable: true });
+  });
+  it('every text has its French', () => {
+    for (const [key, t] of Object.entries(CONVERSATION_TEXTS)) expect((t as any).fr, key).toBeTruthy();
+  });
+  it('in French', async () => {
+    lang = 'fr';
+    await render(<conv.TaskStatusLine status='done' contactName='Dr Test' />);
+    expect(container.textContent).toBe('Terminé');
+  });
+});

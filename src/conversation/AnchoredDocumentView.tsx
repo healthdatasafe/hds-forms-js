@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react';
-import { localizeText } from 'hds-lib';
 import { fitPage, frameBox, isUsableBox, panBy, sameView, zoomAt, type AnchorBox, type Size, type View } from './anchorFrame';
-import { CONVERSATION_TEXTS } from './conversationTexts';
+import { tx } from './labels';
+import { btn } from './ui';
 import { DEFAULT_PDF_OPTIONS, loadPdfJs as defaultLoadPdfJs, type PdfJsLike } from './pdfjs';
 import type { DocumentKind } from './sourceAnchor';
 
@@ -32,12 +32,6 @@ type Status = 'loading' | 'shown' | 'failed' | 'page-missing';
 const MAX_CANVAS_WIDTH = 3000;
 const ZOOM_STEP = 1.5;
 const FALLBACK_VIEWPORT: Size = { width: 320, height: 360 };
-
-const tx = (key: keyof typeof CONVERSATION_TEXTS, vars: Record<string, string | number> = {}): string => {
-  let text = localizeText(CONVERSATION_TEXTS[key]) ?? CONVERSATION_TEXTS[key].en;
-  for (const [k, v] of Object.entries(vars)) text = text.replace(`{${k}}`, String(v));
-  return text;
-};
 
 /**
  * The person's own document, zoomed onto where a value is printed and highlighted, for "can you confirm this value?".
@@ -202,7 +196,7 @@ export function AnchoredDocumentView ({ source, anchor, label, children, loadPdf
 
   const atValue = valueView != null && sameView(view, valueView);
   const shown = status === 'shown';
-  const buttonClass = 'inline-flex h-11 min-w-11 items-center justify-center rounded-md border border-gray-300 bg-white px-3 text-sm font-medium text-gray-900 hover:bg-gray-50 disabled:opacity-50';
+  const buttonClass = `${btn.outline} h-11 min-w-11`;
 
   return (
     <div className={['flex flex-col gap-2', className].filter(Boolean).join(' ')}>

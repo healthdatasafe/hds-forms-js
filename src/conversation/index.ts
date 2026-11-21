@@ -1,6 +1,19 @@
-// hds-forms-js/conversation: the shared components of a conversation with the person (CMC messages, the HDS Reader)
+// hds-forms-js/conversation: the person's side of a standard conversation with a contact (data-model 4.22.0
+// CONVERSATION.md), for any relationship: questions, proposed values, her answers, the state of the work, notices
 export { AnchoredDocumentView } from './AnchoredDocumentView';
 export type { AnchoredDocumentViewProps, AnchoredDocumentSource } from './AnchoredDocumentView';
+export { DocumentConversationCard } from './DocumentConversationCard';
+export type { DocumentConversationCardProps, ConversationActions, ConversationOutcome } from './DocumentConversationCard';
+export { QuestionCard } from './QuestionCard';
+export type { QuestionCardProps, QuestionAnswer } from './QuestionCard';
+export { ValueCorrectionEditor } from './ValueCorrectionEditor';
+export type { ValueCorrectionEditorProps } from './ValueCorrectionEditor';
+export { answerText, questionAnswerText, correctedClientData } from './answers';
+export { TaskStatusLine, NoticeBubble, ConversationAnswerBubble } from './ConversationBubbles';
+export type { TaskStatusLineProps, NoticeBubbleProps, ConversationAnswerBubbleProps } from './ConversationBubbles';
+export { rowBlock, batchCandidates, shownAtOf, isWritten } from './rowBlock';
+export type { RowBlock, RowBlockOptions } from './rowBlock';
+export { tx as conversationText, statusText, noticeText, errorText, reasonText, questionText, optionLabel, itemLabel, proposalText, printedText, dayText, dayToTime } from './labels';
 export { readSourceAnchor, anchoredAttachment, documentKindOf } from './sourceAnchor';
 export type { SourceAnchor, DocumentAttachment, DocumentKind } from './sourceAnchor';
 export { fitPage, frameBox, clampView, zoomAt, panBy, isUsableBox, MAX_SCALE, MIN_LINE_PX } from './anchorFrame';
@@ -8,3 +21,4 @@ export type { AnchorBox, View, Size } from './anchorFrame';
 export { loadPdfJs, DEFAULT_PDF_OPTIONS } from './pdfjs';
 export type { PdfJsLike, PdfDocumentLike, PdfPageLike } from './pdfjs';
 export { CONVERSATION_TEXTS } from './conversationTexts';
+export type { ConversationTextKey } from './conversationTexts';
