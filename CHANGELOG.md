@@ -1,6 +1,44 @@
 # Changelog
 
-## [Unreleased] (plans 131 and 134, not published; proposed 0.35.0)
+## [0.35.0] - 2026-11-21 (plan 128 P2; with plans 131 and 134, merged before it)
+
+### Added
+
+- **The person's side of a standard conversation with a contact, in `hds-forms-js/conversation`** (data-model 4.22.0
+  `documentation/CONVERSATION.md`, plan 128 P2), for any relationship: the components render hds-lib 2.59.0
+  `cmcConversation` views and call back the host, which reads and writes through hds-lib.
+  - **`<DocumentConversationCard>`**: one document's conversation. The state of the work (`task-status`, R4), its
+    notices, the questions with their context, and the values read from the document, each with its printed line and
+    what would be saved. A value opens "Can you confirm this value is XYZ?" with her document zoomed and highlighted on
+    where it is printed (`AnchoredDocumentView`), then Confirm, Correct (the item's own field), or "already in my
+    record". "Confirm the N values read clearly" covers the clear ones; a value to check is confirmed only through the
+    document. Nothing is confirmable while the contact still reads (it writes its values before its questions), before
+    she says the document is hers when it asked, while a question about the value waits, before the contact
+    re-proposes after her choice, or without a date; a value the contact cannot propose (R9: the engine is not vouched
+    for this relationship) says so. A value written stays written while the contact deletes what was answered (R10).
+    "This is not my document" answers `is-this-yours`, or hands the document back to the host when none was asked.
+    The answer carries the card's `shownAt` (the latest `modified` of what it shows, the server's clock: R3).
+  - **`<QuestionCard>`**: `is-this-yours` with the printed name and birth date (and the document on them),
+    "matched to your profile" with "Not mine" after an automatic answer; `which-date` with the dates the document
+    prints, another day or "I do not know"; `which-specimen`, `which-unit`, `which-analyte`, `is-fasting` with their
+    options (an option this version cannot label is shown, not selectable); an unknown or third-party code is shown,
+    not answerable (R8).
+  - **`<ValueCorrectionEditor>`**: the value as she corrects it, with the item's field (`HDSFormField`) and its units,
+    checked like a proposal (`checkValueProposal`); the printed flag and interpretation are not carried, the reference
+    range only in the same unit.
+  - **`<TaskStatusLine>`, `<NoticeBubble>`, `<ConversationAnswerBubble>`**: the state of the work, a notice (a code,
+    never text from the contact), one of her answers in words (it still says what it answered once the contact deleted
+    the question). Hosts give the bubbles and the card their own surface (`bubbleClassName`, `surfaceClassName`).
+  - Option labels: the HDS Reader's specimen codes (`serum-plasma`, `whole-blood`, … `other`), UCUM units as people
+    read them (`1` "no unit (a ratio)", `10*6/mL` → 10⁶/mL, `uL` → µL: `unitText`), item keys by their name.
+  - Pure helpers: `rowBlock` (why a value cannot be confirmed now), `batchCandidates`, `isWritten`, `shownAtOf`,
+    `answerText`, `optionLabel`, `unitText`, `statusText`, `noticeText`, `reasonText`, `questionText`, `proposalText`,
+    `printedText`, `correctedClientData`. Every text in English and French (`CONVERSATION_TEXTS`, `localizeText`).
+
+### Changed — conversation
+
+- `hds-lib` 2.49.0 → 2.59.0 (the conversation types and helpers).
+- `AnchoredDocumentView`'s zoom buttons follow the library's tokens and dark mode.
 
 ### Added — notation picker for a charting method (Creighton: sticker, number, letters)
 
