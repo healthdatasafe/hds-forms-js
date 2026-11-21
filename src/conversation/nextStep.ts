@@ -174,10 +174,14 @@ export function conversationProgress (conv: DocumentConversation, engines: reado
   const present = new Map(conv.proposedValues.filter((pv) => pv.state !== 'replaced').map((pv) => [pv.candidateId, pv]));
   const answeredBy = new Map<string, string>();
   const duplicates = new Set<string>();
+  const documentCandidates = new Set((conv.proposedDocuments ?? []).map((pd) => pd.candidateId));
   for (const a of conv.answers) {
     const ids: unknown = a.content.candidateIds;
     if (!Array.isArray(ids)) continue;
-    // only her answers on the values themselves; an answer to a question about one (`choose`, a date) settles no value
+    // only her answers on the values themselves; an answer to a question about one (`choose`, a date) settles no value,
+    // nor one about the document itself (a proposed document: `applied`, `basis: not-pending`, or its candidate)
+    if (Array.isArray(a.content.applied) || a.content.basis === 'not-pending') continue;
+    if ((ids as unknown[]).some((id) => documentCandidates.has(id as string))) continue;
     const onValues = VALUE_ACTIONS.has(String(a.content.action)) || (a.content.action === 'confirm' && Array.isArray(a.content.written));
     if (!onValues) continue;
     for (const id of ids) {

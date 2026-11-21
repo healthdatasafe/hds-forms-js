@@ -92,6 +92,9 @@ describe('[DOC] nextStep: a proposed document', () => {
     const c = of([pv('a'), d, kindQ]);
     expect(conv.nextStep(c, E, ready)).toMatchObject({ kind: 'question', question: { code: 'which-document-kind' }, about: null });
     expect(conv.conversationProgress(c, E, ready).questions).toBe(0);
+    // her answer on the proposed document is not about a value
+    const corrected = of([pv('a'), d, answer(d, 'correct', { candidateIds: ['d1'], applied: ['time'] })]);
+    expect(conv.conversationProgress(corrected, E, ready)).toMatchObject({ values: 1, answered: 0 });
     expect(conv.optionLabel('which-document-kind', 'laboratory-report')).toEqual({ label: 'Laboratory report', selectable: true });
     expect(conv.optionLabel('which-document-kind', 'x-unknown').selectable).toBe(false);
   });
@@ -186,6 +189,27 @@ describe('[DOC] the document step and her note', () => {
     expect(acts.confirm).toHaveBeenCalledWith(['a'], 100, 'from the old lab');
     await click(container.querySelector('[aria-label="Remove the note"]'));
     expect(onClearNote).toHaveBeenCalled();
+  });
+
+  it('her note sent alone sets the item aside with it (D-1), with the warning; on a proposed document through skipDocument', async () => {
+    const c = of([pv('a')]);
+    const acts = actions();
+    await render(bubble(c, conv.nextStep(c, E, ready), acts, { note: 'ask the lab' }));
+    expect(container.textContent).toContain('Dr Test can read it.');
+    expect(container.textContent).toContain('This sets the item aside; you can still confirm it until Dr Test has finished.');
+    await click(button('Send the note alone'));
+    expect(acts.dismiss).toHaveBeenCalledWith(['a'], 'skip', 100, 'ask the lab');
+    const d = of([pdoc('d1')]);
+    const acts2 = { ...actions(), skipDocument: vi.fn(async () => ({ ok: true as const })) };
+    await render(bubble(d, conv.nextStep(d, E, ready), acts2, { note: 'not a lab report' }));
+    await click(button('Send the note alone'));
+    expect(acts2.skipDocument).toHaveBeenCalledWith('d1', 100, 'not a lab report');
+  });
+
+  it('every text has its en and fr', () => {
+    const missing = Object.entries(conv.CONVERSATION_TEXTS as Record<string, { en?: string; fr?: string }>)
+      .filter(([, t]) => !t.en || !t.fr).map(([k]) => k);
+    expect(missing).toEqual([]);
   });
 
   it('her answer bubble shows its note', async () => {

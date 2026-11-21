@@ -377,6 +377,7 @@ function actionsFor (
     }),
     dismiss: (candidateIds, action, shownAt, note) => call(() => cmcConversation.answerProposedValues(connection, r, { about, candidateIds, action, shownAt, ...noted(note) })),
     answer: (questionId, a, shownAt, note) => call(() => cmcConversation.answerQuestion(connection, r, { questionId, ...a, shownAt, ...noted(note) })),
-    confirmDocument: (candidateId, correction, shownAt, note) => call(() => cmcConversation.acceptProposedDocument(connection, r, { about, candidateId, shownAt, ...(correction != null ? { correction } : {}), ...noted(note) }))
+    confirmDocument: (candidateId, correction, shownAt, note) => call(() => cmcConversation.acceptProposedDocument(connection, r, { about, candidateId, shownAt, ...(correction != null ? { correction } : {}), ...noted(note) })),
+    skipDocument: (candidateId, shownAt, note) => call(() => cmcConversation.skipProposedDocument(connection, r, { about, candidateId, shownAt, ...noted(note) }))
   };
 }

@@ -103,6 +103,9 @@ export const CONVERSATION_TEXTS = {
   'note.draft': { en: 'Your note: “{note}” · goes with your answer', fr: 'Votre note : « {note} » · partira avec votre réponse' },
   'note.remove': { en: 'Remove the note', fr: 'Retirer la note' },
   'note.asMessage': { en: 'Send as a message instead', fr: 'Envoyer plutôt comme message' },
+  'note.visible': { en: '{name} can read it.', fr: '{name} pourra la lire.' },
+  'note.alone': { en: 'Send the note alone', fr: 'Envoyer la note seule' },
+  'note.aloneWarning': { en: 'This sets the item aside; you can still confirm it until {name} has finished.', fr: 'Cela met l’élément de côté ; vous pouvez encore le confirmer tant que {name} n’a pas terminé.' },
   'note.yours': { en: 'Your note: {note}', fr: 'Votre note : {note}' },
   'note.hint': { en: 'What you write now goes as a note with your next answer.', fr: 'Ce que vous écrivez maintenant part comme note avec votre prochaine réponse.' },
   // a document's values (hdsDocumentValues, hdsPrintedIn)
@@ -201,7 +204,7 @@ export const CONVERSATION_TEXTS = {
   'answer.confirm': { en: 'You confirmed {n} values', fr: 'Vous avez confirmé {n} valeurs' },
   'answer.confirmOne': { en: 'You confirmed a value', fr: 'Vous avez confirmé une valeur' },
   'answer.correct': { en: 'You corrected a value', fr: 'Vous avez corrigé une valeur' },
-  'answer.skip': { en: 'You skipped', fr: 'Vous avez passé' },
+  'answer.skip': { en: 'You set it aside', fr: 'Vous l’avez mis de côté' },
   'answer.duplicate': { en: 'You said it is already in your record', fr: 'Vous avez dit que c’est déjà dans votre dossier' },
   'answer.duplicateAuto': { en: 'Your app found {n} values already in your record', fr: 'Votre app a trouvé {n} valeurs déjà dans votre dossier' },
   'answer.duplicateAutoOne': { en: 'Your app found a value already in your record', fr: 'Votre app a trouvé une valeur déjà dans votre dossier' },
