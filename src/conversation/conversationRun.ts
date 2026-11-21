@@ -1,9 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
-import type { ValueCorrection } from 'hds-lib';
+import type { cmcConversation, ValueCorrection } from 'hds-lib';
 import { tx } from './labels';
 import type { ConversationTextKey } from './conversationTexts';
 import type { QuestionAnswer } from './QuestionCard';
 import type { RowBlock } from './rowBlock';
+
+/** What she confirms or corrects for a proposed document (hds-lib `DocumentFields`, not exported at the top level) */
+export type DocumentFields = cmcConversation.DocumentFields;
 
 /** What an action came to: done (some candidates may have been refused, each with hds-lib's reason) or failed */
 export type ConversationOutcome = { ok: true; refused?: Array<{ candidateId: string; reason: string }> } | { ok: false; reason: string };
@@ -13,10 +16,16 @@ export type ConversationOutcome = { ok: true; refused?: Array<{ candidateId: str
  * an answer binds to what was shown) and resolves once the host read the conversation again.
  */
 export interface ConversationActions {
-  confirm (candidateIds: string[], shownAt: number): Promise<ConversationOutcome>;
-  correct (candidateId: string, correction: ValueCorrection, shownAt: number): Promise<ConversationOutcome>;
-  dismiss (candidateIds: string[], action: 'skip' | 'request-item' | 'duplicate', shownAt: number): Promise<ConversationOutcome>;
-  answer (questionId: string, answer: QuestionAnswer, shownAt: number): Promise<ConversationOutcome>;
+  /** `note`: her comment typed in the chat line, carried by this answer (`answer.note`, 4.26.0) */
+  confirm (candidateIds: string[], shownAt: number, note?: string): Promise<ConversationOutcome>;
+  correct (candidateId: string, correction: ValueCorrection, shownAt: number, note?: string): Promise<ConversationOutcome>;
+  dismiss (candidateIds: string[], action: 'skip' | 'request-item' | 'duplicate', shownAt: number, note?: string): Promise<ConversationOutcome>;
+  answer (questionId: string, answer: QuestionAnswer, shownAt: number, note?: string): Promise<ConversationOutcome>;
+  /**
+   * A proposed document's date and kind (hds-lib `acceptProposedDocument`): no `correction` confirms the proposal, a
+   * correction (only what she changed) corrects it
+   */
+  confirmDocument? (candidateId: string, correction: DocumentFields | undefined, shownAt: number, note?: string): Promise<ConversationOutcome>;
 }
 
 /**

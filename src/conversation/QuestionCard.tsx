@@ -59,7 +59,8 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
 
   const identity = question.code === 'is-this-yours' ? c.context?.identity ?? null : null;
   const anchor = question.code === 'is-this-yours' ? anchorOn(c.context?.anchor, c.about) : null;
-  const dates: Array<{ day: string; text: string; label?: string; role?: string }> = question.code === 'which-date' && Array.isArray(c.context?.dates) ? c.context.dates : [];
+  const dated = question.code === 'which-date' || question.code === 'which-document-date';
+  const dates: Array<{ day: string; text: string; label?: string; role?: string }> = dated && Array.isArray(c.context?.dates) ? c.context.dates : [];
   const options: string[] = Array.isArray(c.options) ? c.options : [];
   const matched = answer?.action === 'confirm' && answer?.basis === 'profile-match';
 
@@ -109,7 +110,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
               <button type='button' className={btn.outline} disabled={!can} onClick={() => send({ action: 'not-mine' })}>{tx('notMine')}</button>
             </>
           )}
-          {question.code === 'which-date' && (
+          {dated && (
             <>
               {dates.map((d) => (
                 <button key={d.day + d.text} type='button' className={btn.outline} disabled={!can} onClick={() => send({ action: 'confirm', time: dayToTime(d.day), timePrecision: 'day' })}>
@@ -132,7 +133,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
               <button type='button' className={btn.ghost} disabled={!can} onClick={() => send({ action: 'confirm', timePrecision: 'unknown' })}>{tx('dateUnknown')}</button>
             </>
           )}
-          {['which-specimen', 'which-unit', 'which-analyte', 'is-fasting'].includes(question.code) && (
+          {['which-specimen', 'which-unit', 'which-analyte', 'is-fasting', 'which-document-kind'].includes(question.code) && (
             <>
               {options.map((o) => {
                 const { label, selectable } = optionLabel(question.code, o);

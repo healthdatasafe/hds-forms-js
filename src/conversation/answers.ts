@@ -6,9 +6,15 @@ export function answerText (answer: ConversationItem, conv: DocumentConversation
   const c = answer.content;
   const question = conv?.questions.find((q) => q.item.id === c.inReplyTo) ?? null;
   if (c.action === 'choose') return tx('answer.choose', { option: question != null ? optionLabel(question.code, c.option).label : String(c.option ?? '') });
+  // a proposed document (4.26.0): `applied` names the fields her app wrote on the document
+  if ((c.action === 'confirm' || c.action === 'correct') && Array.isArray(c.applied)) {
+    if (c.action === 'correct') return tx('answer.documentCorrected');
+    if (c.applied.length === 1) return tx(c.applied[0] === 'kind' ? 'answer.documentConfirmedKind' : 'answer.documentConfirmedDate');
+    return tx('answer.documentConfirmed');
+  }
   if (c.action === 'confirm' && question != null) return questionAnswerText(question.code, c, locale);
   // what it answered may be gone (R10 deletes answered questions): its own fields still say which question it was
-  if (c.action === 'confirm' && typeof c.timePrecision === 'string') return questionAnswerText('which-date', c, locale);
+  if (c.action === 'confirm' && typeof c.timePrecision === 'string') return questionAnswerText(Array.isArray(c.candidateIds) && conv?.proposedDocuments?.some((p) => c.candidateIds.includes(p.candidateId)) ? 'which-document-date' : 'which-date', c, locale);
   if (c.action === 'confirm' && !Array.isArray(c.written) && !Array.isArray(c.candidateIds)) return questionAnswerText('is-this-yours', c, locale);
   if (c.action === 'confirm') {
     const n = Array.isArray(c.candidateIds) ? c.candidateIds.length : 1;
@@ -27,9 +33,10 @@ export function answerText (answer: ConversationItem, conv: DocumentConversation
 export function questionAnswerText (code: string, a: Record<string, any>, locale?: string): string {
   if (a.action === 'not-mine') return tx('answer.not-mine');
   if (code === 'is-this-yours') return a.basis === 'profile-match' ? tx('answer.mineAuto') : tx('answer.mine');
-  if (code === 'which-date') {
-    if (a.timePrecision === 'unknown' || typeof a.time !== 'number') return tx('answer.dateUnknown');
-    return `${tx('answer.confirmDate')}: ${dayText(new Date(a.time * 1000).toISOString().slice(0, 10), locale)}`;
+  if (code === 'which-date' || code === 'which-document-date') {
+    const ofDocument = code === 'which-document-date';
+    if (a.timePrecision === 'unknown' || typeof a.time !== 'number') return tx(ofDocument ? 'answer.documentDateUnknown' : 'answer.dateUnknown');
+    return `${tx(ofDocument ? 'answer.documentDate' : 'answer.confirmDate')}: ${dayText(new Date(a.time * 1000).toISOString().slice(0, 10), locale)}`;
   }
   return tx('answer.unknown');
 }
@@ -42,7 +49,8 @@ const isValueConfirm = (a: ConversationItem): boolean => a.content.action === 'c
  * "You confirmed 12 values"); every other answer alone. One by one, each confirmation is its own answer.
  */
 export function answerRuns (answers: ConversationItem[], minRun: number = 3): ConversationItem[][] {
-  const sorted = [...answers].sort((a, b) => a.created - b.created);
+  // her app settling a proposed document with nothing left to apply (`basis: not-pending`) is no answer of hers to show
+  const sorted = answers.filter((a) => a.content.basis !== 'not-pending').sort((a, b) => a.created - b.created);
   const out: ConversationItem[][] = [];
   let run: ConversationItem[] = [];
   const flush = (): void => {
@@ -51,7 +59,8 @@ export function answerRuns (answers: ConversationItem[], minRun: number = 3): Co
     run = [];
   };
   for (const a of sorted) {
-    if (isValueConfirm(a)) { run.push(a); continue; }
+    // an answer with her note stays its own bubble, the note under it
+    if (isValueConfirm(a) && typeof a.content.note !== 'string') { run.push(a); continue; }
     flush();
     out.push([a]);
   }

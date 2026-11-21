@@ -86,6 +86,9 @@ export function ConversationAnswerBubble ({ answer, run, conversation, locale, t
         {first != null && onOpenValue != null
           ? <button type='button' className='text-left underline-offset-2 hover:underline' onClick={() => onOpenValue(first)}>{text}</button>
           : text}
+        {typeof answer.content.note === 'string' && answer.content.note !== '' && (
+          <span className='mt-1 block text-sm italic' data-answer-note=''>{tx('note.yours', { note: answer.content.note })}</span>
+        )}
         {timeText != null && <span className='float-right mt-1.5 ml-3 text-xs leading-none text-gray-500'>{timeText}</span>}
       </div>
     </div>
