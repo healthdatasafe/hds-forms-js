@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.39.0] - 2026-11-21
+
+### Added (plan 135, hds-lib 2.63.0)
+
+- **Her note alone** (D-1): the note chip on a step offers "Send the note alone", the contract's `skip` with `note`
+  (a value, a question, or a proposed document through `ConversationActions.skipDocument` → hds-lib
+  `skipProposedDocument`), with its warning ("This sets the item aside; you can still confirm it until {name} has
+  finished."); the chip says "{name} can read it."
+- A test fails on a conversation text missing its en or fr.
+- hds-lib 2.63.0.
+
 ## [0.38.0] - 2026-11-21
 
 ### Added (plan 135, data-model 4.26.0, hds-lib 2.62.0)

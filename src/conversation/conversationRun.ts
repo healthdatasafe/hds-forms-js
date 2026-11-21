@@ -26,6 +26,8 @@ export interface ConversationActions {
    * correction (only what she changed) corrects it
    */
   confirmDocument? (candidateId: string, correction: DocumentFields | undefined, shownAt: number, note?: string): Promise<ConversationOutcome>;
+  /** A proposed document set aside (hds-lib `skipProposedDocument`): her note sent alone on it */
+  skipDocument? (candidateId: string, shownAt: number, note?: string): Promise<ConversationOutcome>;
 }
 
 /**

@@ -81,6 +81,18 @@ export function ConversationStepBubble ({
     return day != null ? tx(on, { item, value, day }) : tx(plain, { item, value });
   };
 
+  // her note sent on its own: the item set aside with it (a value, a question, a proposed document)
+  const sendNoteAlone = ((): (() => void) | null => {
+    if (actions == null || noteArg == null) return null;
+    if (step.kind === 'value') return () => { run('n', () => actions.dismiss([step.value.candidateId], 'skip', shownAt, noteArg)); };
+    if (step.kind === 'question' && step.question.code !== 'is-this-yours') return () => { run('n', () => actions.answer(step.question.item.id, { action: 'skip' }, shownAt, noteArg)); };
+    if (step.kind === 'document' && actions.skipDocument != null) {
+      const skip = actions.skipDocument;
+      return () => { run('n', () => skip(step.proposed.candidateId, shownAt, noteArg)); };
+    }
+    return null;
+  })();
+
   let body: ReactNode = null;
   if (step.kind === 'question') {
     body = (
@@ -303,6 +315,14 @@ export function ConversationStepBubble ({
           <div className='mt-2 rounded-md border border-dashed border-gray-300 p-2 text-sm dark:border-gray-600' data-note-draft=''>
             <span>{tx('note.draft', { note: noteArg })}</span>
             {onClearNote != null && <button type='button' className={cx(btn.ghost, 'ml-1')} aria-label={tx('note.remove')} onClick={onClearNote}>✕</button>}
+            <p className={cx(small, 'mt-1')}>{tx('note.visible', { name: contactName })}</p>
+            {/* D-1: the note alone is the contract's `skip` + `note`, with its warning */}
+            {sendNoteAlone != null && (
+              <>
+                <button type='button' className={cx(btn.link, 'block')} disabled={!can} onClick={sendNoteAlone}>{tx('note.alone')}</button>
+                <p className={small}>{tx('note.aloneWarning', { name: contactName })}</p>
+              </>
+            )}
             {onNoteAsMessage != null && <button type='button' className={cx(btn.link, 'block')} onClick={onNoteAsMessage}>{tx('note.asMessage')}</button>}
           </div>
         )}

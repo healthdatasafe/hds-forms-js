@@ -119,7 +119,9 @@ is a note: the host passes it as `note` (with `onClearNote`, `onNoteAsMessage` f
 bubble shows "Your note: “…” · goes with your answer" and the reply she taps carries it (every `ConversationActions`
 method takes a trailing `note`). `ConversationAnswerBubble` shows it under her answer; `answerRuns` never folds it. A
 contact that reads no notes says so once (`notice` `note-not-read`: "{name} does not read notes."). The hook removes
-the note once the contact's work is `done` (hds-lib `removeNotes`).
+the note once the contact's work is `done` (hds-lib `removeNotes`). The chip says "{name} can read it." and offers
+"Send the note alone": the contract's `skip` + `note` on the item (`dismiss(…, 'skip', …, note)`, `answer({ action:
+'skip' }, …, note)`, or `skipDocument` for a proposed document), with its warning.
 
 **A document's values.** `documentValuesOf(document, events)` → `{ source, matched }`: `source`, written from it
 (`clientData.related` + a `sourceKey` of the document, or its `hdsDocumentValues` index); `matched`, values of hers it
