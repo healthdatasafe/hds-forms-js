@@ -2,20 +2,28 @@
 
 The standard conversation between a person and a contact (a doctor, the HDS Reader, another service's AI) is defined by
 the data model's [`documentation/CONVERSATION.md`](https://github.com/healthdatasafe/data-model/blob/main/documentation/CONVERSATION.md)
-(4.22.0, codes added in 4.24.0). Every item of that conversation has a component here, so **any HDS app on either side
-of a conversation** renders it the same way: the person's app (hds-webapp), a doctor dashboard, another AI's own UI.
-Nothing here tests who the contact is: the components dispatch on the item's kind and code, never on an app code.
+(data-model 4.22.0 to 4.26.0: codes in 4.24.0, the self-contained anchor and duplicates in 4.25.0, a document's date
+and kind, her note and a document's values in 4.26.0). Every item of that conversation has a component here, so **any
+HDS app on either side of a conversation** renders it the same way: the person's app (hds-webapp), a doctor dashboard,
+another AI's own UI. Nothing here tests who the contact is: the components dispatch on the item's kind and code, never on
+an app code.
 
-The components are **presentational**: they take hds-lib `cmcConversation` views and callbacks, and do no I/O. The
-host reads the conversation (`listConversationAlerts`, `conversationStreamsFor`, `listConversationItems`,
-`conversationOf`, `taskStatusOf`) and writes the answers (`acceptProposedValues`, `answerQuestion`,
-`answerProposedValues`), all in hds-lib. hds-webapp's `src/hooks/useConversations.ts` is a complete example of a host.
+| hds-forms-js | needs hds-lib | data-model |
+|---|---|---|
+| 0.37.0 | ≥ 2.61.0 | ≥ 4.25.0 |
+| 0.38.0 | ≥ 2.62.0 | ≥ 4.26.0 |
+| 0.39.0, 0.40.0 | ≥ 2.63.0 | ≥ 4.26.0 |
+
+The components are **presentational**: they take hds-lib `cmcConversation` views and callbacks, and do no I/O. All the
+I/O sits in **one hook**, `useDocumentConversations` (below), which reads every relationship's conversation and answers
+it through hds-lib; a host renders its documents with the components. hds-webapp's `src/pages/Chat.tsx` is a complete
+example of a host.
 
 ```ts
 import {
-  DocumentConversationCard, QuestionCard, ValueCorrectionEditor, AnchoredDocumentView,
-  TaskStatusLine, NoticeBubble, ConversationAnswerBubble, ContactWorkingIndicator,
-  rowBlock, batchCandidates, isWritten, shownAtOf, isWorking
+  useDocumentConversations, nextStep, conversationProgress, ConversationStepBubble, DocumentStatusBubble,
+  ContactWorkingIndicator, isWorking, ConversationAnswerBubble, answerRuns, NoticeBubble,
+  DocumentConversationCard, DocumentValuesList, AnchoredDocumentView
 } from 'hds-forms-js/conversation';
 ```
 
