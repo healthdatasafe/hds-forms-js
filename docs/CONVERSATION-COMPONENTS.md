@@ -13,7 +13,7 @@ an app code.
 | 0.37.0 | ≥ 2.61.0 | ≥ 4.25.0 |
 | 0.38.0 | ≥ 2.62.0 | ≥ 4.26.0 |
 | 0.39.0, 0.40.0 | ≥ 2.63.0 | ≥ 4.26.0 |
-| 0.41.0 to 0.43.0 | ≥ 2.63.0 | ≥ 4.27.0 |
+| 0.41.0 to 0.44.0 | ≥ 2.63.0 | ≥ 4.27.0 |
 
 Since 0.42.0, `hds-lib` (with `hds-feminine-cycle-ui` and `pdfjs-dist`) is a **peer dependency**: the host installs it
 and the library uses that one copy (see the README's Prerequisites).
@@ -25,7 +25,7 @@ example of a host.
 
 ```ts
 import {
-  useDocumentConversations, nextStep, conversationProgress, ConversationStepBubble, DocumentStatusBubble,
+  useDocumentConversations, useStepChoices, nextStep, conversationProgress, ConversationStepBubble, DocumentStatusBubble,
   ContactWorkingIndicator, isWorking, ConversationAnswerBubble, answerRuns, NoticeBubble,
   DocumentConversationCard, DocumentValuesList, AnchoredDocumentView
 } from 'hds-forms-js/conversation';
@@ -68,17 +68,20 @@ const { documents } = useDocumentConversations(connection, relationships, {
   provisionStreams,          // create the items' model streams before a value is written
   onGranted                  // her app granted a relationship its conversation children: read the relationships again
 });
+const { choices, handlers } = useStepChoices();   // her flow choices, kept in sessionStorage (0.44.0)
 const doc = documents[0];
 const status = doc.status?.hds?.status ?? null;
-const step = nextStep(doc.conversation, doc.engines, { status, ...choices });   // null: nothing to answer
+const step = nextStep(doc.conversation, doc.engines, { status, document: doc.document, ...choices[doc.key] });   // null: nothing to answer
 {step && <ConversationStepBubble key={step.key} step={step} conversation={doc.conversation}
   progress={conversationProgress(doc.conversation, doc.engines, { status })} contactName='HDS Reader' title='Lab report'
-  sourceOf={sourceOf} actions={doc.actions}
-  onDeclineBatch={() => choose({ batchDeclined: true })}
-  onLater={(id) => choose({ deferred: [...deferred, id] })}
-  onAcknowledgeSummary={() => choose({ summaryAcknowledged: true })}
-  onReviewSkipped={() => choose({ deferred: [], includeSkipped: true })} />}
+  sourceOf={sourceOf} actions={doc.actions} {...handlers(doc.key)} />}
 ```
+
+`useStepChoices(store?, key?)` keeps her choices about the flow of each document ("One by one" on the batch, "Later",
+the summary closed, "Review the ones set aside") for the session, under `hds.conversation.steps` in `sessionStorage`
+by default (`store: null`: memory only; any `{ getItem, setItem }` otherwise). None of them writes to her account.
+`handlers(docKey)` gives `onDeclineBatch`, `onLater`, `onAcknowledgeSummary`, `onReviewSkipped`; `choose(docKey,
+choice)` sets any other `StepOptions`.
 
 **The order of steps** (`nextStep`, a pure function of the conversation: leaving and coming back shows the same step):
 `is-this-yours` (nothing is written before it, R3) → the document's `which-date` → the questions about one value (a
