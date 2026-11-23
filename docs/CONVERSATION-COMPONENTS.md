@@ -36,6 +36,11 @@ key). Styling: Tailwind with the library's tokens (`css/tokens.css`: `primary` s
 and cards accept the host's own surface classes (`bubbleClassName`, `surfaceClassName`) so they look like its other
 bubbles. Touch targets are 44 px.
 
+**See them:** the test app's Conversation tab
+([healthdatasafe.github.io/hds-forms-js/?tab=conversation](https://healthdatasafe.github.io/hds-forms-js/?tab=conversation),
+`src-test-app/src/ConversationPanel.tsx`) shows the read-only components on fixtures: her app and a contact's app,
+English and French, light and dark.
+
 ## What maps to what
 
 | Component | Renders | CONVERSATION.md |
