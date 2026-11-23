@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.42.0] - 2026-11-22
+
+Needs hds-lib ≥ 2.63.0, data-model ≥ 4.27.0 (unchanged from 0.41.0).
+
+### Added (plan 135, S3)
+
+- `DocumentValuesList sourceOf`: a value read from the document that carries `clientData.hdsSourceAnchor` gets "See it
+  on the document", the document zoomed where it is printed (`AnchoredDocumentView`, with `loadPdfJs` / `pdfOptions`).
+  `onOpenValue` also gets the value's event, second (additive).
+
+### Changed (plan 135, S1 packaging)
+
+- **`hds-lib`, `hds-feminine-cycle-ui` and `pdfjs-dist` are peer dependencies** with a minimum (hds-lib ≥ 2.63.0,
+  hds-feminine-cycle-ui ≥ 0.12.0, pdfjs-dist ^6.4.299), no longer dependencies at an exact tag. A host installs them
+  itself, and the library uses the host's copy: one `hds-lib` (it holds singletons, `getHDSModel`, `HDSProfile`) and
+  one pdf.js (its worker must match its API). npm 7+ adds a missing peer on its own. With npm, a host whose own
+  `hds-lib` pin is an older tag of the same repo gets the minimum installed in its place without an error, so bump the
+  pin to match.
+- CI: a `consumer-typecheck` job runs hds-webapp's `npm run typecheck` against the branch's sources (it needs the
+  `HDS_CI_TOKEN` secret, hds-webapp being private, and skips green without it).
+
 ## [0.41.0] - 2026-11-21
 
 ### Added (plan 135, data-model 4.27.0)
