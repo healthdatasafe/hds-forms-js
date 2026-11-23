@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.45.0] - 2026-11-23
+
+### Added
+
+- `missingRequiredParts(itemData, value)`: the parts of a composite's value that its eventType requires and that are
+  blank (allergy-coded: `allergen`, `status`); `[]` for any other item. A host disables its save while it is not
+  empty, so the generic form no longer writes an allergy with no status (B-2026-11-21-6).
+
+### Fixed
+
+- A composite date part whose eventType takes a partial date (allergy `lastOccurrence`: `YYYY`, `YYYY-MM` or
+  `YYYY-MM-DD`) is a precision select (not known, year, month, day) with its year, month or day input. Before, a
+  stored `2022` or `2024-03` showed as an empty date, and typing one replaced it with a full day (B-2026-11-21-10).
+- `MultiSelect`: checkbox ids are per field (`useId`), not `ms-<value>`. Two multi-selects sharing an option value
+  had the same ids, so a label could tick the other field's box (B-2026-11-21-9).
+
 ## [0.44.0] - 2026-11-23
 
 Needs hds-lib ≥ 2.63.0, data-model ≥ 4.27.0.
