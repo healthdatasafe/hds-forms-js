@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.43.1] - 2026-11-23
+
+### Fixed
+
+- `Select`: a required field with no value shows a disabled empty `--` placeholder. Before, it showed the first real
+  option while its value stayed null, so the form looked filled and its Save stayed disabled (plan 133).
+
 ## [0.43.0] - 2026-11-23
 
 Needs hds-lib ≥ 2.63.0, data-model ≥ 4.27.0.

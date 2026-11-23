@@ -26,7 +26,12 @@ export function Select ({ label, description, value, onChange, options, required
         disabled={disabled}
         className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
       >
-        {!required && <option value=''>--</option>}
+        {/* A required field with no value still needs an empty option to show: without it the
+            browser displays the first real option while the value stays null. Disabled, and gone
+            once a value is chosen, so it can never be picked back. */}
+        {!required
+          ? <option value=''>--</option>
+          : (value == null || value === '') && <option value='' disabled>--</option>}
         {options.map((opt) => (
           <option key={String(opt.value)} value={opt.value}>
             {opt.label}
