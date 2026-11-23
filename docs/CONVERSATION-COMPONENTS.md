@@ -13,7 +13,7 @@ an app code.
 | 0.37.0 | ≥ 2.61.0 | ≥ 4.25.0 |
 | 0.38.0 | ≥ 2.62.0 | ≥ 4.26.0 |
 | 0.39.0, 0.40.0 | ≥ 2.63.0 | ≥ 4.26.0 |
-| 0.41.0, 0.42.0 | ≥ 2.63.0 | ≥ 4.27.0 |
+| 0.41.0 to 0.43.0 | ≥ 2.63.0 | ≥ 4.27.0 |
 
 Since 0.42.0, `hds-lib` (with `hds-feminine-cycle-ui` and `pdfjs-dist`) is a **peer dependency**: the host installs it
 and the library uses that one copy (see the README's Prerequisites).
@@ -217,6 +217,23 @@ is true while the document's latest `task-status` is `received` or `reading` (or
   confirmed 5 values", "You corrected a value", "You gave the day of the sample: 18 November 2026", "You said the
   document is yours", "Matched to your profile", "You answered: mmol/L"… (`answerText`); it still says what it answered
   once the contact deleted the question (R10). A written value opens with `onOpenValue(eventId)`.
+
+## The contact's side: `viewer: 'contact'` (0.43.0)
+
+A contact's app (a doctor dashboard, a service's console, another AI's UI) shows the same conversation read-only, in
+its own words. Pass `viewer='contact'` and her name (`personName`; "The person" without it):
+
+- `ConversationAnswerBubble`: "Anna confirmed 5 values", "Anna set it aside", "Matched to Anna's profile", "Anna's
+  note: fasting" (`contact.answer.*`, `contact.note`); the bubble sits on the other side (`bubbleIn`) and reads "From
+  Anna" to a screen reader. `answerText(answer, conversation, locale, { viewer: 'contact', personName })` gives the
+  same words alone.
+- `TaskStatusLine`: its own work, "Not opened yet", "Waiting for Anna's answers · 5 values"; errors without naming
+  itself ("This document could not be read yet; reading is tried again.").
+- `DocumentConversationCard`: always read-only (`actions` is ignored); the state of the work as above, the questions
+  and values as she was asked them.
+
+Not offered to a contact yet: asking her a question or proposing a value from these components (`writeQuestion`,
+`writeProposedValues` stay hds-lib calls); the contract has no labels for a third party's question yet (`x-` codes).
 
 ## `ValueCorrectionEditor`
 

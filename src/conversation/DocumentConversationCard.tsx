@@ -5,6 +5,7 @@ import type { PdfJsLike } from './pdfjs';
 import { noticeText, tx, valueDayText } from './labels';
 import { QuestionCard, type QuestionAnswer } from './QuestionCard';
 import { TaskStatusLine } from './ConversationBubbles';
+import type { ConversationViewer } from './answers';
 import { batchCandidates, isWritten, rowBlock, shownAtOf } from './rowBlock';
 import { ValueLine, ValueReview } from './ValueParts';
 import { useConversationRun, type ConversationActions } from './conversationRun';
@@ -28,6 +29,13 @@ export interface DocumentConversationCardProps {
   sourceOf: (attachmentId?: string) => AnchoredDocumentSource | null;
   /** null: shown read-only */
   actions: ConversationActions | null;
+  /**
+   * Whose app shows it: hers (default) or a contact's, always read-only (its `actions` are ignored); the state of the
+   * work then reads as the contact's own ("Waiting for Anna's answers"), the questions and values as she was asked them
+   */
+  viewer?: ConversationViewer;
+  /** Her name, for a contact's app */
+  personName?: string | null;
   /** "This is not my document" when no `is-this-yours` was asked: the host takes the document back (its standard unshare) */
   onNotMyDocument?: () => void;
   /** The title opens the whole document (the host's viewer) */
@@ -49,9 +57,11 @@ export interface DocumentConversationCardProps {
  * (R9) or that waits for an answer says why. Presentational: the host reads, writes and refreshes (`actions`).
  */
 export function DocumentConversationCard ({
-  conversation: conv, status, notices = [], engines, title, contactName, sourceOf, actions, onNotMyDocument, onOpenDocument,
-  locale, loadPdfJs, pdfOptions, className, surfaceClassName
+  conversation: conv, status, notices = [], engines, title, contactName, sourceOf, actions: givenActions, onNotMyDocument, onOpenDocument,
+  viewer = 'person', personName, locale, loadPdfJs, pdfOptions, className, surfaceClassName
 }: DocumentConversationCardProps) {
+  // a contact's app never answers for her
+  const actions = viewer === 'contact' ? null : givenActions;
   const shownAt = useMemo(() => shownAtOf(conv), [conv]);
   const { busy, message, setMessage, run } = useConversationRun();
   const [reviewing, setReviewing] = useState<string | null>(null);
@@ -93,7 +103,7 @@ export function DocumentConversationCard ({
           <h3 className='break-words text-base font-semibold'>
             {onOpenDocument != null ? <button type='button' className='text-left underline-offset-2 hover:underline' onClick={onOpenDocument}>{title}</button> : title}
           </h3>
-          <TaskStatusLine status={workStatus ?? null} errorCode={status?.hds?.errorCode} counts={status?.hds?.counts} contactName={contactName} />
+          <TaskStatusLine status={workStatus ?? null} errorCode={status?.hds?.errorCode} counts={status?.hds?.counts} contactName={contactName} viewer={viewer} personName={personName} />
         </div>
       </div>
 
