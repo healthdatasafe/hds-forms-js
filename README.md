@@ -83,6 +83,34 @@ recorded in another method keeps her method: the stored observation is highlight
 method's words (closest match) and the recorded one is shown as "Recorded as …". An untouched
 field keeps the stored value as recorded. Pass `itemKey` so the item's own key is read first.
 
+#### Method notation picker (several items as one record)
+
+When her method's definition carries a `notation` block (Creighton today), the observation is picked on rows
+(sticker, number, letters, frequency) instead of a list: choices that can no longer lead to a valid record disappear,
+a tap on a selected choice deselects it. `Convertible` uses it for mucus alone. A host entering mucus and bleeding
+together uses the two exports directly:
+
+```tsx
+import { useMethodNotation, MethodNotationPicker, type NotationState } from 'hds-forms';
+
+const notation = useMethodNotation(['body-vulva-mucus-inspect', 'body-vulva-bleeding']);
+// notation.status: 'loading' | 'none' (render HDSFormField for each item) | 'ready'
+// notation.covers: the items the picker enters; notation.writes: every item key it may emit
+
+{notation.status === 'ready' && (
+  <MethodNotationPicker notation={notation} values={values}
+    onChange={(patch, state: NotationState) => { setValues(v => ({ ...v, ...patch })); setCanSave(state.empty || state.valid); }} />
+)}
+```
+
+- `patch` has one entry per key of `notation.writes`, in the shapes `formDataToActions` takes. While the picks are
+  incomplete every entry is `undefined`, so a host that saves only non-null values never saves a partial record.
+- `state` is `{ empty, valid, text }` (`text` is the record as written, e.g. `"L 6C X2"`): disable Save while
+  `!state.empty && !state.valid`.
+- `values` only seeds the picks (edit, prefill); the picker keeps the partial picks itself.
+- Include the items of `notation.writes` in what the host saves (hds-lib's `ensureExistsForItems`,
+  `formDataToActions`): the picker may write items the host did not list (e.g. `body-vulva-bleeding-browndark`).
+
 #### Date / time / duration companions
 
 When an item declares a `dateTime` or `duration` block, `<HDSFormField>` renders the corresponding companion input next to the value field — the companions write to the surrounding Pryv event's `event.time` / `event.duration` (Pryv-native), not to the payload schema. Companions can be exposed individually:
@@ -315,9 +343,21 @@ npm run build:app        # build test app into dist/ for gh-pages
 
 ## Prerequisites
 
-- Node.js >= 20
+- Node.js >= 24
 - npm
-- `hds-lib` (HDS model must be initialized before using components)
+- Peer dependencies, installed by the host app (the library uses the host's copy):
+  `hds-lib` ≥ 2.63.0 (the HDS model must be initialized before using components), `hds-feminine-cycle-ui` ≥ 0.12.0,
+  `pdfjs-dist` ^6.4.299, `react` / `react-dom` ≥ 19:
+
+  ```json
+  "hds-forms-js": "github:healthdatasafe/hds-forms-js#0.42.0",
+  "hds-lib": "github:healthdatasafe/hds-lib-js#2.63.0",
+  "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.12.0",
+  "pdfjs-dist": "6.4.299"
+  ```
+
+  Each CHANGELOG entry states the hds-lib and data-model it needs. npm does not refuse an older `hds-lib` tag pinned
+  by the host: it installs the minimum in its place, so keep the host's pin at or above it.
 
 ## Setup
 

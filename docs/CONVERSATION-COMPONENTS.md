@@ -13,6 +13,10 @@ an app code.
 | 0.37.0 | ≥ 2.61.0 | ≥ 4.25.0 |
 | 0.38.0 | ≥ 2.62.0 | ≥ 4.26.0 |
 | 0.39.0, 0.40.0 | ≥ 2.63.0 | ≥ 4.26.0 |
+| 0.41.0, 0.42.0 | ≥ 2.63.0 | ≥ 4.27.0 |
+
+Since 0.42.0, `hds-lib` (with `hds-feminine-cycle-ui` and `pdfjs-dist`) is a **peer dependency**: the host installs it
+and the library uses that one copy (see the README's Prerequisites).
 
 The components are **presentational**: they take hds-lib `cmcConversation` views and callbacks, and do no I/O. All the
 I/O sits in **one hook**, `useDocumentConversations` (below), which reads every relationship's conversation and answers
@@ -133,9 +137,12 @@ the note once the contact's work is `done` (hds-lib `removeNotes`). The chip say
 
 **A document's values.** `documentValuesOf(document, events)` → `{ source, matched }`: `source`, written from it
 (`clientData.related` + a `sourceKey` of the document, or its `hdsDocumentValues` index); `matched`, values of hers it
-also prints, found already in her record (`hdsPrintedIn`). `DocumentValuesList({ values, onOpenValue?, dayText? })`:
+also prints, found already in her record (`hdsPrintedIn`). `DocumentValuesList({ values, onOpenValue?, sourceOf?, dayText?, loadPdfJs?, pdfOptions? })`:
 "Read from this document (n)", "Also printed here (n)" — "already in your record, not from this document"; nothing when
-both are empty.
+both are empty. A row is a button when the host passes `onOpenValue(eventId, event)` (hds-webapp opens the entry). With
+`sourceOf` (the same as `ConversationStepBubble`'s), a value read from this document that carries
+`clientData.hdsSourceAnchor` gets "See it on the document" / "Hide the document", an `AnchoredDocumentView` under its
+row; a value of the second group was read elsewhere and gets none.
 
 **Specimen labels** come from hds-lib `SPECIMEN_CODES` (en, fr, es); document kinds from the pack
 (`documentKindLabel`, `documentKindOptions`).

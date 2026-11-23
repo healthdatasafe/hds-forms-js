@@ -39,3 +39,73 @@ jobs:
 
     - name: Test
       run: npm test
+
+  # hds-webapp's typecheck against this branch's sources, before a tag (plan 135: 0.35.0 broke a consumer's
+  # typecheck through a dependency nobody declared). hds-webapp and its hds-react-timeline are private: the job needs
+  # the HDS_CI_TOKEN secret (a fine-grained PAT with read access to both) and skips green with a notice without it.
+  # The library's sources replace the webapp's installed copy and resolve hds-lib, hds-feminine-cycle-ui and
+  # pdfjs-dist from the webapp's own install (they are peers), so a red job means the webapp's pins are too old for
+  # this branch, or an export changed shape.
+  consumer-typecheck:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Detect credentials for the private consumer
+      id: guard
+      env:
+        TOKEN: ${{ secrets.HDS_CI_TOKEN }}
+      run: |
+        if [ -n "$TOKEN" ]; then
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "ok=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::HDS_CI_TOKEN is not set; skipping the hds-webapp typecheck (hds-webapp is private)."
+        fi
+
+    - name: Checkout this library
+      if: steps.guard.outputs.ok == 'true'
+      uses: actions/checkout@v7
+      with:
+        path: forms
+        persist-credentials: false
+
+    - name: Checkout hds-webapp
+      if: steps.guard.outputs.ok == 'true'
+      uses: actions/checkout@v7
+      with:
+        repository: healthdatasafe/hds-webapp
+        path: webapp
+        token: ${{ secrets.HDS_CI_TOKEN }}
+        persist-credentials: false
+
+    - name: Install Node.js 24.x
+      if: steps.guard.outputs.ok == 'true'
+      uses: actions/setup-node@v7
+      with:
+        node-version: 24.x
+
+    - name: Authenticate to private dependency repos
+      if: steps.guard.outputs.ok == 'true'
+      env:
+        TOKEN: ${{ secrets.HDS_CI_TOKEN }}
+      run: |
+        git config --global url."https://$TOKEN@github.com/".insteadOf "https://github.com/"
+        git config --global --add url."https://$TOKEN@github.com/".insteadOf "ssh://git@github.com/"
+        git config --global --add url."https://$TOKEN@github.com/".insteadOf "git@github.com:"
+
+    - name: Install hds-webapp
+      if: steps.guard.outputs.ok == 'true'
+      working-directory: webapp
+      run: npm ci
+
+    - name: Put this branch in place of the installed hds-forms-js
+      if: steps.guard.outputs.ok == 'true'
+      run: |
+        rm -rf webapp/node_modules/hds-forms-js
+        mkdir webapp/node_modules/hds-forms-js
+        cp -r forms/package.json forms/src forms/css webapp/node_modules/hds-forms-js/
+
+    - name: Typecheck hds-webapp
+      if: steps.guard.outputs.ok == 'true'
+      working-directory: webapp
+      run: npm run typecheck
