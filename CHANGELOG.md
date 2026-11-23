@@ -1,11 +1,24 @@
 # Changelog
 
-## [0.42.1] - 2026-11-23
+## [0.43.1] - 2026-11-23
 
 ### Fixed
 
 - `Select`: a required field with no value shows a disabled empty `--` placeholder. Before, it showed the first real
   option while its value stayed null, so the form looked filled and its Save stayed disabled (plan 133).
+
+## [0.43.0] - 2026-11-23
+
+Needs hds-lib ≥ 2.63.0, data-model ≥ 4.27.0.
+
+### Added (plan 135, S6: other apps)
+
+- `viewer: 'person' | 'contact'` and `personName` on `ConversationAnswerBubble`, `TaskStatusLine` and
+  `DocumentConversationCard`: a contact's app shows her answers in the third person on its side ("Anna confirmed 5
+  values", "Anna's note: …"), its own work ("Waiting for Anna's answers"), errors without naming itself; the card is
+  always read-only for a contact. `answerText` / `questionAnswerText` take the same reader as a fourth argument;
+  `personNameOf`, types `ConversationViewer`, `AnswerReader`. A test fails on an `answer.*` text without its
+  `contact.answer.*`.
 
 ## [0.42.0] - 2026-11-22
 

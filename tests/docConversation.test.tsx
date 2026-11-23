@@ -240,6 +240,31 @@ describe('[DOC] the document step and her note', () => {
     expect(missing).toEqual([]);
   });
 
+  it('every answer text has its contact wording', () => {
+    const keys = Object.keys(conv.CONVERSATION_TEXTS);
+    const missing = keys.filter((k) => k.startsWith('answer.') && !keys.includes(`contact.${k}`));
+    expect(missing).toEqual([]);
+  });
+
+  it('a contact reads her answers in the third person, on the other side, read-only', async () => {
+    const a = answer({ id: 'x' }, 'confirm', { candidateIds: ['a', 'b'], written: [{ candidateId: 'a', eventId: 'w' }], note: 'fasting' });
+    await render(<conv.ConversationAnswerBubble answer={a} viewer='contact' personName='Anna' />);
+    expect(container.textContent).toContain('Anna confirmed 2 values');
+    expect(container.querySelector('[data-answer-note]')?.textContent).toBe('Anna’s note: fasting');
+    expect(container.querySelector('[data-answer-viewer="contact"]')?.className).toContain('justify-start');
+    await render(<conv.ConversationAnswerBubble answer={answer({ id: 'y' }, 'skip', {})} viewer='contact' />);
+    expect(container.textContent).toContain('The person set it aside');
+  });
+
+  it('the work status in the contact’s own words', async () => {
+    await render(<conv.TaskStatusLine status='awaiting-answers' counts={{ proposed: 2 }} contactName='HDS Reader' viewer='contact' personName='Anna' />);
+    expect(container.textContent).toContain('Waiting for Anna’s answers · 2 values');
+    await render(<conv.TaskStatusLine status='error' errorCode='reading-failed' contactName='HDS Reader' viewer='contact' personName='Anna' />);
+    expect(container.textContent).toContain('This document could not be read yet; reading is tried again.');
+    await render(<conv.TaskStatusLine status='error' errorCode='reading-failed' contactName='HDS Reader' />);
+    expect(container.textContent).toContain('HDS Reader could not read this document yet');
+  });
+
   it('her answer bubble shows its note', async () => {
     const a = answer({ id: 'x' }, 'confirm', { candidateIds: ['a'], written: [{ candidateId: 'a', eventId: 'w' }], note: 'fasting' });
     await render(<conv.ConversationAnswerBubble answer={a} />);
