@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.44.0] - 2026-11-23
+
+Needs hds-lib ≥ 2.63.0, data-model ≥ 4.27.0.
+
+### Added (plan 135, S6: other apps)
+
+- `useStepChoices(store?, key?)`: her choices about the flow of each document's conversation ("One by one", "Later",
+  the summary closed, "Review the ones set aside"), kept for the session in `sessionStorage` (key
+  `hds.conversation.steps`, as hds-webapp kept them) or in a store the host passes; `handlers(docKey)` gives the four
+  `ConversationStepBubble` callbacks. Moved from hds-webapp's `Chat.tsx` so a second app does not copy it.
+
 ## [0.43.1] - 2026-11-23
 
 ### Fixed

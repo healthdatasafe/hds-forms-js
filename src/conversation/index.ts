@@ -26,6 +26,8 @@ export { ConversationStepBubble, DocumentStatusBubble } from './ConversationStep
 export type { ConversationStepBubbleProps, DocumentStatusBubbleProps } from './ConversationStepBubble';
 export { nextStep, conversationProgress, documentOrder, progressText } from './nextStep';
 export type { ConversationStep, StepOptions, ConversationProgress } from './nextStep';
+export { useStepChoices, STEP_CHOICES_KEY } from './useStepChoices';
+export type { StepChoices, StepChoicesStore, StepChoiceHandlers } from './useStepChoices';
 export { ValueLine, ValueReview } from './ValueParts';
 export { useConversationRun, blockText } from './conversationRun';
 export type { ValueReviewProps } from './ValueParts';
