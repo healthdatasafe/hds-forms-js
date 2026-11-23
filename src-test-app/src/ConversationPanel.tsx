@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { HDSSettings } from 'hds-lib';
+import { settings } from 'hds-lib';
 import {
   ConversationAnswerBubble, ContactWorkingIndicator, NoticeBubble, TaskStatusLine, type ConversationViewer
 } from 'hds-forms/conversation';
@@ -45,7 +45,11 @@ export default function ConversationPanel () {
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   // the components read the language from hds-lib's preferred locales
   const [, setVersion] = useState(0);
-  useEffect(() => { HDSSettings._testInject('preferredLocales', [lang]); setVersion((v) => v + 1); }, [lang]);
+  useEffect(() => {
+    settings.setPreferredLocales([lang]);
+    setVersion((v) => v + 1);
+    return () => settings.setPreferredLocales(['en']);
+  }, [lang]);
   useEffect(() => { document.documentElement.classList.toggle('dark', dark); }, [dark]);
 
   return (

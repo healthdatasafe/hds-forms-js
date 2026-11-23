@@ -307,7 +307,7 @@ export default function App () {
   }, [items]);
 
   const tabClass = (t: Tab) =>
-    `px-4 py-2 text-sm font-medium rounded-t-lg ${tab === t
+    `shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium rounded-t-lg ${tab === t
       ? 'bg-white text-primary-700 border border-b-white border-gray-200 dark:bg-gray-800 dark:text-primary-400 dark:border-gray-600'
       : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`;
 
@@ -332,7 +332,7 @@ export default function App () {
       </div>
 
       {/* Tab bar */}
-      <div className='mb-0 flex gap-1 border-b border-gray-200 dark:border-gray-600'>
+      <div className='mb-0 flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-600'>
         <button className={tabClass('fields')} onClick={() => setTab('fields')}>
           Single Field
         </button>
