@@ -256,4 +256,24 @@ describe('[DOC] the document step and her note', () => {
     await render(<conv.DocumentValuesList values={{ source: [], matched: [] }} />);
     expect(container.querySelector('[data-document-values]')).toBeNull();
   });
+
+  it('the values list: a value opens with its event; one read from here is shown where it is printed', async () => {
+    const anchor = { attachmentId: 'a1', page: 1, bbox: [0.1, 0.2, 0.3, 0.05] };
+    const read = { id: 'v1', type: 'concentration/ug-l', time: 1, streamIds: ['ferritin'], content: 48, clientData: { hdsSourceAnchor: anchor } };
+    const matched = { ...read, id: 'v2' };
+    const plain = { ...read, id: 'v3', clientData: {} };
+    const onOpenValue = vi.fn();
+    const sourceOf = vi.fn(() => null);
+    await render(<conv.DocumentValuesList values={{ source: [read, plain], matched: [matched] }} onOpenValue={onOpenValue} sourceOf={sourceOf} />);
+    const links = [...container.querySelectorAll('button')].filter((b) => b.textContent === 'See it on the document');
+    // only v1: v3 has no anchor, v2 was read from another document
+    expect(links.length).toBe(1);
+    expect(links[0].closest('[data-value-event]')?.getAttribute('data-value-event')).toBe('v1');
+    await act(async () => { links[0].click(); });
+    expect(sourceOf).toHaveBeenCalledWith('a1');
+    expect(container.textContent).toContain('Hide the document');
+    const open = container.querySelector('[data-value-event="v3"] button') as HTMLButtonElement;
+    await act(async () => { open.click(); });
+    expect(onOpenValue).toHaveBeenCalledWith('v3', plain);
+  });
 });
