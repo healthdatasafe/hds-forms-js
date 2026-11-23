@@ -14,9 +14,10 @@ import { jsonFormForItemDef } from 'hds-forms/schema/itemDefToSchema';
 import type { SectionEntry } from 'hds-forms/types';
 import FormBuilder from './FormBuilder';
 import DocumentPanel from './DocumentPanel';
+import ConversationPanel from './ConversationPanel';
 import { Timeline } from 'hds-react-timeline';
 
-type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'timeline' | 'settings' | 'document';
+type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'timeline' | 'settings' | 'document' | 'conversation';
 
 // Public read-only demo access on the throwaway `sample-mira` account, scoped to
 // the `mira-demo` stream. This bundle is published to gh-pages, so anything used
@@ -234,7 +235,10 @@ function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list
 }
 
 export default function App () {
-  const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(window.location.search).get('tab') === 'document' ? 'document' : 'fields'));
+  const [tab, setTab] = useState<Tab>(() => {
+    const asked = new URLSearchParams(window.location.search).get('tab');
+    return asked === 'document' || asked === 'conversation' ? asked : 'fields';
+  });
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ItemSearchPickerItem[]>([]);
 
@@ -303,7 +307,7 @@ export default function App () {
   }, [items]);
 
   const tabClass = (t: Tab) =>
-    `px-4 py-2 text-sm font-medium rounded-t-lg ${tab === t
+    `shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium rounded-t-lg ${tab === t
       ? 'bg-white text-primary-700 border border-b-white border-gray-200 dark:bg-gray-800 dark:text-primary-400 dark:border-gray-600'
       : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`;
 
@@ -328,7 +332,7 @@ export default function App () {
       </div>
 
       {/* Tab bar */}
-      <div className='mb-0 flex gap-1 border-b border-gray-200 dark:border-gray-600'>
+      <div className='mb-0 flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-600'>
         <button className={tabClass('fields')} onClick={() => setTab('fields')}>
           Single Field
         </button>
@@ -352,6 +356,9 @@ export default function App () {
         </button>
         <button className={tabClass('document')} onClick={() => setTab('document')}>
           Document
+        </button>
+        <button className={tabClass('conversation')} onClick={() => setTab('conversation')}>
+          Conversation
         </button>
       </div>
 
@@ -425,6 +432,7 @@ export default function App () {
         {/* ── Settings Tab ── */}
         {tab === 'settings' && <SettingsPanel />}
         {tab === 'document' && <DocumentPanel />}
+        {tab === 'conversation' && <ConversationPanel />}
       </div>
     </div>
   );
