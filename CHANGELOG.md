@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `Select`: a required field with no value shows a disabled empty `--` placeholder. Before, it showed the first real
+  option while its value stayed null, so the form looked filled and its Save stayed disabled (plan 133).
+
 ## [0.41.0] - 2026-11-21
 
 ### Added (plan 135, data-model 4.27.0)
