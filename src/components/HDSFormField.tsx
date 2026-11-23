@@ -6,6 +6,8 @@ import { ageInYears, plausibilityText, plausibilityWarnings } from '../schema/pl
 import { mergeSliderLabels } from './sliderLabels';
 import { Checkbox } from './fields/Checkbox';
 import { DateInput } from './fields/DateInput';
+import { PartialDateInput } from './fields/PartialDateInput';
+import { acceptsPartialDate } from './fields/partialDate';
 import { TextInput } from './fields/TextInput';
 import { NumberInput } from './fields/NumberInput';
 import { Select } from './fields/Select';
@@ -234,7 +236,8 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
     case 'checkbox':
       return <Checkbox {...baseProps} />;
     case 'date':
-      return <DateInput {...baseProps} />;
+      // a composite part whose eventType takes YYYY or YYYY-MM (allergy `lastOccurrence`) gets its precision
+      return acceptsPartialDate(objectSchema) ? <PartialDateInput {...baseProps} /> : <DateInput {...baseProps} />;
     case 'text':
       return <TextInput {...baseProps} />;
     case 'number': {

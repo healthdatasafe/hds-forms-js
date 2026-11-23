@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { FieldProps } from '../../types';
 
 interface MultiSelectFieldProps extends FieldProps {
@@ -13,6 +14,8 @@ interface MultiSelectFieldProps extends FieldProps {
  * these as checkbox lists, and multi-select dropdowns are poor on touch.
  */
 export function MultiSelect ({ label, description, value, onChange, options, required, disabled }: MultiSelectFieldProps) {
+  // ids per field instance: two multi-selects sharing an option value must not share a checkbox id (B-2026-11-21-9)
+  const idBase = useId();
   const selected: string[] = Array.isArray(value) ? value : [];
 
   function toggle (optValue: string, checked: boolean) {
@@ -35,13 +38,13 @@ export function MultiSelect ({ label, description, value, onChange, options, req
           <div key={opt.value} className='flex items-start gap-3'>
             <input
               type='checkbox'
-              id={`ms-${opt.value}`}
+              id={`${idBase}-${opt.value}`}
               checked={selected.includes(opt.value)}
               onChange={(e) => toggle(opt.value, e.target.checked)}
               disabled={disabled}
               className='mt-1 h-4 w-4 rounded border-[color:var(--hds-input,#848c97)] bg-gray-100 text-primary-600 focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-primary-600'
             />
-            <label htmlFor={`ms-${opt.value}`} className='text-sm font-medium text-gray-900 dark:text-gray-300'>
+            <label htmlFor={`${idBase}-${opt.value}`} className='text-sm font-medium text-gray-900 dark:text-gray-300'>
               {opt.label}
             </label>
           </div>

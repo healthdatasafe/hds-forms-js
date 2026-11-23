@@ -56,6 +56,7 @@ export type { MethodNotationPickerProps, NotationState } from './components/Meth
 // Schema utilities
 export { schemaFor } from './schema/schemas';
 export { jsonFormForItemDef } from './schema/itemDefToSchema';
+export { missingRequiredParts } from './schema/requiredParts';
 
 // Event data conversion
 export { prefillFromEvents, matchEventsToItemDefs, formDataToActions, formDataToEventBatch } from './schema/eventData';
