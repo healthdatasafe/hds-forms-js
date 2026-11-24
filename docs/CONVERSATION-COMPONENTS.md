@@ -21,7 +21,7 @@ the item's kind and code, never on an app code.
 | 0.37.0 | ≥ 2.61.0 | ≥ 4.25.0 |
 | 0.38.0 | ≥ 2.62.0 | ≥ 4.26.0 |
 | 0.39.0, 0.40.0 | ≥ 2.63.0 | ≥ 4.26.0 |
-| 0.41.0 to 0.44.0 | ≥ 2.63.0 | ≥ 4.27.0 |
+| 0.41.0 to 0.46.1 | ≥ 2.63.0 | ≥ 4.27.0 |
 
 The components are **presentational**: they take hds-lib `cmcConversation` views and callbacks, and do no I/O. All the
 I/O sits in **one hook**, `useDocumentConversations` (§ 5), which reads every relationship's conversation and answers it
