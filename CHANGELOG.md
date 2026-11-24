@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `useDocumentConversations` (needs hds-lib 2.65.0): a document gets its conversation when the contact's grant reads it
+  (`cmcDocuments.readsDocument`: its own share child, a stream under `documents`), not only when it reads every document
+  or a current `document-shared` alert was sent. A document the platform hides from the contact (a stream at `none` or
+  `create-only`) gets none unless shared. Every document talked about is read, in one batch per relationship. Her notes
+  count as about an unshared document on the same rule, and not while the document could not be read. A permission
+  changed at equal count reads the conversation again (plan 140).
+
 ## [0.46.1] - 2026-11-24
 
 ### Changed
