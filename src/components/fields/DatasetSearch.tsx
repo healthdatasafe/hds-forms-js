@@ -5,6 +5,7 @@ import { getCompanionSchema, extractCompanionDefaults, getEnumLabel, keyToLabel 
 import { buildPinnedValue, pinDisplayLabel } from '../../schema/itemPin';
 import type { ItemPin } from '../../schema/itemPin';
 import { ALL_OR_NOTHING_HINT, useAllOrNothing } from './allOrNothing';
+import { fill } from '../../textUtils';
 
 const l = localizeText;
 
@@ -39,7 +40,14 @@ const T = {
   yours: { en: 'Your entries', fr: 'Vos saisies' },
   results: { en: 'Search results', fr: 'Résultats' },
   noMatch: { en: 'Nothing found', fr: 'Aucun résultat' },
-  useTyped: { en: 'Use “{text}”', fr: 'Utiliser « {text} »' }
+  useTyped: { en: 'Use “{text}”', fr: 'Utiliser « {text} »' },
+  typeToSearch: { en: 'Type at least {n} characters to search...', fr: 'Saisissez au moins {n} caractères pour rechercher...' },
+  typeToSearchOne: { en: 'Type at least 1 character to search...', fr: 'Saisissez au moins 1 caractère pour rechercher...' },
+  searching: { en: 'Searching...', fr: 'Recherche...' },
+  pinMismatch: {
+    en: 'Pinned concept belongs to datasource "{pinned}", but this field searches "{datasource}". Fix the form\'s itemCustomizations.',
+    fr: 'Le concept imposé appartient à la source « {pinned} », mais ce champ cherche dans « {datasource} ». Corrigez les itemCustomizations du formulaire.'
+  }
 };
 
 /** Resolve a display field name — handles both plain string and LocalizableText */
@@ -480,7 +488,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
 
       {pinMismatch && (
         <div className='rounded-lg border border-red-300 bg-red-50 p-2.5 text-sm text-red-700 dark:border-red-700 dark:bg-red-900/30 dark:text-red-300'>
-          Pinned concept belongs to datasource &quot;{pin?.datasource}&quot;, but this field searches &quot;{datasource}&quot;. Fix the form&apos;s itemCustomizations.
+          {fill(l(T.pinMismatch), { pinned: pin?.datasource ?? '', datasource })}
         </div>
       )}
 
@@ -501,7 +509,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
                 value={query}
                 onFocus={() => { if (recentConcepts.length > 0 || searchedQuery !== '') setIsOpen(true); }}
                 onChange={(e) => handleInputChange(e.target.value)}
-                placeholder={`Type at least ${minQueryLength} characters to search...`}
+                placeholder={minQueryLength === 1 ? l(T.typeToSearchOne) : fill(l(T.typeToSearch), { n: minQueryLength })}
                 disabled={disabled}
                 className='block w-full rounded-lg border border-[color:var(--hds-input,#848c97)] bg-gray-50 p-2.5 pr-8 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:focus:border-primary-500 dark:focus:ring-primary-500'
               />
@@ -539,7 +547,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
             )}
 
             {isLoading && (
-              <div className='mt-1 text-xs text-gray-500 dark:text-gray-400'>Searching...</div>
+              <div className='mt-1 text-xs text-gray-500 dark:text-gray-400'>{l(T.searching)}</div>
             )}
 
             {showList && (

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- `FormBuilder`, `QuestionnaireBuilder`, `ReminderEditor`, `ItemSearchPicker`, `DatasetSearch` and `repeatableLabel` show their own texts in the current language (English and French) instead of English only; `labels` still win.
+
 ## [0.46.0] - 2026-11-24
 
 ### Added

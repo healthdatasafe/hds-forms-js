@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { localizeText as l } from 'hds-lib';
+import { fill } from '../textUtils';
+import { REMINDER_TEXTS as T } from './builderTexts';
 
 export interface ReminderEditorConfig {
   enabled?: boolean;
@@ -20,27 +23,26 @@ interface ReminderEditorProps {
   availableItemKeys?: Array<{ key: string; label: string }>;
 }
 
-const DURATION_OPTIONS = [
-  { value: '', label: '—' },
-  { value: 'PT8H', label: '8 hours' },
-  { value: 'P1D', label: '1 day' },
-  { value: 'P2D', label: '2 days' },
-  { value: 'P1W', label: '1 week' },
-  { value: 'P2W', label: '2 weeks' },
-  { value: 'P21D', label: '21 days' },
-  { value: 'P1M', label: '1 month' },
-  { value: 'P35D', label: '35 days' },
-  { value: 'P3M', label: '3 months' },
-  { value: 'P6M', label: '6 months' },
-  { value: 'P1Y', label: '1 year' }
-];
+const DURATIONS = ['PT8H', 'P1D', 'P2D', 'P1W', 'P2W', 'P21D', 'P1M', 'P35D', 'P3M', 'P6M', 'P1Y'] as const;
+const IMPORTANCES = ['may', 'should', 'must'] as const;
 
-const IMPORTANCE_OPTIONS = [
-  { value: '', label: 'default (may)' },
-  { value: 'may', label: 'May (optional)' },
-  { value: 'should', label: 'Should (recommended)' },
-  { value: 'must', label: 'Must (required)' }
-];
+const IMPORTANCE_WORDS = { may: T.importanceMay, should: T.importanceShould, must: T.importanceMust };
+const IMPORTANCE_OPTIONS = { may: T.importanceMayOption, should: T.importanceShouldOption, must: T.importanceMustOption };
+
+/** The importance as one word; a value this version does not know is shown as it is */
+function importanceWord (importance: string): string {
+  const text = (IMPORTANCE_WORDS as Record<string, { en: string; fr: string } | undefined>)[importance];
+  return text ? l(text) : importance;
+}
+
+const durationOptions = () => (
+  <>
+    <option value=''>—</option>
+    {DURATIONS.map(d => (
+      <option key={d} value={d}>{l(T[`duration.${d}`])}</option>
+    ))}
+  </>
+);
 
 type ReminderType = 'none' | 'cooldown' | 'interval' | 'relative';
 
@@ -56,16 +58,16 @@ function detectType (config: Partial<ReminderEditorConfig> | null | undefined): 
 function describeDefault (config: ReminderEditorConfig | null): string {
   if (!config) return 'none';
   const parts: string[] = [];
-  if (config.cooldown) parts.push(`cooldown: ${config.cooldown}`);
+  if (config.cooldown) parts.push(fill(l(T.describeCooldown), { value: config.cooldown }));
   if (config.expectedInterval) {
     const { min, max } = config.expectedInterval;
-    parts.push(`interval: ${min || '?'}–${max || '?'}`);
+    parts.push(fill(l(T.describeInterval), { min: min || '?', max: max || '?' }));
   }
   if (config.relativeTo) {
-    parts.push(`relative to ${config.relativeTo} days [${config.relativeDays?.join(', ')}]`);
+    parts.push(fill(l(T.describeRelative), { item: config.relativeTo, days: String(config.relativeDays?.join(', ')) }));
   }
-  if (config.importance) parts.push(config.importance);
-  return parts.join(', ') || 'configured (no timing)';
+  if (config.importance) parts.push(importanceWord(config.importance));
+  return parts.join(', ') || l(T.describeNoTiming);
 }
 
 const selectClass = 'rounded border border-[color:var(--hds-input,#848c97)] bg-white px-1 py-0.5 text-xs text-gray-900 dark:bg-gray-800 dark:text-white';
@@ -140,9 +142,9 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
   return (
     <div className='mt-1 space-y-1'>
       <div className='flex items-center gap-2'>
-        <label className='text-gray-600 dark:text-gray-400'>Reminder:</label>
+        <label className='text-gray-600 dark:text-gray-400'>{l(T.reminder)}</label>
         <span className='text-gray-400 dark:text-gray-500' title={defaultReminder ? describeDefault(defaultReminder) : undefined}>
-          {defaultReminder ? describeDefault(defaultReminder) : 'none in data model'}
+          {defaultReminder ? describeDefault(defaultReminder) : l(T.noneInModel)}
         </span>
         <input
           type='checkbox'
@@ -156,28 +158,25 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
           {/* Row 1: Type + Importance */}
           <div className='flex flex-wrap items-center gap-3'>
             <div className='flex items-center gap-1'>
-              <label className={labelClass}>Type:</label>
+              <label className={labelClass}>{l(T.type)}</label>
               <select value={type} onChange={e => handleTypeChange(e.target.value as ReminderType)} className={selectClass}>
-                <option value='cooldown'>Cooldown</option>
-                <option value='interval'>Expected interval</option>
+                <option value='cooldown'>{l(T.typeCooldown)}</option>
+                <option value='interval'>{l(T.typeInterval)}</option>
                 {(type === 'relative' || (availableItemKeys && availableItemKeys.length > 0)) && (
-                  <option value='relative'>Relative to item</option>
+                  <option value='relative'>{l(T.typeRelative)}</option>
                 )}
               </select>
             </div>
             <div className='flex items-center gap-1'>
-              <label className={labelClass}>Importance:</label>
+              <label className={labelClass}>{l(T.importance)}</label>
               <select
                 value={override?.importance || ''}
                 onChange={e => update({ importance: (e.target.value || undefined) as any })}
                 className={selectClass}
               >
-                {IMPORTANCE_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.value === '' && defaultReminder?.importance
-                      ? `default (${defaultReminder.importance})`
-                      : opt.label}
-                  </option>
+                <option value=''>{fill(l(T.importanceDefault), { value: importanceWord(defaultReminder?.importance || 'may') })}</option>
+                {IMPORTANCES.map(i => (
+                  <option key={i} value={i}>{l(IMPORTANCE_OPTIONS[i])}</option>
                 ))}
               </select>
             </div>
@@ -186,15 +185,13 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
           {/* Row 2: Type-specific fields */}
           {type === 'cooldown' && (
             <div className='flex items-center gap-1'>
-              <label className={labelClass}>Cooldown:</label>
+              <label className={labelClass}>{l(T.cooldown)}</label>
               <select
                 value={effective?.cooldown || ''}
                 onChange={e => update({ cooldown: e.target.value || undefined })}
                 className={selectClass}
               >
-                {DURATION_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
+                {durationOptions()}
               </select>
             </div>
           )}
@@ -202,39 +199,33 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
           {type === 'interval' && (
             <div className='flex flex-wrap items-center gap-3'>
               <div className='flex items-center gap-1'>
-                <label className={labelClass}>Min:</label>
+                <label className={labelClass}>{l(T.min)}</label>
                 <select
                   value={effective?.expectedInterval?.min || ''}
                   onChange={e => updateInterval('min', e.target.value)}
                   className={selectClass}
                 >
-                  {DURATION_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
+                  {durationOptions()}
                 </select>
               </div>
               <div className='flex items-center gap-1'>
-                <label className={labelClass}>Max:</label>
+                <label className={labelClass}>{l(T.max)}</label>
                 <select
                   value={effective?.expectedInterval?.max || ''}
                   onChange={e => updateInterval('max', e.target.value)}
                   className={selectClass}
                 >
-                  {DURATION_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
+                  {durationOptions()}
                 </select>
               </div>
               <div className='flex items-center gap-1'>
-                <label className={labelClass}>Cooldown:</label>
+                <label className={labelClass}>{l(T.cooldown)}</label>
                 <select
                   value={effective?.cooldown || ''}
                   onChange={e => update({ cooldown: e.target.value || undefined })}
                   className={selectClass}
                 >
-                  {DURATION_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
+                  {durationOptions()}
                 </select>
               </div>
             </div>
@@ -243,18 +234,18 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
           {type === 'relative' && (
             <div className='flex flex-wrap items-center gap-3'>
               <div className='flex items-center gap-1'>
-                <label className={labelClass}>Relative to:</label>
+                <label className={labelClass}>{l(T.relativeTo)}</label>
                 <span className='text-xs text-gray-700 dark:text-gray-300'>{effective?.relativeTo || '—'}</span>
               </div>
               <div className='flex items-center gap-1'>
-                <label className={labelClass}>Days:</label>
+                <label className={labelClass}>{l(T.days)}</label>
                 <input
                   type='text'
                   value={(effective?.relativeDays || []).join(', ')}
                   onChange={e => updateRelativeDays(e.target.value)}
                   placeholder='2, 3, 4'
                   className={inputClass}
-                  title='Comma-separated cycle days (e.g. 2, 3, 4)'
+                  title={l(T.daysHint)}
                 />
               </div>
             </div>

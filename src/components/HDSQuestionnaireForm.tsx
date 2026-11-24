@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { localizeText, appTemplates } from 'hds-lib';
+import { FORM_TEXTS } from './formTexts';
 import { DEFAULT_QUESTIONNAIRE_LABELS } from './questionnaireLabels';
 import type { QuestionnaireFormLabels } from './questionnaireLabels';
 
@@ -163,7 +164,7 @@ export function HDSQuestionnaireForm ({
         disabled={disabled}
         className='rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-300 disabled:opacity-50 dark:bg-[var(--hds-primary)] dark:text-[var(--hds-primary-foreground)] dark:hover:bg-primary-400 dark:focus:ring-primary-800'
       >
-        {submitLabel || 'Submit'}
+        {submitLabel || l(FORM_TEXTS.submit)}
       </button>
     </form>
   );

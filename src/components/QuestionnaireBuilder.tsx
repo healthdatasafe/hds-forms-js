@@ -17,6 +17,8 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { getHDSModel, localizeText, appTemplates } from 'hds-lib';
+import { fill, localizeTable } from '../textUtils';
+import { QUESTIONNAIRE_BUILDER_TEXTS as T } from './builderTexts';
 
 const l = localizeText;
 
@@ -24,13 +26,17 @@ type QuestionDef = appTemplates.QuestionDef;
 type QuestionScope = appTemplates.QuestionScope;
 type QuestionSubField = appTemplates.QuestionSubField;
 
-const SCOPE_TYPES: Array<{ value: 'ever' | 'window' | 'latest', label: string }> = [
-  { value: 'ever', label: 'Ever (lifetime)' },
-  { value: 'window', label: 'Within window' },
-  { value: 'latest', label: 'Latest, within' }
+const SCOPE_TYPES = [
+  { value: 'ever', text: T.scopeEver },
+  { value: 'window', text: T.scopeWindow },
+  { value: 'latest', text: T.scopeLatest }
 ];
 
-const SUB_FIELD_TYPES: Array<QuestionSubField['type']> = ['select-segmented', 'text', 'number'];
+const SUB_FIELD_TYPES: Record<QuestionSubField['type'], { en: string; fr: string }> = {
+  'select-segmented': T.subFieldSelect,
+  text: T.subFieldText,
+  number: T.subFieldNumber
+};
 
 export interface QuestionnaireBuilderLabels {
   title: string;
@@ -58,32 +64,6 @@ export interface QuestionnaireBuilderLabels {
   invalidItemRef: string;
 }
 
-const DEFAULT_LABELS: QuestionnaireBuilderLabels = {
-  title: 'Title',
-  description: 'Description',
-  addQuestion: 'Add question',
-  noQuestions: 'No questions yet.',
-  questionKey: 'Key',
-  questionLabel: 'Question text',
-  itemRef: 'Item',
-  scope: 'Time scope',
-  withinDays: 'Within days',
-  subField: 'Sub-field',
-  noSubField: '(none)',
-  subFieldLabel: 'Sub-field label',
-  subFieldOptions: 'Options',
-  addOption: '+ option',
-  optionValue: 'Value',
-  optionLabel: 'Label',
-  drugSystem: 'Code system',
-  drugCode: 'Code',
-  drugFilter: 'Drug filter',
-  drugFilterHint: 'Restrict prefill matching to events whose drug.codes[] contains this code.',
-  remove: 'Remove',
-  invalidKey: 'Key must match [a-zA-Z0-9_-]+',
-  invalidItemRef: 'Pick an item from the list'
-};
-
 const MEDICATION_ITEM_PREFIX = 'medication-';
 
 function isMedicationItem (itemRef: string): boolean {
@@ -97,7 +77,7 @@ export interface QuestionnaireBuilderProps {
   readOnly?: boolean;
   /** Called whenever the questionnaire is modified. */
   onDirty?: () => void;
-  /** i18n overrides. */
+  /** Override the default labels (by default, in the current language). */
   labels?: Partial<QuestionnaireBuilderLabels>;
 }
 
@@ -107,7 +87,7 @@ export function QuestionnaireBuilder ({
   onDirty,
   labels: labelOverrides
 }: QuestionnaireBuilderProps) {
-  const lb = { ...DEFAULT_LABELS, ...labelOverrides };
+  const lb: QuestionnaireBuilderLabels = { ...localizeTable(T), ...labelOverrides };
   const model = getHDSModel();
   const allItemDefs = useMemo(() => model.itemsDefs.getAllActive(), [model]);
 
@@ -232,7 +212,7 @@ export function QuestionnaireBuilder ({
                 <div className='flex-1'>
                   <div className='text-xs font-mono text-gray-500 dark:text-gray-400'>{key}</div>
                   <div className='text-sm font-medium text-gray-900 dark:text-white'>
-                    {l(q.label) || '(no label)'}
+                    {l(q.label) || l(T.noLabel)}
                   </div>
                   <div className='mt-1 text-xs text-gray-600 dark:text-gray-300'>
                     <span className='font-medium'>{lb.itemRef}:</span> {q.itemRef}
@@ -241,7 +221,7 @@ export function QuestionnaireBuilder ({
                     {q.subField && (
                       <>
                         {' · '}
-                        <span className='font-medium'>{lb.subField}:</span> {q.subField.type}
+                        <span className='font-medium'>{lb.subField}:</span> {subFieldTypeText(q.subField.type)}
                       </>
                     )}
                   </div>
@@ -305,8 +285,12 @@ export function QuestionnaireBuilder ({
 }
 
 function scopeToText (scope: QuestionScope): string {
-  if (scope.type === 'ever') return 'ever';
-  return `${scope.type}/${scope.withinDays}d`;
+  if (scope.type === 'ever') return l(T.scopeEverShort);
+  return fill(l(scope.type === 'window' ? T.scopeWindowShort : T.scopeLatestShort), { n: String(scope.withinDays) });
+}
+
+function subFieldTypeText (type: QuestionSubField['type']): string {
+  return SUB_FIELD_TYPES[type] ? l(SUB_FIELD_TYPES[type]) : type;
 }
 
 interface QuestionEditorProps {
@@ -357,7 +341,7 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
               disabled={readOnly}
               className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
             >
-              {SCOPE_TYPES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              {SCOPE_TYPES.map((s) => <option key={s.value} value={s.value}>{l(s.text)}</option>)}
             </select>
           </div>
           {question.scope.type !== 'ever' && (
@@ -395,7 +379,7 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
           className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
         >
           <option value=''>{labels.noSubField}</option>
-          {SUB_FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          {Object.entries(SUB_FIELD_TYPES).map(([t, text]) => <option key={t} value={t}>{l(text)}</option>)}
         </select>
       </div>
       {question.subField && (
@@ -450,7 +434,7 @@ function DrugCodeEditor ({ question, onChange, labels, readOnly }: SubEditorProp
           <input
             type='text'
             value={first.code || ''}
-            placeholder='e.g. G03DA04'
+            placeholder={l(T.drugCodePlaceholder)}
             onChange={(e) => updateCode({ system: first.system || 'ATC', code: e.target.value })}
             disabled={readOnly}
             className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm font-mono dark:bg-gray-800 dark:text-white'
@@ -512,7 +496,7 @@ function SubFieldDetails ({ question, onChange, labels, readOnly }: SubEditorPro
         <input
           type='text'
           value={subLabel}
-          placeholder='e.g. Trimester'
+          placeholder={l(T.subFieldLabelPlaceholder)}
           onChange={(e) => updateLabel(e.target.value)}
           disabled={readOnly}
           className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'

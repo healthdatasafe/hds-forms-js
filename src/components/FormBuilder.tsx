@@ -6,6 +6,8 @@ import { ReminderEditor } from './ReminderEditor';
 import type { ReminderEditorConfig } from './ReminderEditor';
 import { QuestionnaireBuilder } from './QuestionnaireBuilder';
 import { REPEATABLE_OPTIONS, repeatableLabel, getItemGroup } from '../formBuilderUtils';
+import { fill, localizeTable } from '../textUtils';
+import { FORM_BUILDER_TEXTS as T } from './builderTexts';
 
 const { Questionnaire } = appTemplates;
 
@@ -32,28 +34,12 @@ export interface FormBuilderLabels {
   unknownItem: string;
 }
 
-const DEFAULT_LABELS: FormBuilderLabels = {
-  searchItems: 'Search items...',
-  selectSectionToAdd: 'Select a section to add items',
-  addPermanentSection: 'Permanent section',
-  addRecurringSection: 'Recurring section',
-  bundledQuestionnaires: 'Bundled questionnaires',
-  addQuestionnaire: 'Add questionnaire',
-  removeQuestionnaire: 'Remove',
-  sectionName: 'Section name',
-  clickToAdd: 'Click items in the browser to add them',
-  noItems: 'No items — click to select this section',
-  customize: 'Customize',
-  repeatable: 'Repeatable',
-  preview: 'Preview',
-  addSectionsToPreview: 'Add sections to preview the form',
-  published: 'Published',
-  coverageOk: 'All question items are covered by the request\'s permissions.',
-  coverageMissing: 'permission(s) missing for this questionnaire',
-  coverageUnknown: 'unknown item(s)',
-  coverageApply: 'Add missing permissions to request',
-  unknownItem: 'Unknown item: not in the data model, remove it'
-};
+/** A section's type in words; a type this version does not know is shown as it is */
+function sectionTypeText (type: string): string {
+  if (type === 'permanent') return l(T.typePermanent);
+  if (type === 'recurring') return l(T.typeRecurring);
+  return type;
+}
 
 // -- Component props --
 
@@ -68,7 +54,7 @@ export interface FormBuilderProps {
   onDirty?: () => void;
   /** Show ReminderEditor in item customization panel */
   showReminders?: boolean;
-  /** Override default English labels (for i18n) */
+  /** Override the default labels (by default, in the current language) */
   labels?: Partial<FormBuilderLabels>;
   /** Default preview mode (null = collapsed) */
   defaultPreviewMode?: PreviewMode | null;
@@ -91,7 +77,7 @@ export default function FormBuilder ({
   metadataSlot,
   actionSlot
 }: FormBuilderProps) {
-  const lb = { ...DEFAULT_LABELS, ...labelOverrides };
+  const lb: FormBuilderLabels = { ...localizeTable(T), ...labelOverrides };
 
   const model = getHDSModel();
   const allItemDefs = useMemo(() => model.itemsDefs.getAllActive(), [model]);
@@ -415,10 +401,10 @@ export default function FormBuilder ({
                   <button
                     onClick={e => { e.stopPropagation(); toggleSectionType(section.key); }}
                     className='rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-500 hover:bg-gray-200 disabled:opacity-60 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600'
-                    title='Click to toggle type'
+                    title={l(T.toggleType)}
                     disabled={readOnly}
                   >
-                    {section.type}
+                    {sectionTypeText(section.type)}
                   </button>
                   {!readOnly && (
                     <>
@@ -426,20 +412,20 @@ export default function FormBuilder ({
                         onClick={e => { e.stopPropagation(); moveSectionUp(section.key); }}
                         disabled={sIdx === 0}
                         className='text-xs text-gray-400 hover:text-gray-600 disabled:opacity-30 dark:hover:text-gray-300'
-                        title='Move section up'
+                        title={l(T.moveSectionUp)}
                       >↑
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); moveSectionDown(section.key); }}
                         disabled={sIdx === sections.length - 1}
                         className='text-xs text-gray-400 hover:text-gray-600 disabled:opacity-30 dark:hover:text-gray-300'
-                        title='Move section down'
+                        title={l(T.moveSectionDown)}
                       >↓
                       </button>
                       <button
                         onClick={e => { e.stopPropagation(); removeSection(section.key); }}
                         className='text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200'
-                        title='Remove section'
+                        title={l(T.removeSection)}
                       >×
                       </button>
                     </>
@@ -525,9 +511,9 @@ export default function FormBuilder ({
                                     onChange={e => setRepeatableValue(section.key, itemKey, e.target.value)}
                                     className='rounded border border-[color:var(--hds-input,#848c97)] bg-white px-1 py-0.5 text-xs text-gray-900 dark:bg-gray-800 dark:text-white'
                                   >
-                                    <option value=''>default ({repeatableLabel(defaultRepeatable)})</option>
+                                    <option value=''>{fill(l(T.repeatableDefault), { value: repeatableLabel(defaultRepeatable) })}</option>
                                     {REPEATABLE_OPTIONS.map(opt => (
-                                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                      <option key={opt.value} value={opt.value}>{repeatableLabel(opt.value)}</option>
                                     ))}
                                   </select>
                                 </div>
@@ -684,7 +670,7 @@ export default function FormBuilder ({
                           {sections.map((section: any) => (
                             <div key={section.key} className='rounded border border-gray-200 p-3 dark:border-gray-600'>
                               <h4 className='mb-2 text-sm font-medium text-gray-700 dark:text-gray-300'>
-                                {l(section.name)} ({section.type})
+                                {l(section.name)} ({sectionTypeText(section.type)})
                               </h4>
                               <HDSFormSection
                                 section={{
