@@ -33,8 +33,11 @@ export interface DocumentValuesListProps {
    * carries `clientData.hdsSourceAnchor` gets "See it on the document", the document zoomed where it is printed
    */
   sourceOf?: (attachmentId?: string) => AnchoredDocumentSource | null;
-  /** Its day in the host's words */
-  dayText?: (time: number) => string;
+  /**
+   * Its date in the host's words. The value's event comes second: its `clientData` says how far the date is known
+   * (`hdsTimePrecision`, data-model PARTIAL-DATES.md), which its `time` alone does not (B-2026-11-23-5)
+   */
+  dayText?: (time: number, event: ValueEvent) => string;
   loadPdfJs?: () => Promise<PdfJsLike>;
   pdfOptions?: Record<string, unknown>;
   className?: string;
@@ -59,7 +62,7 @@ export function DocumentValuesList ({ values, onOpenValue, sourceOf, dayText, lo
         {onOpenValue != null
           ? <button type='button' className={cx(btn.link, 'text-left')} onClick={() => onOpenValue(e.id, e)}>{text}</button>
           : <span>{text}</span>}
-        {dayText != null && <span className={cx(small, 'ml-2')}>{dayText(e.time)}</span>}
+        {dayText != null && <span className={cx(small, 'ml-2')}>{dayText(e.time, e)}</span>}
         {anchor != null && (
           <button type='button' className={cx(btn.link, 'ml-2')} aria-expanded={open} onClick={() => setShown(open ? null : e.id)}>
             {open ? tx('hideDocument') : tx('seeOnDocument')}
