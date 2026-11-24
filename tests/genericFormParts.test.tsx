@@ -43,6 +43,7 @@ vi.mock('hds-lib', () => ({
 const { HDSFormField } = await import('../src/components/HDSFormField');
 const { MultiSelect } = await import('../src/components/fields/MultiSelect');
 const { missingRequiredParts } = await import('../src/schema/requiredParts');
+const { schemaFor } = await import('../src/schema/schemas');
 const { acceptsPartialDate } = await import('../src/components/fields/partialDate');
 
 const categories = [{ value: 'food', label: 'Food' }, { value: 'medication', label: 'Medication' }];
@@ -150,6 +151,21 @@ describe('a partial date part (B-2026-11-21-10)', () => {
     const c = await mount(<HDSFormField itemData={dated} value={{ name: 'x', since: '2024-03-12' }} onChange={() => {}} />);
     expect((c.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2024-03-12');
     expect(byLabel(c, 'Since: how precisely')).toBeNull();
+  });
+});
+
+describe('the generated schema of a partial date part (B-2026-11-24-1)', () => {
+  it('carries the eventType pattern, so a stored year or month is valid', () => {
+    const part = schemaFor(allergyItem).properties!.lastOccurrence;
+    expect(part).toEqual({ title: 'Last reaction', type: 'string', pattern: PARTIAL });
+    for (const stored of ['2022', '2024-03', '2024-03-12']) expect(new RegExp(part.pattern!).test(stored)).toBe(true);
+  });
+
+  it('a date part without the partial pattern, or with no eventType schema, stays a full date', () => {
+    const dated: any = { type: 'composite', eventType: 'test/dated-v1', label: { en: 'Dated' }, composite: { since: { label: { en: 'Since' }, type: 'date' } } };
+    const full = { title: 'Since', type: 'string', format: 'date', dateSaveFormat: 'YYYY-MM-DD' };
+    expect(schemaFor(dated).properties!.since).toEqual(full);
+    expect(schemaFor({ ...dated, eventType: 'unknown/type' }).properties!.since).toEqual(full);
   });
 });
 

@@ -1,4 +1,6 @@
 import { localizeText } from 'hds-lib';
+import { eventTypeObjectSchema } from '../components/fields/allOrNothing';
+import { acceptsPartialDate } from '../components/fields/partialDate';
 
 type localizableText = { en: string; fr?: string; es?: string };
 
@@ -147,6 +149,8 @@ export interface JSONSchema {
   type?: 'boolean' | 'string' | 'number' | 'object' | 'array';
   format?: string;
   dateSaveFormat?: string;
+  /** A composite's partial date part — the eventType's own pattern (`YYYY`, `YYYY-MM` or `YYYY-MM-DD`). */
+  pattern?: string;
   minLength?: number;
   oneOf?: Array<{ const: string | number; title: string }>;
   properties?: Record<string, JSONSchema>;
@@ -165,11 +169,12 @@ export interface JSONSchema {
 
 const l = localizeText;
 
-type SchemaAction = (schema: JSONSchema, v: ItemData) => void;
+type SchemaAction = (schema: JSONSchema, v: ItemData, typeSchema?: any) => void;
 
 const SCHEMAS_PER_TYPE: Record<string, SchemaAction> = { checkbox, date, text, number, select, 'multi-select': multiSelect, composite, 'datasource-search': datasourceSearch, convertible, slider, system, attachments };
 
-export function schemaFor (v: ItemData): JSONSchema {
+/** @param typeSchema — for a part of a composite, its property in the eventType's JSON schema */
+export function schemaFor (v: ItemData, typeSchema?: any): JSONSchema {
   const schema: JSONSchema = {
     title: l(v.label) || ''
   };
@@ -182,7 +187,7 @@ export function schemaFor (v: ItemData): JSONSchema {
     schema.type = 'object';
     return schema;
   }
-  action(schema, v);
+  action(schema, v, typeSchema);
   return schema;
 }
 
@@ -192,8 +197,13 @@ function checkbox (schema: JSONSchema, _v: ItemData): void {
   schema.type = 'boolean';
 }
 
-function date (schema: JSONSchema, _v: ItemData): void {
+function date (schema: JSONSchema, _v: ItemData, typeSchema?: any): void {
   schema.type = 'string';
+  // a partial date (allergy `lastOccurrence`): `format: date` would refuse a stored `2022` or `2024-03` (B-2026-11-24-1)
+  if (acceptsPartialDate(typeSchema)) {
+    schema.pattern = typeSchema.pattern;
+    return;
+  }
   schema.format = 'date';
   schema.dateSaveFormat = 'YYYY-MM-DD';
 }
@@ -247,13 +257,14 @@ function datasourceSearch (schema: JSONSchema, _v: ItemData): void {
   schema.type = 'object';
 }
 
-function composite (schema: JSONSchema, v: ItemData): void {
+function composite (schema: JSONSchema, v: ItemData, typeSchema?: any): void {
   const compositeData = v as CompositeData;
+  const objectSchema = typeSchema ?? eventTypeObjectSchema(compositeData.eventType);
   schema.type = 'object';
   schema.properties = {};
   schema.required = [];
   for (const [key, value] of Object.entries(compositeData.composite)) {
-    schema.properties[key] = schemaFor(value);
+    schema.properties[key] = schemaFor(value, objectSchema?.properties?.[key]);
     if (value.canBeNull !== true) schema.required.push(key);
   }
 }
