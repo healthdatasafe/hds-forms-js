@@ -42,22 +42,25 @@ export function boxRect (box: AnchorBox, page: Size): { x: number; y: number; wi
   };
 }
 
-/** The least height a framed line gets on screen, in CSS pixels: readable on a phone */
+/** The height of a line read comfortably on a phone, in CSS pixels: what a line too small to show whole is zoomed to */
 export const MIN_LINE_PX = 18;
+
+/** The least height a whole line is shown at, in CSS pixels: under it, its words can no longer be made out */
+export const LEAST_LINE_PX = 6;
 
 /**
  * The value's box, as large as it fits with its surroundings (a little of the page left and right, about a line's
- * height above and below), and never smaller than a readable line. A box that is then wider than the screen (a whole
- * printed row on a phone) starts at its left edge, where the label is printed: the value follows on the same line,
- * and the rest is a drag away.
+ * height above and below): a whole printed row, so the value is in view with its label and unit, small on a phone and
+ * a tap on + away from larger. Only a row too small to make out whole is zoomed to a readable line; wider than the
+ * screen then, it starts at its left edge, where the label is printed, and the rest is a drag away.
  */
 export function frameBox (viewport: Size, page: Size, box: AnchorBox, maxScale = MAX_SCALE): View {
   const r = boxRect(box, page);
   const padX = Math.max(page.width * 0.03, 4);
   const padY = Math.max(r.height * 1.5, page.height * 0.01, 4);
   const fit = Math.min(viewport.width / (r.width + 2 * padX), viewport.height / (r.height + 2 * padY));
-  const readable = MIN_LINE_PX / r.height;
-  const s = Math.max(minScale(viewport, page), Math.min(Math.max(fit, readable), maxScale));
+  const wanted = fit * r.height >= LEAST_LINE_PX ? fit : MIN_LINE_PX / r.height;
+  const s = Math.max(minScale(viewport, page), Math.min(wanted, maxScale));
   const fitsAcross = s * (r.width + 2 * padX) <= viewport.width + 0.5;
   const x = fitsAcross ? viewport.width / 2 - s * (r.x + r.width / 2) : -s * (r.x - padX);
   return clampView({ s, x, y: viewport.height / 2 - s * (r.y + r.height / 2) }, viewport, page);

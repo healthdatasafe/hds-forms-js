@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { boxRect, clampView, fitPage, frameBox, isUsableBox, MAX_SCALE, MIN_LINE_PX, panBy, sameView, zoomAt } from '../src/conversation/anchorFrame';
+import { boxRect, clampView, fitPage, frameBox, isUsableBox, LEAST_LINE_PX, MAX_SCALE, MIN_LINE_PX, panBy, sameView, zoomAt } from '../src/conversation/anchorFrame';
 import { anchoredAttachment, documentKindOf, readSourceAnchor } from '../src/conversation/sourceAnchor';
 
 // a phone: 360 × 400 viewport; an A4 page laid out at the viewport's width
@@ -22,18 +22,42 @@ describe('anchorFrame', () => {
     expect(fitPage({ width: 360, height: 2000 }, PAGE).s).toBe(1);
   });
 
-  it('[AF2] on a phone, a whole printed row is readable: its label first, the value on the same line', () => {
+  it('[AF2] on a phone, a whole printed row is in view: its label, its value and its unit', () => {
     const v = frameBox(VP, PAGE, HB);
     const r = boxRect(HB, PAGE);
-    expect(v.s * r.height).toBeGreaterThanOrEqual(MIN_LINE_PX - 0.01);
+    expect(v.s * r.height).toBeGreaterThanOrEqual(LEAST_LINE_PX);
+    expect(v.x + v.s * r.x).toBeGreaterThan(0);
+    expect(v.x + v.s * (r.x + r.width)).toBeLessThan(VP.width);
+    // centred across; in view, though near the page's top it cannot be centred in height (no blank beyond the page, AF4)
+    expect(centreOnScreen(v, HB).x).toBeCloseTo(VP.width / 2, 0);
+    expect(v.y).toBe(0);
+    expect(v.y + v.s * r.y).toBeGreaterThan(0);
+    expect(v.y + v.s * (r.y + r.height)).toBeLessThan(VP.height);
+  });
+
+  it('[AF2c] a tight row in a narrow view (a popup on a phone) is whole too, its small text a zoom away', () => {
+    const vp = { width: 318, height: 448 };
+    const page = { width: 318, height: 318 * 1.414 };
+    const box: [number, number, number, number] = [8.57, 42.58, 70.7, 1.25];
+    const v = frameBox(vp, page, box);
+    const r = boxRect(box, page);
+    expect(v.x + v.s * r.x).toBeGreaterThanOrEqual(0);
+    expect(v.x + v.s * (r.x + r.width)).toBeLessThanOrEqual(vp.width + 0.5);
+    expect(v.s * r.height).toBeGreaterThanOrEqual(LEAST_LINE_PX);
+    expect(v.s * r.height).toBeLessThan(MIN_LINE_PX);
+  });
+
+  it('[AF2d] a row too small to make out whole is readable: its label first, the rest a drag away', () => {
+    const box: [number, number, number, number] = [8.1, 29.69, 83.81, 0.8];
+    const v = frameBox(VP, PAGE, box);
+    const r = boxRect(box, PAGE);
+    expect(v.s * r.height).toBeCloseTo(MIN_LINE_PX, 5);
     expect(v.s).toBeLessThanOrEqual(MAX_SCALE);
-    // the row's left edge (the label) on screen, with a margin
+    // the row's left edge (the label) on screen, with a margin; its end is not
     expect(v.x + v.s * r.x).toBeGreaterThan(0);
     expect(v.x + v.s * r.x).toBeLessThan(VP.width * 0.2);
-    // the result column of s-lab-fr-0001 (about 45 % of the page's width) still in view
-    expect(v.x + v.s * 0.47 * PAGE.width).toBeLessThan(VP.width);
-    // the line itself on screen, vertically centred
-    expect(centreOnScreen(v, HB).y).toBeCloseTo(VP.height / 2, 0);
+    expect(v.x + v.s * (r.x + r.width)).toBeGreaterThan(VP.width);
+    expect(centreOnScreen(v, box).y).toBeCloseTo(VP.height / 2, 0);
   });
 
   it('[AF2b] on a wide screen the whole row fits: centred, with its margins', () => {
