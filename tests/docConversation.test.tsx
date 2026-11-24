@@ -301,4 +301,12 @@ describe('[DOC] the document step and her note', () => {
     await act(async () => { open.click(); });
     expect(onOpenValue).toHaveBeenCalledWith('v3', plain);
   });
+
+  it('the values list: the host dates a value from its event, not its time alone (B-2026-11-23-5)', async () => {
+    const ev = { id: 'v1', type: 'concentration/ug-l', time: 1, streamIds: ['ferritin'], content: 48, clientData: { hdsTimePrecision: 'year' } };
+    const dayText = vi.fn((_time: number, e: { clientData?: Record<string, any> }) => `known to the ${e.clientData?.hdsTimePrecision}`);
+    await render(<conv.DocumentValuesList values={{ source: [ev], matched: [] }} dayText={dayText} />);
+    expect(dayText).toHaveBeenCalledWith(1, ev);
+    expect(container.textContent).toContain('known to the year');
+  });
 });

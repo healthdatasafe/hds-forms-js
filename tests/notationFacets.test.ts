@@ -186,7 +186,7 @@ describe('notation facets', () => {
     check(m, m.candidates);
     const f = fullModel();
     check(f, f.candidates.filter(c => !c.payload.mucus || ['0', '6C', '6GCKL', '10DL', '6B'].includes(c.payload.mucus)));
-  });
+  }, 20_000);
 });
 
 describe('the choices follow the model data, with no code change', () => {

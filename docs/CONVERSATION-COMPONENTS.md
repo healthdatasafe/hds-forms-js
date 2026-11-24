@@ -255,7 +255,9 @@ in the same unit (`correctedClientData`). A refused correction is a `role=alert`
 `sourceKey` of the document, or its `hdsDocumentValues` index); `matched`, values of hers it also prints, found already
 in her record (`hdsPrintedIn`). `DocumentValuesList({ values, onOpenValue?, sourceOf?, dayText?, loadPdfJs?, pdfOptions? })`:
 "Read from this document (n)", "Also printed here (n)" ("already in your record, not from this document"); nothing when
-both are empty. A row is a button when the host passes `onOpenValue(eventId, event)`. With `sourceOf`, a value read from
+both are empty. A row is a button when the host passes `onOpenValue(eventId, event)`. `dayText(time, event)` gives its
+date in the host's words: read the event's `clientData.hdsTimePrecision` (a value known to the month or the year has no
+day), not its `time` alone. With `sourceOf`, a value read from
 this document that carries `clientData.hdsSourceAnchor` gets "See it on the document" / "Hide the document" (an
 `AnchoredDocumentView` under its row, `aria-expanded`); a value of the second group was read elsewhere and gets none.
 

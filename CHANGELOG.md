@@ -8,6 +8,19 @@
   wider than the view opened at a comfortable size from its left edge, and on a phone (or in a popup) only its label
   showed. A row under 6 px high (`LEAST_LINE_PX`) still opens that way.
 
+## [0.46.0] - 2026-11-24
+
+### Added
+
+- `DocumentValuesList`: `dayText(time, event)` gets the value's event second, so a host can date a value as far as its
+  date is known (`clientData.hdsTimePrecision`) instead of reading its `time` as an exact day (B-2026-11-23-5).
+
+### Fixed
+
+- `schemaFor` / `jsonFormForItemDef`: a composite date part whose eventType takes a partial date (allergy
+  `lastOccurrence`) carries the eventType's `pattern`, not `format: date`, so a validator accepts a stored `2022` or
+  `2024-03` (B-2026-11-24-1).
+
 ## [0.45.0] - 2026-11-23
 
 ### Added
