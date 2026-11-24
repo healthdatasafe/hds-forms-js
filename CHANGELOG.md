@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.46.1] - 2026-11-24
+
 ### Changed
 
 - `AnchoredDocumentView` opens on the whole printed row, so the value is in view with its label and unit. Before, a row
