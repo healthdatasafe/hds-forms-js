@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- **How long, and no news, in a document's conversation.** `ContactWorkingIndicator` and the document cards count the time
+  since the contact's latest `task-status` (`sinceS`; her share's while there is none: `sentAt`). Without a newer one they
+  stop saying the contact reads: after 10 minutes of `reading` (or an unknown status), or 5 after her share, "No news from
+  HDS Reader about “…” for 12 min"; after 5 minutes of `received`, "… has not started reading it yet (12 min)", and no news
+  past 13 hours. On the card: "Reading started · no news for 12 min". They say what her app knows, never that the contact
+  stopped. A screen reader hears since when, once. `workState`, `progressState`, `isInProgress`,
+  `NO_NEWS_INDICATOR_MAX_S` for hosts.
+
+### Deprecated
+
+- `isWorking` and `WORKING_MAX_AGE_S` (the indicator disappeared after 30 minutes while the card said "Being read").
+
 ### Changed
 
 - `FormBuilder`, `QuestionnaireBuilder`, `ReminderEditor`, `ItemSearchPicker`, `DatasetSearch` and `repeatableLabel` show their own texts in the current language (English and French) instead of English only; `labels` still win.

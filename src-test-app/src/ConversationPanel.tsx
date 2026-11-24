@@ -34,6 +34,11 @@ const STATUSES: Array<{ status: string | null; errorCode?: string; counts?: { pr
   { status: 'error', errorCode: 'no-attachment' }
 ];
 const NOTICES = ['ready', 'no-result-found', 'several-sampling-dates', 'typed-text-not-read', 'note-not-read'];
+/** Work in progress, by how long ago its last news came */
+const OPENED_S = Date.now() / 1000;
+const WORKING_SINCE: Array<{ status: string; minutes: number }> = [
+  { status: 'reading', minutes: 1.2 }, { status: 'sent', minutes: 8 }, { status: 'received', minutes: 12 }, { status: 'received', minutes: 200 }, { status: 'reading', minutes: 15 }, { status: 'reading', minutes: 200 }
+];
 const CONTACT = 'HDS Reader';
 const PERSON = 'Anna';
 
@@ -92,6 +97,15 @@ export default function ConversationPanel () {
           <div className='max-w-xl space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-900'>
             {NOTICES.map((code) => <NoticeBubble key={code} code={code} contactName={CONTACT} timeText='10:40' />)}
             <ContactWorkingIndicator contactName={CONTACT} status='reading' documentTitle='Blood test March 2026' />
+            {WORKING_SINCE.map(({ status, minutes }) => (
+              <ContactWorkingIndicator key={`${status}-${minutes}`} contactName={CONTACT} status={status} documentTitle='Blood test March 2026' sinceS={OPENED_S - minutes * 60} locale={lang} />
+            ))}
+          </div>
+          <h2 className='text-lg font-semibold text-gray-900 dark:text-white'>In progress, then no news (<code>TaskStatusLine</code> with <code>sinceS</code>)</h2>
+          <div className='max-w-xl space-y-2 rounded-lg bg-gray-50 p-3 dark:bg-gray-900'>
+            {WORKING_SINCE.map(({ status, minutes }) => (
+              <TaskStatusLine key={`${status}-${minutes}`} status={status === 'sent' ? null : status} contactName={CONTACT} sinceS={OPENED_S - minutes * 60} locale={lang} />
+            ))}
           </div>
         </section>
       )}

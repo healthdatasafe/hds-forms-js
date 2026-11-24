@@ -18,6 +18,8 @@ export interface DocumentConversationCardProps {
   conversation: DocumentConversation;
   /** The latest `task-status` alert of the document (hds-lib `taskStatusOf`, R4), null before the first */
   status: ConversationAlert | null;
+  /** When she shared it (seconds): how long the contact has been silent, while there is no `status` */
+  sentAt?: number | null;
   /** The notices about this document */
   notices?: ConversationAlert[];
   /** The engines vouched for this relationship's app (hds-lib `vouchedEnginesFor`, R9) */
@@ -57,7 +59,7 @@ export interface DocumentConversationCardProps {
  * (R9) or that waits for an answer says why. Presentational: the host reads, writes and refreshes (`actions`).
  */
 export function DocumentConversationCard ({
-  conversation: conv, status, notices = [], engines, title, contactName, sourceOf, actions: givenActions, onNotMyDocument, onOpenDocument,
+  conversation: conv, status, sentAt, notices = [], engines, title, contactName, sourceOf, actions: givenActions, onNotMyDocument, onOpenDocument,
   viewer = 'person', personName, locale, loadPdfJs, pdfOptions, className, surfaceClassName
 }: DocumentConversationCardProps) {
   // a contact's app never answers for her
@@ -103,7 +105,7 @@ export function DocumentConversationCard ({
           <h3 className='break-words text-base font-semibold'>
             {onOpenDocument != null ? <button type='button' className='text-left underline-offset-2 hover:underline' onClick={onOpenDocument}>{title}</button> : title}
           </h3>
-          <TaskStatusLine status={workStatus ?? null} errorCode={status?.hds?.errorCode} counts={status?.hds?.counts} contactName={contactName} viewer={viewer} personName={personName} />
+          <TaskStatusLine status={workStatus ?? null} errorCode={status?.hds?.errorCode} counts={status?.hds?.counts} contactName={contactName} viewer={viewer} personName={personName} sinceS={status?.time ?? sentAt} locale={locale} />
         </div>
       </div>
 
