@@ -39,7 +39,7 @@ export interface DocumentConversationData {
   actions: ConversationActions;
 }
 
-type DocumentEvent = { id: string; type?: string; trashed?: boolean; time?: number; content?: any; clientData?: Record<string, any> };
+type DocumentEvent = { id: string; type?: string; trashed?: boolean; streamIds?: string[]; time?: number; content?: any; clientData?: Record<string, any> };
 
 export interface DocumentConversationsState {
   documents: DocumentConversationData[];
@@ -86,6 +86,21 @@ interface Read {
   items: ConversationItem[];
   /** The documents the contact proposed a date and kind for, by id */
   documents: Record<string, DocumentEvent>;
+  /** Where each document is, by id: null when it is gone, absent when it was not read */
+  streamIds: Record<string, string[] | null>;
+}
+
+/** The documents a conversation is about, as the contact's alerts and the items name them */
+function aboutsOf (alerts: ConversationAlert[], items: ConversationItem[]): Set<string> {
+  const abouts = new Set<string>();
+  for (const a of alerts) if (a.direction === 'received' && typeof a.hds.about === 'string' && a.kind !== 'answer') abouts.add(a.hds.about);
+  for (const i of items) abouts.add(i.about);
+  return abouts;
+}
+
+/** Whether the grant reads a document, as the platform decides; one not read or gone: whether it reads them all */
+function grantReads (rel: ConversationRel, streamIds: string[] | null | undefined): boolean {
+  return streamIds != null ? cmcDocuments.readsDocument(rel.grantedPermissions, { streamIds }) : cmcDocuments.sharesAllDocuments(rel.grantedPermissions);
 }
 
 /** hds-lib's reason on a refused call (`HDSLibError` carries it in its inner object) */
@@ -114,9 +129,22 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
   const [failed, setFailed] = useState(false);
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((v) => v + 1), []);
-  const relKey = rels.map((r) => `${r.accessId}:${r.localCollectorStreamId ?? ''}:${r.grantedPermissions.length}`).join('|');
+  const relKey = rels.map((r) => `${r.accessId}:${r.localCollectorStreamId ?? ''}:${r.grantedPermissions.map((p) => `${p.streamId ?? ''}=${p.level ?? ''}`).join(',')}`).join('|');
   const relsRef = useRef(rels);
   relsRef.current = rels;
+
+  // R11: the documents each relationship may talk about: shared in it now, or read by its grant
+  const sharedIn = useMemo(() => {
+    const out = new Map<string, Set<string>>();
+    for (const a of opts.documentAlerts) {
+      if (a.direction !== 'sent' || a.kind !== 'document-shared' || !a.current) continue;
+      if (!out.has(a.stream)) out.set(a.stream, new Set());
+      out.get(a.stream)!.add(a.eventId);
+    }
+    return out;
+  }, [opts.documentAlerts]);
+  // a document shared or taken back changed its streams: read again
+  const sharedKey = [...sharedIn].map(([stream, ids]) => `${stream}:${[...ids].sort().join(',')}`).sort().join('|');
 
   useEffect(() => {
     const withChannel = relsRef.current.filter((r) => r.localCollectorStreamId != null);
@@ -142,14 +170,25 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
           const items = streams != null ? await cmcConversation.listConversationItems(connection, streams) : [];
           // a proposed document is a step only against the document itself (which fields still wait on it)
           const documents: Record<string, DocumentEvent> = {};
-          for (const about of new Set(items.filter((i) => i.kind === 'proposed-document').map((i) => i.about))) {
+          const proposed = new Set(items.filter((i) => i.kind === 'proposed-document').map((i) => i.about));
+          // R11: whether the grant reads a document depends on the streams it is in
+          const streamIds: Read['streamIds'] = {};
+          const abouts = [...aboutsOf(alerts, items)];
+          if (abouts.length > 0) {
             try {
-              documents[about] = await connection.apiOne('events.getOne', { id: about } as any, 'event') as DocumentEvent;
+              const results = await connection.api(abouts.map((id) => ({ method: 'events.getOne', params: { id } })) as any) as Array<{ event?: DocumentEvent; error?: { id?: string } }>;
+              abouts.forEach((about, i) => {
+                const { event, error } = results[i] ?? {};
+                if (event?.streamIds != null) streamIds[about] = event.streamIds;
+                else if (event != null || error?.id === 'unknown-resource') streamIds[about] = null;
+                else console.warn('[conversation] document not read:', error);
+                if (event != null && proposed.has(about)) documents[about] = event;
+              });
             } catch (e) {
-              console.warn('[conversation] document not read:', e);
+              console.warn('[conversation] documents not read:', e);
             }
           }
-          list.push({ rel, alerts, items, documents });
+          list.push({ rel, alerts, items, documents, streamIds });
         }
         if (!cancelled) { setReads({ key: relKey, list }); setFailed(false); }
         if (granted) await grantedRef.current?.();
@@ -161,39 +200,24 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
     const onVisible = (): void => { if (document.visibilityState === 'visible') reload(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { cancelled = true; document.removeEventListener('visibilitychange', onVisible); };
-  }, [connection, relKey, opts.alertEventsKey, version, reload]);
+  }, [connection, relKey, sharedKey, opts.alertEventsKey, version, reload]);
 
-  // R11: the documents each relationship may talk about: shared in it now, or every one when its grant reads them all
   const autoDuplicates = opts.autoMarkDuplicates !== false;
   const dupTried = useRef(new Set<string>());
   const dupDone = useRef(new Set<string>());
   const [checked, setChecked] = useState(0);
-
-  const sharedIn = useMemo(() => {
-    const out = new Map<string, Set<string>>();
-    for (const a of opts.documentAlerts) {
-      if (a.direction !== 'sent' || a.kind !== 'document-shared' || !a.current) continue;
-      if (!out.has(a.stream)) out.set(a.stream, new Set());
-      out.get(a.stream)!.add(a.eventId);
-    }
-    return out;
-  }, [opts.documentAlerts]);
 
   const state = useMemo(() => {
     const documents: DocumentConversationData[] = [];
     const answers: DocumentConversationsState['answers'] = [];
     const looseNotices: ConversationAlert[] = [];
     if (connection == null || reads == null || reads.key !== relKey) return { documents, answers, looseNotices };
-    for (const { rel, alerts, items, documents: docEvents } of reads.list) {
+    for (const { rel, alerts, items, documents: docEvents, streamIds } of reads.list) {
       const fromContact = alerts.filter((a) => a.direction === 'received');
-      const seesAll = cmcDocuments.sharesAllDocuments(rel.grantedPermissions);
-      const allowed = (about: string): boolean => seesAll || (sharedIn.get(rel.localCollectorStreamId!)?.has(about) ?? false);
-      const abouts = new Set<string>();
-      for (const a of fromContact) if (typeof a.hds.about === 'string' && a.kind !== 'answer') abouts.add(a.hds.about);
-      for (const i of items) abouts.add(i.about);
+      const allowed = (about: string): boolean => (sharedIn.get(rel.localCollectorStreamId!)?.has(about) ?? false) || grantReads(rel, streamIds[about]);
       for (const a of fromContact) if (a.kind === 'notice' && a.hds.about == null) looseNotices.push(a);
       const engines = cmcConversation.vouchedEnginesFor(rel.appCode);
-      for (const about of abouts) {
+      for (const about of aboutsOf(alerts, items)) {
         if (!allowed(about)) continue;
         const conversation = cmcConversation.conversationOf(items, about);
         const mine = fromContact.filter((a) => a.hds.about === about);
@@ -298,12 +322,12 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
   useEffect(() => {
     if (connection == null || reads == null) return;
     const work: Array<{ rel: ConversationRel; about: string; unshared: boolean; ids: string[] }> = [];
-    for (const { rel, alerts, items } of reads.list) {
-      const seesAll = cmcDocuments.sharesAllDocuments(rel.grantedPermissions);
+    for (const { rel, alerts, items, streamIds } of reads.list) {
       for (const about of new Set(items.map((i) => i.about))) {
         const conv = cmcConversation.conversationOf(items, about);
         if (!conv.answers.some((a) => typeof a.content.note === 'string')) continue;
-        const unshared = !seesAll && !(sharedIn.get(rel.localCollectorStreamId ?? '')?.has(about) ?? false);
+        // a document not read this time may still be one the grant reads: not taken for unshared
+        const unshared = streamIds[about] !== undefined && !grantReads(rel, streamIds[about]) && !(sharedIn.get(rel.localCollectorStreamId ?? '')?.has(about) ?? false);
         const due = cmcConversation.notesToRemove(conv, cmcConversation.taskStatusOf(alerts, about), { unshared }).map((a) => a.id).filter((id) => !notesTried.current.has(id));
         if (due.length > 0) work.push({ rel, about, unshared, ids: due });
       }

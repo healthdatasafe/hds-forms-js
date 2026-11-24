@@ -1,0 +1,139 @@
+// @vitest-environment happy-dom
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import type { Root } from 'react-dom/client';
+import type { ConversationRel, DocumentConversationsState } from '../src/conversation/useDocumentConversations';
+
+(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
+
+/** R11: which documents a contact may talk about; hds-lib's real `readsDocument` and `conversationOf`, the reads faked */
+const lib = vi.hoisted(() => ({ alerts: [] as any[], items: [] as any[], removeNotes: vi.fn(async () => []) }));
+vi.mock('hds-lib', async (importOriginal) => {
+  const real: any = await importOriginal();
+  return {
+    ...real,
+    HDSProfile: { isHooked: false },
+    cmcConversation: {
+      ...real.cmcConversation,
+      listConversationAlerts: async () => lib.alerts,
+      conversationStreamsFor: async () => ({ received: 'conv-aaaaaaaaaaaa', sent: 'conv-bbbbbbbbbbbb' }),
+      listConversationItems: async () => lib.items,
+      removeNotes: lib.removeNotes
+    }
+  };
+});
+const { useDocumentConversations } = await import('../src/conversation/useDocumentConversations');
+
+const DOC = 'docevent0001';
+const SHARE = 'share-abcdefghijk1';
+const RECEIVED = 'share-abcdefghijk2';
+const STREAM = ':_cmc:apps:a:c:collectors:x';
+const rel = (grantedPermissions: any[]): ConversationRel => ({ accessId: 'acc1', localCollectorStreamId: STREAM, grantedPermissions });
+const status = { alertEventId: 'st', kind: 'task-status', hds: { kind: 'task-status', about: DOC, status: 'thinking', attempt: 1 }, time: 1, direction: 'received', from: null };
+const question = { id: 'q1', streamId: 'conv-aaaaaaaaaaaa', direction: 'received', kind: 'question', about: DOC, time: 1, created: 1, modified: 1, content: { kind: 'question', about: DOC, code: 'x-acme-which', options: ['a'] } };
+const noted = { id: 'n1', streamId: 'conv-bbbbbbbbbbbb', direction: 'sent', kind: 'answer', about: DOC, time: 2, created: 2, modified: 2, content: { kind: 'answer', about: DOC, inReplyTo: 'q1', action: 'choose', value: 'a', note: 'a note' } };
+const shared = (current: boolean) => [{ alertEventId: 's1', kind: 'document-shared', eventId: DOC, time: 1, direction: 'sent', from: null, current, stream: STREAM }] as any;
+
+/** What `events.getOne` of the document answers in the batch; null = the batch fails */
+let one: any;
+const api = vi.fn(async (calls: any[]) => {
+  if (one == null) throw new TypeError('Failed to fetch');
+  return calls.map(() => one);
+});
+const connection = { api } as any;
+
+let root: Root | null = null;
+let state: DocumentConversationsState;
+function Host ({ rels, documentAlerts }: { rels: ConversationRel[]; documentAlerts: any[] }) {
+  state = useDocumentConversations(connection, rels, { alertEventsKey: '', documentAlerts });
+  return null;
+}
+const NONE: any[] = [];
+async function read (perms: any[], documentAlerts: any[] = NONE): Promise<string[]> {
+  root ??= createRoot(document.createElement('div'));
+  const rels = [rel(perms)];
+  await act(async () => { root!.render(<Host rels={rels} documentAlerts={documentAlerts} />); });
+  return state.documents.map((d) => d.about);
+}
+
+beforeEach(() => {
+  lib.alerts = [status];
+  lib.items = [];
+  one = { event: { id: DOC, streamIds: ['documents', SHARE] } };
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+});
+afterEach(() => { act(() => root?.unmount()); root = null; api.mockClear(); lib.removeNotes.mockClear(); vi.restoreAllMocks(); });
+
+describe('useDocumentConversations: the documents a contact may talk about (R11)', () => {
+  it('[R11A] a grant on every document, also when the document was not read or is gone', async () => {
+    const all = [{ streamId: 'documents', level: 'read' }];
+    expect(await read(all)).toEqual([DOC]);
+    expect(api).toHaveBeenCalledWith([{ method: 'events.getOne', params: { id: DOC } }]);
+    one = { error: { id: 'unknown-resource' } };
+    expect(await read([{ streamId: '*', level: 'read' }])).toEqual([DOC]);
+    one = null;
+    expect(await read(all)).toEqual([DOC]);
+  });
+
+  it('[R11B] its own share child, or a stream under documents, with no alert', async () => {
+    expect(await read([{ streamId: SHARE, level: 'read' }])).toEqual([DOC]);
+    one = { event: { id: DOC, streamIds: ['documents-lab'] } };
+    expect(await read([{ streamId: 'documents-lab', level: 'read' }])).toEqual([DOC]);
+    one = { event: { id: DOC, streamIds: ['documents', RECEIVED] } };
+    expect(await read([{ streamId: RECEIVED, level: 'contribute' }])).toEqual([DOC]);
+  });
+
+  it('[R11C] a document the grant does not read, or the platform hides from it', async () => {
+    expect(await read([{ streamId: 'share-abcdefghijk9', level: 'read' }])).toEqual([]);
+    expect(await read([{ streamId: 'documents', level: 'read' }, { streamId: SHARE, level: 'none' }])).toEqual([]);
+    one = null;
+    expect(await read([{ streamId: SHARE, level: 'read' }])).toEqual([]);
+  });
+
+  it('[R11D] a current document-shared alert is enough, one taken back is not', async () => {
+    const other = [{ streamId: 'body-weight', level: 'read' }];
+    expect(await read(other, shared(true))).toEqual([DOC]);
+    expect(await read(other, shared(false))).toEqual([]);
+  });
+
+  it('[R11E] taken back: the document is read again', async () => {
+    const perms = [{ streamId: SHARE, level: 'read' }];
+    expect(await read(perms, shared(true))).toEqual([DOC]);
+    one = { event: { id: DOC, streamIds: ['documents'] } };
+    expect(await read(perms, shared(false))).toEqual([]);
+  });
+
+  it('[R11F] the document is given to the host only when its date and kind were proposed', async () => {
+    await read([{ streamId: SHARE, level: 'read' }]);
+    expect(state.documents[0].document).toBeNull();
+    lib.items = [{ ...question, id: 'p1', kind: 'proposed-document', content: { kind: 'proposed-document', about: DOC, candidateId: 'd1', document: { time: 1773316800, kind: 'laboratory-report' }, status: 'clear' } }];
+    await act(async () => { state.reload(); });
+    expect(state.documents[0].document).toEqual(one.event);
+  });
+});
+
+describe('useDocumentConversations: her notes on an unshared document', () => {
+  beforeEach(() => { lib.alerts = []; lib.items = [question, noted]; });
+  const removed = () => lib.removeNotes.mock.calls.map((c: any[]) => c[2]);
+
+  it('[NOTE1] kept while the grant reads the document or it is shared, removed once neither', async () => {
+    await read([{ streamId: 'documents', level: 'read' }]);
+    await read([{ streamId: SHARE, level: 'read' }]);
+    const other = [{ streamId: 'body-weight', level: 'read' }];
+    await read(other, shared(true));
+    expect(removed()).toEqual([]);
+    await read(other, shared(false));
+    expect(removed()).toEqual([{ about: DOC, unshared: true }]);
+  });
+
+  it('[NOTE2] removed when the document is gone, kept when it was not read', async () => {
+    const perms = [{ streamId: SHARE, level: 'read' }];
+    one = null;
+    await read(perms);
+    expect(removed()).toEqual([]);
+    one = { error: { id: 'unknown-resource' } };
+    await act(async () => { state.reload(); });
+    expect(removed()).toEqual([{ about: DOC, unshared: true }]);
+  });
+});
