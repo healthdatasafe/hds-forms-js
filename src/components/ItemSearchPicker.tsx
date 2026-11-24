@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { getHDSModel, localizeText } from 'hds-lib';
 import { getItemGroup } from '../formBuilderUtils';
+import { FORM_BUILDER_TEXTS, ITEM_PICKER_TEXTS as T } from './builderTexts';
 
 /** Item types a form renders (hds-lib 2.28.0 `ENTERABLE_ITEM_TYPES`; copied so older hds-lib pins filter the same). */
 const ENTERABLE_ITEM_TYPES = [
@@ -23,7 +24,7 @@ export interface ItemSearchPickerProps {
   onSelect: (key: string) => void;
   /** Search placeholder */
   placeholder?: string;
-  /** Accessible name of the search box (`aria-label`); a placeholder is not a label. Default 'Search items'. */
+  /** Accessible name of the search box (`aria-label`); a placeholder is not a label. Default 'Search items', in the current language. */
   searchLabel?: string;
   /** Filter function to restrict which items are shown */
   filter?: (item: ItemSearchPickerItem) => boolean;
@@ -49,8 +50,8 @@ export function ItemSearchPicker ({
   items: externalItems,
   selectedKey,
   onSelect,
-  placeholder = 'Search items...',
-  searchLabel = 'Search items',
+  placeholder = localizeText(FORM_BUILDER_TEXTS.searchItems),
+  searchLabel = localizeText(T.searchLabel),
   filter,
   usedKeys,
   selectable = true,
@@ -156,7 +157,7 @@ export function ItemSearchPicker ({
           </div>
         ))}
         {sortedGroups.length === 0 && (
-          <div className='px-3 py-2 text-sm text-gray-400'>No items match</div>
+          <div className='px-3 py-2 text-sm text-gray-400'>{localizeText(T.noMatch)}</div>
         )}
       </div>
     </div>

@@ -4,12 +4,19 @@
 
 ### Changed
 
+- `FormBuilder`, `QuestionnaireBuilder`, `ReminderEditor`, `ItemSearchPicker`, `DatasetSearch` and `repeatableLabel` show their own texts in the current language (English and French) instead of English only; `labels` still win.
 - `useDocumentConversations` (needs hds-lib 2.65.0): a document gets its conversation when the contact's grant reads it
   (`cmcDocuments.readsDocument`: its own share child, a stream under `documents`), not only when it reads every document
   or a current `document-shared` alert was sent. A document the platform hides from the contact (a stream at `none` or
   `create-only`) gets none unless shared. Every document talked about is read, in one batch per relationship. Her notes
   count as about an unshared document on the same rule, and not while the document could not be read. A permission
   changed at equal count reads the conversation again (plan 140).
+
+### Fixed
+
+- `FormBuilder` and `QuestionnaireBuilder` keep the other languages of a text: an edit changes the language shown, as the
+  host's own fields do. Before, an edit of a question or of a questionnaire's title was saved as English only and its
+  other languages were lost, and a section's name was always shown and edited in English.
 
 ## [0.46.1] - 2026-11-24
 

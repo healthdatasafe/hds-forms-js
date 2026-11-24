@@ -1,24 +1,18 @@
-export const REPEATABLE_LABELS: Record<string, string> = {
-  once: 'Once',
-  any: 'Any time',
-  P1D: 'Daily',
-  P1W: 'Weekly',
-  P1M: 'Monthly',
-  unlimited: 'Unlimited'
-};
+import { localizeText } from 'hds-lib';
+import { REPEATABLE_TEXTS } from './components/builderTexts';
+
+/** The English labels, by `repeatable` value; `repeatableLabel` gives the one in the current language */
+export const REPEATABLE_LABELS: Record<string, string> = Object.fromEntries(
+  Object.entries(REPEATABLE_TEXTS).map(([value, text]) => [value, text.en])
+);
 
 export function repeatableLabel (value: string): string {
-  return REPEATABLE_LABELS[value] || value;
+  const text = (REPEATABLE_TEXTS as Record<string, { en: string; fr: string } | undefined>)[value];
+  return text ? localizeText(text) : value;
 }
 
-export const REPEATABLE_OPTIONS = [
-  { value: 'once', label: 'Once' },
-  { value: 'any', label: 'Any time' },
-  { value: 'P1D', label: 'Daily' },
-  { value: 'P1W', label: 'Weekly' },
-  { value: 'P1M', label: 'Monthly' },
-  { value: 'unlimited', label: 'Unlimited' }
-];
+/** The `repeatable` values, in the order they are offered, with their English labels */
+export const REPEATABLE_OPTIONS = Object.entries(REPEATABLE_TEXTS).map(([value, text]) => ({ value, label: text.en as string }));
 
 /** Group items by top-level key prefix (body, profile, fertility, ...) */
 export function getItemGroup (itemKey: string): string {

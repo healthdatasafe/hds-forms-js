@@ -1,4 +1,5 @@
 import { localizeText } from 'hds-lib';
+import { fill } from '../textUtils';
 
 /**
  * Plausibility of a value about to be saved (B-2026-11-05-6): the platform checks types only, so a systolic below its
@@ -98,9 +99,6 @@ const TEXT = {
     fr: 'La systolique ({systolic}) est normalement plus haute que la diastolique ({diastolic}). Vérifiez qu’elles ne sont pas inversées.'
   }
 };
-
-const fill = (text: string, values: Record<string, string | number>) =>
-  text.replace(/\{(\w+)\}/g, (all, k) => (values[k] != null ? String(values[k]) : all));
 
 /**
  * A warning as a sentence in the current language; a part of a composite is named by its label in `partLabels`
