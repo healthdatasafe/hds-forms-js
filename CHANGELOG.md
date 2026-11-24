@@ -6,6 +6,12 @@
 
 - `FormBuilder`, `QuestionnaireBuilder`, `ReminderEditor`, `ItemSearchPicker`, `DatasetSearch` and `repeatableLabel` show their own texts in the current language (English and French) instead of English only; `labels` still win.
 
+### Fixed
+
+- `FormBuilder` and `QuestionnaireBuilder` keep the other languages of a text: an edit changes the language shown, as the
+  host's own fields do. Before, an edit of a question or of a questionnaire's title was saved as English only and its
+  other languages were lost, and a section's name was always shown and edited in English.
+
 ## [0.46.1] - 2026-11-24
 
 ### Changed

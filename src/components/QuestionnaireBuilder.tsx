@@ -17,7 +17,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { getHDSModel, localizeText, appTemplates } from 'hds-lib';
-import { fill, localizeTable } from '../textUtils';
+import { fill, localizeTable, withShownText } from '../textUtils';
 import { QUESTIONNAIRE_BUILDER_TEXTS as T } from './builderTexts';
 
 const l = localizeText;
@@ -104,14 +104,14 @@ export function QuestionnaireBuilder ({
   // Title / description handlers
   function updateTitle (value: string) {
     if (readOnly) return;
-    if (value) (questionnaire as { title: appTemplates.QuestionnaireRequestContent['title'] }).title = { en: value };
+    if (value) (questionnaire as { title: appTemplates.QuestionnaireRequestContent['title'] }).title = withShownText(questionnaire.title, value);
     else (questionnaire as unknown as { title: null }).title = null as never;
     refresh();
   }
 
   function updateDescription (value: string) {
     if (readOnly) return;
-    if (value) (questionnaire as { description: appTemplates.QuestionnaireRequestContent['description'] }).description = { en: value };
+    if (value) (questionnaire as { description: appTemplates.QuestionnaireRequestContent['description'] }).description = withShownText(questionnaire.description, value);
     else (questionnaire as unknown as { description: null }).description = null as never;
     refresh();
   }
@@ -309,7 +309,7 @@ function QuestionEditor ({ question, itemDefs, onChange, labels, readOnly }: Que
         <input
           type='text'
           value={l(question.label) || ''}
-          onChange={(e) => onChange((q) => { q.label = { en: e.target.value }; })}
+          onChange={(e) => onChange((q) => { q.label = withShownText(q.label, e.target.value); })}
           disabled={readOnly}
           className='w-full rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-1 text-sm dark:bg-gray-800 dark:text-white'
         />
@@ -455,7 +455,7 @@ function SubFieldDetails ({ question, onChange, labels, readOnly }: SubEditorPro
   function updateLabel (value: string) {
     onChange((q) => {
       if (!q.subField) return;
-      if (value) q.subField.label = { en: value };
+      if (value) q.subField.label = withShownText(q.subField.label, value);
       else delete q.subField.label;
     });
   }
@@ -467,7 +467,7 @@ function SubFieldDetails ({ question, onChange, labels, readOnly }: SubEditorPro
       const cur = next[i] || { value: '', label: { en: '' } };
       next[i] = {
         value: patch.value !== undefined ? patch.value : cur.value,
-        label: patch.label !== undefined ? { en: patch.label } : cur.label
+        label: patch.label !== undefined ? withShownText(cur.label, patch.label) : cur.label
       };
       q.subField.options = next;
     });

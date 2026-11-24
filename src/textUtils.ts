@@ -12,3 +12,15 @@ export function localizeTable<K extends string> (table: Readonly<Record<K, Text>
   for (const key of Object.keys(table) as K[]) out[key] = localizeText(table[key]);
   return out;
 }
+
+/** The language `localizeText` shows a text in, the one an edit of it goes to; `en` for a text with no language */
+export function shownLang (text: Readonly<Record<string, string | undefined>> | null | undefined): string {
+  const langs = Object.keys(text ?? {}).filter((lang) => text![lang] != null);
+  if (langs.length === 0) return 'en';
+  return localizeText(Object.fromEntries(langs.map((lang) => [lang, lang])));
+}
+
+/** `text` with the language shown set to `value`, the other languages kept */
+export function withShownText (text: Readonly<Record<string, string | undefined>> | null | undefined, value: string): { en: string } & Record<string, string> {
+  return { ...text, [shownLang(text)]: value } as { en: string } & Record<string, string>;
+}

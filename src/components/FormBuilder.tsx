@@ -6,7 +6,7 @@ import { ReminderEditor } from './ReminderEditor';
 import type { ReminderEditorConfig } from './ReminderEditor';
 import { QuestionnaireBuilder } from './QuestionnaireBuilder';
 import { REPEATABLE_OPTIONS, repeatableLabel, getItemGroup } from '../formBuilderUtils';
-import { fill, localizeTable } from '../textUtils';
+import { fill, localizeTable, withShownText } from '../textUtils';
 import { FORM_BUILDER_TEXTS as T } from './builderTexts';
 
 const { Questionnaire } = appTemplates;
@@ -202,7 +202,7 @@ export default function FormBuilder ({
 
   function updateSectionName (key: string, name: string) {
     const section = request.getSectionByKey(key);
-    if (section) { section.setName({ en: name }); refresh(); }
+    if (section) { section.setName(withShownText(section.name, name)); refresh(); }
   }
 
   function toggleSectionType (key: string) {
@@ -391,7 +391,7 @@ export default function FormBuilder ({
                 <div className='mb-2 flex items-center gap-2'>
                   <input
                     type='text'
-                    value={section.name?.en || ''}
+                    value={l(section.name) || ''}
                     onChange={e => updateSectionName(section.key, e.target.value)}
                     className='flex-1 rounded border border-[color:var(--hds-input,#848c97)] bg-white px-2 py-0.5 text-sm font-medium text-gray-900 focus:border-blue-500 focus:outline-none disabled:opacity-60 dark:bg-gray-700 dark:text-white'
                     placeholder={lb.sectionName}
