@@ -261,8 +261,9 @@ this document that carries `clientData.hdsSourceAnchor` gets "See it on the docu
 
 ### `AnchoredDocumentView`
 
-Her own document (PDF through pdf.js, or a picture), zoomed onto an anchor's box and highlighted; zoom out to the whole
-page and back; pinch, drag, + / −. Props and the pdf.js setup: the README's section. A `role=region` named "Your
+Her own document (PDF through pdf.js, or a picture), zoomed onto an anchor's box and highlighted: a printed row opens
+whole, with its value (zoomed to a readable line, from its label, only when it would be too small to make out); zoom out
+to the whole page and back; pinch, drag, + / −. Props and the pdf.js setup: the README's section. A `role=region` named "Your
 document, {label}", the page a `role=img`, loading and errors a `role=status`. Anchors are read through
 `anchorOn(anchor, about)`: an anchor naming another document (`eventId`, data-model 4.25.0) is ignored (R11).
 

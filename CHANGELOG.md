@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- `AnchoredDocumentView` opens on the whole printed row, so the value is in view with its label and unit. Before, a row
+  wider than the view opened at a comfortable size from its left edge, and on a phone (or in a popup) only its label
+  showed. A row under 6 px high (`LEAST_LINE_PX`) still opens that way.
+
 ## [0.45.0] - 2026-11-23
 
 ### Added
