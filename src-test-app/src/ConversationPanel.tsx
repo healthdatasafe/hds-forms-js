@@ -37,7 +37,7 @@ const NOTICES = ['ready', 'no-result-found', 'several-sampling-dates', 'typed-te
 /** Work in progress, by how long ago its last news came */
 const OPENED_S = Date.now() / 1000;
 const WORKING_SINCE: Array<{ status: string; minutes: number }> = [
-  { status: 'reading', minutes: 1.2 }, { status: 'sent', minutes: 8 }, { status: 'received', minutes: 12 }, { status: 'received', minutes: 200 }, { status: 'reading', minutes: 15 }, { status: 'reading', minutes: 200 }
+  { status: 'reading', minutes: 1.2 }, { status: 'sent', minutes: 8 }, { status: 'received', minutes: 12 }, { status: 'received', minutes: 200 }, { status: 'on-hold', minutes: 12 }, { status: 'on-hold', minutes: 1600 }, { status: 'reading', minutes: 15 }, { status: 'reading', minutes: 200 }
 ];
 const CONTACT = 'HDS Reader';
 const PERSON = 'Anna';

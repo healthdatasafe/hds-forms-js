@@ -12,6 +12,12 @@
   stopped. A screen reader hears since when, once. `workState`, `progressState`, `isInProgress`,
   `NO_NEWS_INDICATOR_MAX_S` for hosts.
 
+- **`on-hold` (data-model 4.33.0): the contact has the document and cannot work on it now.** The indicator says so at once,
+  without dots ("… has “…” and cannot read it right now (12 min). You have nothing to do."), the card "Waiting to be read";
+  no news past 25 hours. Not settled: nothing is confirmable, except a proposed date and kind of the document, which stays
+  answerable. A value that cannot be confirmed yet reads "… has not finished with this document yet" (it said "is still
+  reading", untrue on hold).
+
 ### Deprecated
 
 - `isWorking` and `WORKING_MAX_AGE_S` (the indicator disappeared after 30 minutes while the card said "Being read").

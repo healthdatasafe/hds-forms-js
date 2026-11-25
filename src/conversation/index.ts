@@ -13,7 +13,7 @@ export type { ConversationViewer, AnswerReader } from './answers';
 export { TaskStatusLine, NoticeBubble, ConversationAnswerBubble } from './ConversationBubbles';
 export { ContactWorkingIndicator } from './ContactWorkingIndicator';
 export type { ContactWorkingIndicatorProps } from './ContactWorkingIndicator';
-export { isWorking, isInProgress, progressState, workState, NO_NEWS_INDICATOR_MAX_S, WORKING_STATUSES, WORKING_MAX_AGE_S } from './workInProgress';
+export { isWorking, isInProgress, ON_HOLD, progressState, workState, NO_NEWS_INDICATOR_MAX_S, WORKING_STATUSES, WORKING_MAX_AGE_S } from './workInProgress';
 export type { WorkState } from './workInProgress';
 export type { TaskStatusLineProps, NoticeBubbleProps, ConversationAnswerBubbleProps } from './ConversationBubbles';
 export { rowBlock, batchCandidates, shownAtOf, isWritten, alreadyInRecord, anchorOn } from './rowBlock';

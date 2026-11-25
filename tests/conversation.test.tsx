@@ -310,7 +310,7 @@ describe('[CONV-UI] DocumentConversationCard', () => {
 
   it('while the contact reads, its values are listed, not confirmable', async () => {
     await render(card(of([pv('c1'), pv('c2')]), actions(), { status: statusAlert('reading') }));
-    expect(container.textContent).toContain('Dr Test is still reading this document.');
+    expect(container.textContent).toContain('Dr Test has not finished with this document yet.');
     expect(button('Confirm')).toBeNull();
     expect(button('Confirm the 2 values read clearly')).toBeNull();
   });
@@ -441,6 +441,41 @@ describe('[CONV-UI] bubbles and texts', () => {
         expect(heard(), status).toMatch(/^No news from HDS Reader about “Lab report” since .+\. Your document is kept/);
         expect(heard(), status).not.toContain('15 min');
       }
+    });
+
+    it('on hold (4.33.0): said at once, no dots, never as work; no news past 25 h', async () => {
+      const at = { hds: { kind: 'task-status', status: 'on-hold' }, time: T };
+      expect(conv.isInProgress('on-hold')).toBe(true);
+      expect(conv.isWorking(at, T + 1)).toBe(false);
+      expect(conv.workState(at, T)).toBe('on-hold');
+      expect(conv.workState(at, T + 25 * 3600 - 1)).toBe('on-hold');
+      expect(conv.workState(at, T + 25 * 3600)).toBe('no-news');
+      await render(<conv.ContactWorkingIndicator contactName='HDS Reader' status='on-hold' documentTitle='Lab report' sinceS={T} nowS={T + 720} locale='en-US' />);
+      expect(text()).toContain('HDS Reader has “Lab report” and cannot read it right now (12 min).');
+      expect(text()).toContain('You have nothing to do. Your document is kept in your account.');
+      expect(text()).not.toMatch(/is reading|is working|stopped|later/);
+      expect(container.querySelector('.motion-safe\\:animate-bounce')).toBeNull();
+      expect(container.querySelector('[data-working-indicator="on-hold"]')).not.toBeNull();
+      expect(heard()).toMatch(/^HDS Reader has “Lab report” and cannot read it right now, since .+\. You have nothing to do/);
+      await render(<conv.ContactWorkingIndicator key='n' contactName='HDS Reader' status='on-hold' sinceS={T} nowS={T + 3 * 3600} />);
+      expect(text()).toContain('HDS Reader has your document and cannot read it right now (over an hour).');
+      await render(<conv.ContactWorkingIndicator key='t' contactName='HDS Reader' status='on-hold' />);
+      expect(container.querySelector('[data-working-indicator="on-hold"]')).not.toBeNull();
+      await render(<conv.TaskStatusLine key='l' status='on-hold' contactName='HDS Reader' sinceS={T} nowS={T + 720} />);
+      expect(text()).toContain('Waiting to be read · 12 min');
+      expect(text()).toContain('You have nothing to do.');
+      await render(<conv.TaskStatusLine key='o' status='on-hold' contactName='HDS Reader' sinceS={T} nowS={T + 30 * 3600} />);
+      expect(text()).toContain('Waiting to be read · no news for 1 day');
+      await render(<conv.TaskStatusLine key='p' status='on-hold' contactName='HDS Reader' />);
+      expect(text()).toBe('Waiting to be read');
+      lang = 'fr';
+      await render(<conv.ContactWorkingIndicator key='f' contactName='Lecteur HDS' status='on-hold' documentTitle='Bilan' sinceS={T} nowS={T + 720} locale='fr-CH' />);
+      expect(text()).toContain('Lecteur HDS a « Bilan » et ne peut pas le lire pour le moment (12 min).');
+      expect(text()).toContain('Vous n’avez rien à faire.');
+    });
+
+    it('a status is a word from the contact: no name of the language is taken for one', () => {
+      for (const st of ['constructor', 'toString', '__proto__']) expect(conv.progressState(st, T, T + 599), st).toBe('working');
     });
 
     it('received and not started: said as such, and past an hour without an exact time', async () => {

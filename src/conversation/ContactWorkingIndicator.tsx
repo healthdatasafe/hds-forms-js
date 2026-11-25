@@ -2,7 +2,7 @@ import { tx } from './labels';
 import type { ConversationTextKey } from './conversationTexts';
 import { bubbleIn, cx } from './ui';
 import { counterText, durationText, momentText, useNowS, waitText } from './elapsed';
-import { progressState } from './workInProgress';
+import { ON_HOLD, progressState } from './workInProgress';
 
 export interface ContactWorkingIndicatorProps {
   contactName: string;
@@ -28,7 +28,7 @@ export interface ContactWorkingIndicatorProps {
  * The standard "working" indicator of a conversation, as a typing indicator from the contact: three moving dots, what it
  * does ("HDS Reader is reading “Lab report”…") and for how long, on the contact's side at the end of the thread. After a
  * while the dots go and it says what is known: the contact has it and has not started, or no news, for how long, and that
- * her document is kept. The host shows it while the contact's latest status of a document is in progress (`workState`) and removes it on
+ * her document is kept; `on-hold` is said at once, without dots. The host shows it while the contact's latest status of a document is in progress (`workState`) and removes it on
  * the next one. Announced politely to screen readers, once per state: the moving time is for the eye, they hear since
  * when. The dots stand still when the person asks for reduced motion.
  */
@@ -36,7 +36,8 @@ export function ContactWorkingIndicator ({ contactName, status, documentTitle, s
   const now = useNowS(sinceS, nowS);
   const vars = { name: contactName, title: documentTitle ?? '' };
   const doc = documentTitle != null && documentTitle !== '';
-  const state = sinceS != null ? progressState(status, sinceS, now) : 'working';
+  // a hold is never work, also without a time
+  const state = sinceS != null ? progressState(status, sinceS, now) : status === ON_HOLD ? 'on-hold' : 'working';
   // `sent`: her app's own state, between her share and the contact's first task-status (no webhook: 1-2 minutes)
   const text = status === 'sent'
     ? tx(doc ? 'working.sent' : 'working.sentNoTitle', vars)
@@ -46,11 +47,11 @@ export function ContactWorkingIndicator ({ contactName, status, documentTitle, s
         ? tx(doc ? 'working.reading' : 'working.readingNoTitle', vars)
         : tx(doc ? 'working.other' : 'working.otherNoTitle', vars);
   // past `working`: the moving time for the eye, since when for a screen reader
-  const key = state === 'not-started' ? 'working.notStarted' : 'working.noNews';
+  const key = state === 'not-started' ? 'working.notStarted' : state === 'on-hold' ? 'working.onHold' : 'working.noNews';
   const said = (since: boolean) => {
     const full = `${key}${since ? 'Since' : ''}${doc ? '' : 'NoTitle'}` as ConversationTextKey;
     const age = now - (sinceS ?? now);
-    return tx(full, since ? { ...vars, moment: momentText(sinceS ?? now, now, locale) } : { ...vars, time: state === 'not-started' ? waitText(age) : durationText(age) });
+    return tx(full, since ? { ...vars, moment: momentText(sinceS ?? now, now, locale) } : { ...vars, time: state === 'no-news' ? durationText(age) : waitText(age) });
   };
   return (
     <div className={cx('flex justify-start', className)} data-working-indicator={state === 'working' ? '' : state}>
@@ -71,7 +72,7 @@ export function ContactWorkingIndicator ({ contactName, status, documentTitle, s
             <>
               <span aria-hidden='true'>{said(false)}</span>
               <span className='sr-only'>{said(true)}</span>
-              {' '}<span>{tx('status.kept')}</span>
+              {' '}<span>{tx(state === 'on-hold' ? 'status.onHoldKept' : 'status.kept')}</span>
             </>
             )}
       </div>
