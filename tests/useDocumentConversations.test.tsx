@@ -8,7 +8,7 @@ import type { ConversationRel, DocumentConversationsState } from '../src/convers
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 /** R11: which documents a contact may talk about; hds-lib's real `readsDocument` and `conversationOf`, the reads faked */
-const lib = vi.hoisted(() => ({ alerts: [] as any[], items: [] as any[], removeNotes: vi.fn(async () => []) }));
+const lib = vi.hoisted(() => ({ alerts: [] as any[], items: [] as any[], removeNotes: vi.fn(async () => []), accept: vi.fn() }));
 vi.mock('hds-lib', async (importOriginal) => {
   const real: any = await importOriginal();
   return {
@@ -19,7 +19,8 @@ vi.mock('hds-lib', async (importOriginal) => {
       listConversationAlerts: async () => lib.alerts,
       conversationStreamsFor: async () => ({ received: 'conv-aaaaaaaaaaaa', sent: 'conv-bbbbbbbbbbbb' }),
       listConversationItems: async () => lib.items,
-      removeNotes: lib.removeNotes
+      removeNotes: lib.removeNotes,
+      acceptProposedValues: lib.accept
     }
   };
 });
@@ -155,5 +156,50 @@ describe('useDocumentConversations: her notes on an unshared document', () => {
     lib.items = [question, { ...noted, created: 15, modified: 15 }];
     await read(perms);
     expect(removed()).toEqual([]);
+  });
+});
+
+describe('useDocumentConversations: what an answer came to', () => {
+  const R1 = { candidateId: 'c1', reason: 'changed-since-shown' };
+  const ANSWERED = { candidateId: 'c2', reason: 'answered' };
+  const notPosted = (inner: any) => Object.assign(new Error('alert'), { innerObject: { reason: 'alert-not-posted', ...inner } });
+  async function actions () {
+    await read([{ streamId: 'documents', level: 'read' }]);
+    return state.documents[0].actions;
+  }
+  const run = async (fn: () => Promise<any>): Promise<any> => {
+    let out: any;
+    await act(async () => { out = await fn(); });
+    return out;
+  };
+
+  it('an alert not posted is a success that keeps the refusals', async () => {
+    const a = await actions();
+    lib.accept.mockRejectedValueOnce(notPosted({ answers: [], refused: [R1], notPosted: ['x'] }));
+    expect(await run(() => a.confirm(['c1', 'c3'], 1))).toEqual({ ok: true, refused: [R1] });
+    lib.accept.mockRejectedValueOnce(notPosted({ answerEventId: 'x' }));
+    expect(await run(() => a.confirm(['c1'], 1))).toEqual({ ok: true, refused: [] });
+  });
+
+  it('a confirm ignores the values already answered, and no other refusal', async () => {
+    const a = await actions();
+    lib.accept.mockResolvedValueOnce({ answers: [], refused: [ANSWERED] });
+    expect(await run(() => a.confirm(['c2'], 1))).toEqual({ ok: true, refused: [] });
+    lib.accept.mockResolvedValueOnce({ answers: [], refused: [ANSWERED, R1] });
+    expect(await run(() => a.confirm(['c1', 'c2'], 1))).toEqual({ ok: true, refused: [R1] });
+    lib.accept.mockRejectedValueOnce(notPosted({ refused: [ANSWERED, R1] }));
+    expect(await run(() => a.confirm(['c1', 'c2'], 1))).toEqual({ ok: true, refused: [R1] });
+  });
+
+  it('a correction of a value already answered is refused: it was not applied', async () => {
+    const a = await actions();
+    lib.accept.mockResolvedValueOnce({ answers: [], refused: [ANSWERED] });
+    expect(await run(() => a.correct('c2', { itemKey: 'x', type: 'y', content: 1 } as any, 1))).toEqual({ ok: true, refused: [ANSWERED] });
+  });
+
+  it('a write that failed is a failure', async () => {
+    const a = await actions();
+    lib.accept.mockRejectedValueOnce(Object.assign(new Error('w'), { innerObject: { reason: 'write-failed', refused: [ANSWERED] } }));
+    expect(await run(() => a.confirm(['c1'], 1))).toEqual({ ok: false, reason: 'write-failed' });
   });
 });

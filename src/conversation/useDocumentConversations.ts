@@ -109,6 +109,19 @@ function reasonOf (e: unknown): string {
   return err?.innerObject?.reason ?? err?.reason ?? 'failed';
 }
 
+type Refused = Array<{ candidateId: string; reason: string }>;
+
+/** The candidates hds-lib refused, from its result or from the error it throws when an alert was not posted */
+function refusedOf (from: unknown): Refused {
+  const refused = (from as { refused?: unknown } | null)?.refused;
+  return Array.isArray(refused) ? refused : [];
+}
+
+/** Her confirm of a value already answered (a second tap after a write that failed in the middle) is not refused: the reload shows it */
+function notAnswered (out: ConversationOutcome): ConversationOutcome {
+  return out.ok && out.refused != null ? { ...out, refused: out.refused.filter((r) => r.reason !== 'answered') } : out;
+}
+
 /**
  * The person's side of the standard conversation with her contacts (data-model CONVERSATION.md, hds-lib
  * `cmcConversation`), for any contact and any HDS app: per relationship with a system channel, the conversation alerts
@@ -375,14 +388,13 @@ function actionsFor (
   const proposedKeys = (candidateIds: string[]) => conversation.proposedValues
     .filter((p) => candidateIds.includes(p.candidateId))
     .map((p) => p.item.content.proposal?.itemKey);
-  const call = async (fn: () => Promise<{ refused?: Array<{ candidateId: string; reason: string }> } | unknown>): Promise<ConversationOutcome> => {
+  const call = async (fn: () => Promise<unknown>): Promise<ConversationOutcome> => {
     try {
-      const res = await fn() as { refused?: Array<{ candidateId: string; reason: string }> } | null;
-      return { ok: true, refused: res?.refused ?? [] };
+      return { ok: true, refused: refusedOf(await fn()) };
     } catch (e) {
       const reason = reasonOf(e);
       // written, not announced: the contact finds the answer on her sent child when it reads the document again
-      if (reason === 'alert-not-posted') return { ok: true };
+      if (reason === 'alert-not-posted') return { ok: true, refused: refusedOf((e as { innerObject?: unknown } | null)?.innerObject) };
       console.warn('[conversation] answer failed:', e);
       return { ok: false, reason };
     } finally {
@@ -392,10 +404,10 @@ function actionsFor (
   const r = rel as any;
   const noted = (note?: string): { note?: string } => (note != null && note !== '' ? { note } : {});
   return {
-    confirm: (candidateIds, shownAt, note) => call(async () => {
+    confirm: async (candidateIds, shownAt, note) => notAnswered(await call(async () => {
       await provisionFor(proposedKeys(candidateIds));
       return await cmcConversation.acceptProposedValues(connection, r, { about, decisions: candidateIds.map((candidateId) => ({ candidateId, action: 'confirm' as const })), shownAt, engines, ...noted(note) });
-    }),
+    })),
     correct: (candidateId, correction, shownAt, note) => call(async () => {
       await provisionFor([correction.itemKey]);
       return await cmcConversation.acceptProposedValues(connection, r, { about, decisions: [{ candidateId, action: 'correct', correction }], shownAt, engines, ...noted(note) });

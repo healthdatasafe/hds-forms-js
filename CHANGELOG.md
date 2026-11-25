@@ -9,6 +9,10 @@
   `proposalText`: "10KL — Stretchy, clear, lubricative · X2 — seen twice (Creighton)".
 - **Correct opens in the method the value was read in.** With a method of her own it opened there, so a Creighton cell was
   corrected to a Billings record. `HDSFormField` and `Convertible`: `inputMethod`, the method a field opens in and keeps.
+- **A refused value is said when the contact's alert was not posted.** The outcome was a success without the refusals, so a
+  value that changed meanwhile was not saved and nothing said it.
+- **Confirming again after a write that failed in the middle no longer says it failed.** The values already saved are refused
+  as answered: ignored for a confirm (they show as saved). A correction refused so says the document was updated.
 
 ## [0.47.0] - 2026-11-25
 

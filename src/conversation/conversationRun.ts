@@ -30,6 +30,9 @@ export interface ConversationActions {
   skipDocument? (candidateId: string, shownAt: number, note?: string): Promise<ConversationOutcome>;
 }
 
+/** A refusal because of what happened since she saw it: changed by the contact, or already answered */
+const MEANWHILE = new Set(['changed-since-shown', 'answered']);
+
 /**
  * One action at a time and what it came to: `busy` while it runs, `message` when it failed or was refused because what
  * she saw changed meanwhile (R3), `after` when it went through.
@@ -47,7 +50,7 @@ export function useConversationRun () {
       const out = await fn();
       const refused = 'refused' in out ? out.refused ?? [] : [];
       if ('reason' in out) setMessage(out.reason === 'changed-since-shown' ? tx('updated') : tx('failed'));
-      else if (refused.length > 0) setMessage(refused.some((r) => r.reason === 'changed-since-shown') ? tx('updated') : tx('failed'));
+      else if (refused.length > 0) setMessage(refused.some((r) => MEANWHILE.has(r.reason)) ? tx('updated') : tx('failed'));
       else after?.();
     } catch {
       setMessage(tx('failed'));
