@@ -9,7 +9,9 @@ import { QuestionCard } from './QuestionCard';
 import { ValueCorrectionEditor } from './ValueCorrectionEditor';
 import { TaskStatusLine } from './ConversationBubbles';
 import { anchorOn, shownAtOf } from './rowBlock';
-import { blockText, useConversationRun, type ConversationActions } from './conversationRun';
+import { blockText, useConversationRun, type ConversationActions, type StepFiling } from './conversationRun';
+import { StepFilingChoice } from './StepFilingChoice';
+import { useStepFiling, type StepFilingTick } from './useStepFiling';
 import { progressText, type ConversationProgress, type ConversationStep } from './nextStep';
 import { btn, bubbleIn, cx, small } from './ui';
 
@@ -26,6 +28,12 @@ export interface ConversationStepBubbleProps {
   sourceOf: (attachmentId?: string) => AnchoredDocumentSource | null;
   /** null: shown, no answer possible */
   actions: ConversationActions | null;
+  /**
+   * What filing the document under a kind would do, for a step that confirms its kind (data-model 4.35.0): the step says
+   * where it goes and who newly sees it, with a tick; null for a kind (or a document) it is not offered for. Without it,
+   * confirming a kind files nothing.
+   */
+  filingOf?: (documentKind: string) => StepFiling | null;
   /** "One by one" on the batch step */
   onDeclineBatch?: () => void;
   /**
@@ -59,6 +67,16 @@ export interface ConversationStepBubbleProps {
   bubbleClassName?: string;
 }
 
+/** What confirming a proposed document applies: each field from the proposal, else from her answers to its questions */
+function documentFields (pd: cmcConversation.ProposedDocumentView, conv: DocumentConversation): { documentKind?: string; time?: number; timePrecision?: string } {
+  const p = pd.item.content.proposal ?? {};
+  const answered = conv.documentAnswers?.[pd.candidateId];
+  return {
+    documentKind: typeof p.documentKind === 'string' ? p.documentKind : answered?.documentKind,
+    ...(typeof p.time === 'number' ? { time: p.time, timePrecision: p.timePrecision } : answered?.date ?? {})
+  };
+}
+
 /** States of a value she did not answer (`duplicate`: her app found it in her record) */
 const UNANSWERED = new Set(['open', 'replaced', 'duplicate']);
 
@@ -71,7 +89,7 @@ const UNANSWERED = new Set(['open', 'replaced', 'duplicate']);
  * host shows the next step once it read the conversation again.
  */
 export function ConversationStepBubble ({
-  step, conversation, progress, contactName, title, sourceOf, actions, onDeclineBatch, onLater, onAcknowledgeSummary, onReviewSkipped,
+  step, conversation, progress, contactName, title, sourceOf, actions, filingOf, onDeclineBatch, onLater, onAcknowledgeSummary, onReviewSkipped,
   note, onClearNote, onNoteAsMessage, noteAloneSignal, locale, loadPdfJs, pdfOptions, className, bubbleClassName
 }: ConversationStepBubbleProps) {
   const noteArg = note != null && note.trim() !== '' ? note.trim().slice(0, cmcConversation.NOTE_MAX_LENGTH) : undefined;
@@ -83,6 +101,13 @@ export function ConversationStepBubble ({
   const [showDoc, setShowDoc] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState<string | null>(null);
   const can = actions != null && busy == null;
+  // a proposed document: what is applied is the proposal, else her answers to its questions (hds-lib `acceptProposedDocument`)
+  const fields = step.kind === 'document' ? documentFields(step.proposed, conversation) : null;
+  const kindToConfirm = step.kind === 'document' && step.pending.includes('kind') ? fields?.documentKind ?? null : null;
+  const filing = kindToConfirm != null && actions?.confirmDocument != null ? filingOf?.(kindToConfirm) ?? null : null;
+  // one tick for the step and its "Change": one she took off stays off there
+  const fileTick = useState<StepFilingTick>(null);
+  const file = useStepFiling(step.key, filing, fileTick);
   // the day it would be saved on: a cumulative report ("Ferritine 12" and "Ferritine 30" differ by it alone), a picture
   const saveText = (pv: ProposedValueView, item: string, value: string, plain: 'step.save' | 'wouldSave', on: 'step.saveOn' | 'wouldSaveOn'): string => {
     const day = valueDayText(pv, conversation.proposedValues, locale, conversation);
@@ -180,14 +205,17 @@ export function ConversationStepBubble ({
   } else if (step.kind === 'document') {
     const pd = step.proposed;
     const c = pd.item.content;
-    const p = c.proposal ?? {};
-    const kind = step.pending.includes('kind') && typeof p.documentKind === 'string' ? (documentKindLabel(p.documentKind) ?? p.documentKind) : null;
+    const p = fields ?? {};
+    const kind = kindToConfirm != null ? (documentKindLabel(kindToConfirm) ?? kindToConfirm) : null;
     const date = step.pending.includes('time') && typeof p.time === 'number' ? proposedDateText(p.time, p.timePrecision, locale) : null;
+    const noDate = step.pending.includes('time') && p.timePrecision === 'unknown';
     const anchor = anchorOn(c.anchor, c.about);
     const docOpen = showDoc === step.key || (showDoc == null && c.status === 'check');
     const text = kind != null && date != null
       ? tx('document.proposal', { kind, date })
-      : kind != null ? tx('document.proposalKind', { kind }) : date != null ? tx('document.proposalDate', { date }) : null;
+      : kind != null && noDate
+        ? tx('document.proposalKindNoDate', { kind })
+        : kind != null ? tx('document.proposalKind', { kind }) : date != null ? tx('document.proposalDate', { date }) : noDate ? tx('document.proposalNoDate') : null;
     const confirmDocument = actions?.confirmDocument;
     body = (
       <div className='space-y-2' data-proposed-document={pd.candidateId}>
@@ -199,16 +227,21 @@ export function ConversationStepBubble ({
               pending={step.pending}
               proposal={p}
               busy={busy != null}
-              onSubmit={(correction) => run('dx', () => confirmDocument(pd.candidateId, correction, shownAt, noteArg), () => setCorrecting(null))}
+              filingOf={filingOf}
+              filingTick={{ stepKey: step.key, tick: fileTick }}
+              onSubmit={(correction, chosen) => run('dx', () => confirmDocument(pd.candidateId, correction, shownAt, noteArg, chosen), () => setCorrecting(null))}
               onCancel={() => setCorrecting(null)}
             />
             )
           : confirmDocument != null && (
-            <div className='flex flex-wrap gap-2'>
-              <button type='button' className={btn.primary} disabled={!can || text == null} onClick={() => run('dc', () => confirmDocument(pd.candidateId, undefined, shownAt, noteArg))}>{tx('confirm')}</button>
-              <button type='button' className={btn.outline} disabled={!can} onClick={() => setCorrecting(step.key)}>{tx('document.change')}</button>
-              {onLater != null && <button type='button' className={btn.ghost} disabled={!can} onClick={() => onLater(pd.candidateId)}>{tx('step.later')}</button>}
-            </div>
+            <>
+              {filing != null && <StepFilingChoice filing={filing} checked={file.checked} disabled={!can} onChange={(checked) => file.setChecked(checked)} />}
+              <div className='flex flex-wrap gap-2'>
+                <button type='button' className={btn.primary} disabled={!can || text == null} onClick={() => run('dc', () => confirmDocument(pd.candidateId, undefined, shownAt, noteArg, file.chosen))}>{tx('confirm')}</button>
+                <button type='button' className={btn.outline} disabled={!can} onClick={() => setCorrecting(step.key)}>{tx('document.change')}</button>
+                {onLater != null && <button type='button' className={btn.ghost} disabled={!can} onClick={() => onLater(pd.candidateId)}>{tx('step.later')}</button>}
+              </div>
+            </>
           )}
         {/* where the date is printed (its anchor), else the document from its first page */}
         <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>

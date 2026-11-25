@@ -8,6 +8,28 @@ import type { RowBlock } from './rowBlock';
 /** What she confirms or corrects for a proposed document (hds-lib `DocumentFields`, not exported at the top level) */
 export type DocumentFields = cmcConversation.DocumentFields;
 
+/**
+ * What filing a document as she confirms its kind does (data-model DOCUMENTS.md "Filing", 4.35.0), as the host knows it
+ * from the grants it read: shown on the step, and given back with her confirm when she ticked it.
+ */
+export interface StepFiling {
+  /** The stream of the kind the document goes to (hds-lib `documentKinds.streamFor`) */
+  place: string;
+  /** Its name, as she reads it */
+  label: string;
+  /** Who newly sees the document there */
+  gains: string[];
+  /** Who no longer does */
+  loses: string[];
+  /** false: not all who see her documents are known, `gains` and `loses` may miss some */
+  complete: boolean;
+  /**
+   * The host's own identity of who gains and who loses (two readers may share a name): never shown, part of what her
+   * tick stands for, and what the host compares before it writes
+   */
+  key?: string;
+}
+
 /** What an action came to: done (some candidates may have been refused, each with hds-lib's reason) or failed */
 export type ConversationOutcome = { ok: true; refused?: Array<{ candidateId: string; reason: string }> } | { ok: false; reason: string };
 
@@ -23,9 +45,11 @@ export interface ConversationActions {
   answer (questionId: string, answer: QuestionAnswer, shownAt: number, note?: string): Promise<ConversationOutcome>;
   /**
    * A proposed document's date and kind (hds-lib `acceptProposedDocument`): no `correction` confirms the proposal, a
-   * correction (only what she changed) corrects it
+   * correction (only what she changed) corrects it. `filing` (only when she ticked it): what she was told, the document is
+   * also filed there (hds-lib `file`). A host that offers it reads the document and the grants again first, and answers
+   * `{ ok: false, reason: 'changed-since-shown' }` with nothing written when it would tell her something else now.
    */
-  confirmDocument? (candidateId: string, correction: DocumentFields | undefined, shownAt: number, note?: string): Promise<ConversationOutcome>;
+  confirmDocument? (candidateId: string, correction: DocumentFields | undefined, shownAt: number, note?: string, filing?: StepFiling): Promise<ConversationOutcome>;
   /** A proposed document set aside (hds-lib `skipProposedDocument`): her note sent alone on it */
   skipDocument? (candidateId: string, shownAt: number, note?: string): Promise<ConversationOutcome>;
 }

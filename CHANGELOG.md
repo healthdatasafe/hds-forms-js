@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- **Filing a document as she confirms its kind (data-model 4.35.0).** `ConversationStepBubble` `filingOf`: the
+  document's step, and Change under it, say where the document goes for that kind, who will now see it and who no longer
+  will, with a tick; off by default when someone gains or loses it, or when not all its readers are known. What she ticked
+  (`StepFiling`) comes back as the last argument of `ConversationActions.confirmDocument`; `useDocumentConversations`
+  passes hds-lib `file`. Without `filingOf` nothing changes, and nothing is filed. One tick for the step and its Change;
+  `StepFiling.key` (optional) is the host's own identity of the readers, so two readers with one name are told apart.
+  Its texts in the five languages (es, it, pt-BR are machine drafts, as in 0.51.0).
+
+### Fixed
+
+- **A kind or a date she answered in a question is said on the document's step**, a kind with "you do not know its
+  date" too. It was applied and not shown, and Confirm stayed off when the proposal had neither, or when she had answered
+  that she does not know the date.
+
 ## [0.52.0] - 2026-11-25
 
 Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0, as 0.50.0.

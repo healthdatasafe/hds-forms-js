@@ -33,6 +33,7 @@ export { ValueLine, ValueReview } from './ValueParts';
 export { useConversationRun, blockText } from './conversationRun';
 export type { ValueReviewProps } from './ValueParts';
 export { useDocumentConversations } from './useDocumentConversations';
+export type { StepFiling } from './conversationRun';
 export type { ConversationRel, DocumentConversationData, DocumentConversationsState, DocumentConversationsOptions } from './useDocumentConversations';
 export type { SourceAnchor, DocumentAttachment, DocumentKind } from './sourceAnchor';
 export { fitPage, frameBox, clampView, zoomAt, panBy, isUsableBox, MAX_SCALE, MIN_LINE_PX } from './anchorFrame';

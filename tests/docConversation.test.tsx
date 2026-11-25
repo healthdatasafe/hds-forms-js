@@ -16,6 +16,7 @@ const ITEMS: Record<string, any> = {
 };
 const KINDS: Record<string, any> = {
   'laboratory-report': { key: 'laboratory-report', label: { en: 'Laboratory report' } },
+  'administrative-document': { key: 'administrative-document', label: { en: 'Administrative document' } },
   other: { key: 'other', label: { en: 'Other document' } }
 };
 vi.mock('hds-lib', async (importOriginal) => {
@@ -186,7 +187,7 @@ describe('[DOC] the document step and her note', () => {
     await render(bubble(c, conv.nextStep(c, E, ready), acts, { onLater: vi.fn() }));
     expect(container.textContent).toContain('This looks like a Laboratory report from November 5, 2020. Save that on the document?');
     await click(button('Confirm'));
-    expect(acts.confirmDocument).toHaveBeenCalledWith('d1', undefined, 100, undefined);
+    expect(acts.confirmDocument).toHaveBeenCalledWith('d1', undefined, 100, undefined, undefined);
     await click(button('Change'));
     const select = container.querySelector('select') as HTMLSelectElement;
     await act(async () => {
@@ -194,7 +195,141 @@ describe('[DOC] the document step and her note', () => {
       select.dispatchEvent(new Event('change', { bubbles: true }));
     });
     await click(button('Save'));
-    expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', { documentKind: 'other' }, 100, undefined);
+    expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', { documentKind: 'other' }, 100, undefined, undefined);
+  });
+
+  const clinical = { place: 'documents-clinical', label: 'Clinical documents', gains: [] as string[], loses: [] as string[], complete: true };
+  const tick = () => container.querySelector('[data-step-filing] input') as HTMLInputElement | null;
+  const choose = async (value: string) => {
+    const select = container.querySelector('select') as HTMLSelectElement;
+    await act(async () => { select.value = value; select.dispatchEvent(new Event('change', { bubbles: true })); });
+  };
+
+  it('[FOC1] says where it goes; ticked when no one newly sees it or loses it; Confirm carries what she was told', async () => {
+    const c = of([pdoc('d1')]);
+    const acts = actions();
+    const filingOf = vi.fn(() => clinical);
+    await render(bubble(c, conv.nextStep(c, E, ready), acts, { filingOf }));
+    expect(filingOf).toHaveBeenCalledWith('laboratory-report');
+    expect(container.textContent).toContain('Also file it in: Clinical documents');
+    expect(container.textContent).toContain('No one new will see it, and no one will lose it.');
+    expect(tick()!.checked).toBe(true);
+    await click(button('Confirm'));
+    expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', undefined, 100, undefined, clinical);
+    await click(tick());
+    await click(button('Confirm'));
+    expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', undefined, 100, undefined, undefined);
+  });
+
+  it('[FOC2] unticked when someone gains it, loses it, or not all readers are known; her tick is for what she was told', async () => {
+    const c = of([pdoc('d1')]);
+    const step = conv.nextStep(c, E, ready);
+    for (const [change, text] of [[{ gains: ['Dr New'] }, 'Will now see it: Dr New'], [{ loses: ['Dr Old'] }, 'Will no longer see it: Dr Old'], [{ complete: false }, 'some may now see it']] as Array<[object, string]>) {
+      const acts = actions();
+      await render(bubble(c, step, acts, { filingOf: () => ({ ...clinical, ...change }) }));
+      expect(container.textContent).toContain(text);
+      expect(container.textContent).not.toContain('No one new');
+      expect(tick()!.checked).toBe(false);
+      await click(button('Confirm'));
+      expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', undefined, 100, undefined, undefined);
+    }
+    const acts = actions();
+    await render(bubble(c, step, acts, { filingOf: () => ({ ...clinical, gains: ['Dr New'] }) }));
+    await click(tick());
+    expect(tick()!.checked).toBe(true);
+    await act(async () => { root!.render(bubble(c, step, acts, { filingOf: () => ({ ...clinical, gains: ['Dr New', 'Dr Other'] }) })); });
+    expect(tick()!.checked).toBe(false);
+    await act(async () => { root!.render(bubble(c, step, acts, { filingOf: () => ({ ...clinical, gains: ['Dr New'] }) })); });
+    await click(button('Confirm'));
+    expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', undefined, 100, undefined, { ...clinical, gains: ['Dr New'] });
+  });
+
+  it('[FOC3] nothing offered without the host, for a kind it is not offered for, or when the kind is not confirmed here', async () => {
+    const c = of([pdoc('d1')]);
+    await render(bubble(c, conv.nextStep(c, E, ready)));
+    expect(tick()).toBeNull();
+    await render(bubble(c, conv.nextStep(c, E, ready), actions(), { filingOf: () => null }));
+    expect(tick()).toBeNull();
+    const filingOf = vi.fn(() => clinical);
+    const dateOnly = { ...ready, document: { ...ready.document, clientData: { hdsDocumentPending: ['time'] } } };
+    await render(bubble(c, conv.nextStep(c, E, dateOnly), actions(), { filingOf }));
+    expect(container.textContent).toContain('This document looks dated');
+    expect(tick()).toBeNull();
+    const noKind = of([pdoc('d1', { time: 1604577600, timePrecision: 'day' })]);
+    await render(bubble(noKind, conv.nextStep(noKind, E, ready), actions(), { filingOf }));
+    expect(tick()).toBeNull();
+    const { confirmDocument: _c, ...without } = actions();
+    await render(bubble(c, conv.nextStep(c, E, ready), without, { filingOf }));
+    expect(tick()).toBeNull();
+    expect(filingOf).not.toHaveBeenCalled();
+  });
+
+  it('[FOC4] Change: the place follows the kind she picks, and her tick with it', async () => {
+    const c = of([pdoc('d1')]);
+    const acts = actions();
+    const admin = { ...clinical, place: 'documents-admin', label: 'Administrative documents', gains: ['Insurer'] };
+    const filingOf = (kind: string) => kind === 'laboratory-report' ? clinical : kind === 'administrative-document' ? admin : null;
+    await render(bubble(c, conv.nextStep(c, E, ready), acts, { filingOf }));
+    await click(button('Change'));
+    expect(container.textContent).toContain('Clinical documents');
+    await choose('other');
+    expect(tick()).toBeNull();
+    await choose('administrative-document');
+    expect(container.textContent).toContain('Also file it in: Administrative documents');
+    expect(tick()!.checked).toBe(false);
+    await click(tick());
+    await click(button('Save'));
+    expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', { documentKind: 'administrative-document' }, 100, undefined, admin);
+  });
+
+  it('[FOC7] a tick she took off on the step stays off in Change; readers told apart by the host\'s key, not their names', async () => {
+    const c = of([pdoc('d1')]);
+    const acts = actions();
+    await render(bubble(c, conv.nextStep(c, E, ready), acts, { filingOf: () => clinical }));
+    await click(tick());
+    await click(button('Change'));
+    expect(tick()!.checked).toBe(false);
+    const day = container.querySelector('input[type="date"]') as HTMLInputElement;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(day, '2020-11-06');
+      day.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await click(button('Save'));
+    expect((acts.confirmDocument.mock.calls.at(-1) as unknown[])[4]).toBeUndefined();
+    const a2 = actions();
+    const named = { ...clinical, gains: ['Dr Martin'], key: 'c:1' };
+    await render(bubble(c, conv.nextStep(c, E, ready), a2, { filingOf: () => named }));
+    await click(tick());
+    expect(tick()!.checked).toBe(true);
+    await act(async () => { root!.render(bubble(c, conv.nextStep(c, E, ready), a2, { filingOf: () => ({ ...named, key: 'c:2' }) })); });
+    expect(tick()!.checked).toBe(false);
+  });
+
+  it('[FOC5] a kind, a date or no date she answered in a question is what is confirmed: said, filed by it', async () => {
+    const p = pdoc('d1', {});
+    const kindQ = question('which-document-kind', { candidateId: 'd1', options: ['laboratory-report', 'other'] });
+    const dateQ = question('which-document-date', { candidateId: 'd1' });
+    const kind = answer(kindQ, 'choose', { option: 'laboratory-report' });
+    const c = of([p, kindQ, kind]);
+    const acts = actions();
+    const filingOf = vi.fn(() => clinical);
+    await render(bubble(c, conv.nextStep(c, E, ready), acts, { filingOf }));
+    expect(container.textContent).toContain('This looks like a Laboratory report. Save that on the document?');
+    expect(filingOf).toHaveBeenCalledWith('laboratory-report');
+    await click(button('Confirm'));
+    expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', undefined, 100, undefined, clinical);
+    const dated = of([p, kindQ, kind, dateQ, answer(dateQ, 'confirm', { time: 1604577600, timePrecision: 'day' })]);
+    await render(bubble(dated, conv.nextStep(dated, E, ready), actions()));
+    expect(container.textContent).toContain('This looks like a Laboratory report from November 5, 2020.');
+    const undated = of([p, dateQ, answer(dateQ, 'confirm', { timePrecision: 'unknown' })]);
+    const a2 = actions();
+    await render(bubble(undated, conv.nextStep(undated, E, ready), a2));
+    expect(container.textContent).toContain('You do not know the date of this document. Save that on it?');
+    await click(button('Confirm'));
+    expect(a2.confirmDocument).toHaveBeenLastCalledWith('d1', undefined, 100, undefined, undefined);
+    const kindUndated = of([p, kindQ, kind, dateQ, answer(dateQ, 'confirm', { timePrecision: 'unknown' })]);
+    await render(bubble(kindUndated, conv.nextStep(kindUndated, E, ready), actions()));
+    expect(container.textContent).toContain('This looks like a Laboratory report, and you do not know its date. Save that on the document?');
   });
 
   it('her note shows on the step, goes with the answer she taps, ✕ removes it', async () => {
