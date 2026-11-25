@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ConversationAlert, DocumentConversation, ProposedValueView } from 'hds-lib';
 import type { AnchoredDocumentSource } from './AnchoredDocumentView';
 import type { PdfJsLike } from './pdfjs';
-import { noticeText, tx, valueDayText } from './labels';
+import { noticeText, pictureText, tx, valueDayText } from './labels';
 import { QuestionCard, type QuestionAnswer } from './QuestionCard';
 import { TaskStatusLine } from './ConversationBubbles';
 import type { ConversationViewer } from './answers';
 import { batchCandidates, isWritten, rowBlock, shownAtOf } from './rowBlock';
 import { ValueLine, ValueReview } from './ValueParts';
 import { useConversationRun, type ConversationActions } from './conversationRun';
-import { btn, card, cx, muted } from './ui';
+import { btn, card, cx, muted, small } from './ui';
 
 export type { ConversationOutcome, ConversationActions } from './conversationRun';
 
@@ -94,6 +94,7 @@ export function DocumentConversationCard ({
   const pvOf = (candidateId: unknown): ProposedValueView | null => conv.proposedValues.find((p) => p.candidateId === candidateId) ?? null;
   // a replaced value is shown once, through what replaced it
   const shownValues = conv.proposedValues.filter((p) => p.state !== 'replaced');
+  const picture = pictureText(conv);
   const answerQ = (questionId: string) => (a: QuestionAnswer) => {
     if (actions != null) run('q:' + questionId, () => actions.answer(questionId, a, shownAt));
   };
@@ -121,16 +122,17 @@ export function DocumentConversationCard ({
           />
         ))}
         {conv.identity !== 'not-mine' && docQuestions.map((q) => (
-          <QuestionCard key={q.item.id} question={q} contactName={contactName} busy={busy != null} onAnswer={actions != null ? answerQ(q.item.id) : null} locale={locale} />
+          <QuestionCard key={q.item.id} question={q} contactName={contactName} sourceOf={sourceOf} busy={busy != null} onAnswer={actions != null ? answerQ(q.item.id) : null} locale={locale} loadPdfJs={loadPdfJs} pdfOptions={pdfOptions} />
         ))}
         {conv.identity !== 'not-mine' && valueQuestions.map((q) => (
-          <QuestionCard key={q.item.id} question={q} about={pvOf(q.item.content.candidateId)} contactName={contactName} busy={busy != null} onAnswer={actions != null ? answerQ(q.item.id) : null} locale={locale} />
+          <QuestionCard key={q.item.id} question={q} about={pvOf(q.item.content.candidateId)} contactName={contactName} sourceOf={sourceOf} busy={busy != null} onAnswer={actions != null ? answerQ(q.item.id) : null} locale={locale} loadPdfJs={loadPdfJs} pdfOptions={pdfOptions} />
         ))}
       </div>
 
       {conv.identity !== 'not-mine' && shownValues.length > 0 && (
         <>
           <h4 className='mt-4 text-sm font-semibold'>{tx('proposedTitle')}</h4>
+          {viewer === 'person' && picture != null && <p className={cx(small, 'mt-1')} data-picture-count=''>{picture}</p>}
           {batch.length > 1 && actions != null && (
             <button type='button' className={cx(btn.primary, 'mt-2 w-full')} disabled={!can} onClick={() => run('batch', () => actions.confirm(batch.map((p) => p.candidateId), shownAt))}>
               {tx('confirmAll', { n: batch.length })}

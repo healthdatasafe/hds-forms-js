@@ -205,6 +205,59 @@ describe('[CONV-UI] DocumentConversationCard', () => {
     expect(a.answer).toHaveBeenCalledWith(q.id, { action: 'not-mine' }, 100);
   });
 
+  it('which-date: her document is one tap away while it is open, on the value it is about, else on its first page', async () => {
+    const q = question('which-date', { context: { dates: [{ day: '2026-11-18', text: '18.11.2026', role: 'sampling' }, { day: '2026-11-18', text: '18.11.2026', role: 'report' }] } });
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sourceOf = vi.fn(() => ({ kind: 'image', url: 'data:image/png;base64,AAAA' }) as any);
+    await render(card(of([pv('c1'), q]), actions(), { sourceOf }));
+    const dates = [...container.querySelectorAll('[data-question="which-date"] button')].map((b) => b.textContent);
+    expect(dates.filter((d) => d!.includes('18.11.2026')).length).toBe(2);
+    expect(err.mock.calls.some((c) => String(c[0]).includes('same key'))).toBe(false);
+    err.mockRestore();
+    expect(container.querySelector('[data-question="which-date"] [role="region"]')).toBeNull();
+    await click(button('See the document'));
+    expect(container.querySelector('[data-question="which-date"]')!.textContent).toContain('Hide');
+    expect(sourceOf).toHaveBeenCalledWith(undefined);
+    await render(card(of([pv('c1'), q, answer(q, 'confirm', { time: 1795003200, timePrecision: 'day' }, 200)]), actions(), { sourceOf }));
+    expect(container.querySelector('[data-question="which-date"]')!.textContent).not.toContain('See the document');
+  });
+
+  it('a picture: how many results were read on it, beside its values, for her alone', async () => {
+    const on = (backend: string | undefined, id: string, over: any = {}) => { const v = pv(id, over); v.content.extraction = { ...v.content.extraction, backend }; return v; };
+    const line = () => container.querySelector('[data-picture-count]')?.textContent ?? null;
+    await render(card(of([on('vision', 'c1'), on('vision', 'c2', { status: 'kept-aside', reason: 'x' }), on('vision', 'c3', { replaces: 'c1' })]), actions()));
+    expect(line()).toBe('2 results read on this picture. Compare with the page: a line may be missing.');
+    await render(card(of([on('vision', 'c1')]), actions()));
+    expect(line()).toBe('1 result read on this picture. Compare with the page: a line may be missing.');
+    lang = 'fr';
+    await render(card(of([on('vision', 'c1'), on('vision', 'c2')]), actions()));
+    expect(line()).toBe('2 résultats lus sur cette image. Comparez avec la page : une ligne peut manquer.');
+    lang = 'en';
+    for (const backend of ['text-layer', undefined]) {
+      await render(card(of([on(backend, 'c1')]), actions()));
+      expect(line()).toBeNull();
+    }
+    await render(card(of([on('vision', 'c1')]), null, { viewer: 'contact', personName: 'Anna' }));
+    expect(line()).toBeNull();
+  });
+
+  it('a picture: the step says it until she answered one of its values', async () => {
+    const on = (id: string) => { const v = pv(id); v.content.extraction = { ...v.content.extraction, backend: 'vision' }; return v; };
+    const line = () => container.querySelector('[data-picture-count]')?.textContent ?? null;
+    const step = (c: any) => {
+      const st = conv.nextStep(c, ['hds-reader'], { status: 'awaiting-answers' })!;
+      return <conv.ConversationStepBubble step={st} conversation={c} contactName='Dr Test' title='Lab report' sourceOf={() => null} actions={actions()} />;
+    };
+    const vs = [on('c1'), on('c2'), on('c3'), on('c4')];
+    await render(step(of(vs)));
+    expect(line()).toBe('4 results read on this picture. Compare with the page: a line may be missing.');
+    const q = question('which-date', { context: { dates: [] } });
+    await render(step(of([q, ...vs])));
+    expect(line()).toBeNull();
+    await render(step(of([...vs, answer(vs[0], 'confirm', { candidateIds: ['c1'], written: [{ candidateId: 'c1', eventId: 'v1' }] }, 300)])));
+    expect(line()).toBeNull();
+  });
+
   it('which-date: a printed date answers with its day at 12:00 UTC; "I do not know" with unknown', async () => {
     const q = question('which-date', { context: { dates: [{ day: '2026-11-18', text: '18.11.2026', label: 'Prélevé le', role: 'sampling' }] } });
     const a = actions();
