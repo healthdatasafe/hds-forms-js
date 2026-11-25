@@ -15,8 +15,20 @@
   document's card, and its first step about values, say "12 results read on this picture. Compare with the page: a line may
   be missing." Told by `extraction.backend` (anything but `text-layer`).
 
+### Changed
+
+- **The day beside a value**: `valueDayText` also says it for a value read from a picture, and for a value with no day of its
+  own once she answered it (new optional argument: the conversation). "On {day}" replaces "sampled {day}", and the texts of
+  the date answers no longer name a sample: the document may be a chart.
+- `which-date` about the whole document says what the day is used for.
+
 ### Fixed
 
+- **A picture she confirms values on stayed on "Opening your document…"** from the second value on: a cached picture loads
+  before the view waits for it.
+- **Answers are written one at a time.** The next step can be answered while the last one is still being written; two writes
+  at once lost entries of the document's list of values.
+- **Correct:** Save waits for a change (unchanged, it wrote "corrected") and for a complete value, and says which.
 - **A date question shows her document** ("See the document", as "Is this yours?"): the days may have been read from a
   picture she has not open. On the value's line when it is about one, else on the first page.
 - The same day printed under two roles no longer shares a React key.

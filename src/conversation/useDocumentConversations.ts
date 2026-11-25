@@ -142,6 +142,7 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
   const [failed, setFailed] = useState(false);
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((v) => v + 1), []);
+  const answering = useRef<Promise<unknown>>(Promise.resolve());
   const relKey = rels.map((r) => `${r.accessId}:${r.localCollectorStreamId ?? ''}:${r.grantedPermissions.map((p) => `${p.streamId ?? ''}=${p.level ?? ''}`).join(',')}`).join('|');
   const relsRef = useRef(rels);
   relsRef.current = rels;
@@ -249,7 +250,7 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
           time: times.length > 0 ? Math.min(...times) : 0,
           checking: dupKeys.some(({ k }) => !dupDone.current.has(k)),
           document: docEvents[about] ?? null,
-          actions: actionsFor(connection, rel, about, engines, reload, conversation, (ids) => provisionRef.current?.(ids) ?? Promise.resolve())
+          actions: actionsFor(connection, rel, about, engines, reload, conversation, (ids) => provisionRef.current?.(ids) ?? Promise.resolve(), answering)
         };
         documents.push(doc);
         for (const item of conversation.answers) answers.push({ item, document: doc });
@@ -379,7 +380,7 @@ function itemStreamOf (itemKey: unknown): string | null {
  */
 function actionsFor (
   connection: Pryv.Connection, rel: ConversationRel, about: string, engines: string[], reload: () => void,
-  conversation: DocumentConversation, provision: (streamIds: string[]) => Promise<void>
+  conversation: DocumentConversation, provision: (streamIds: string[]) => Promise<void>, answering: { current: Promise<unknown> }
 ): ConversationActions {
   const provisionFor = async (itemKeys: unknown[]): Promise<void> => {
     const ids = [...new Set(itemKeys.map(itemStreamOf).filter((s): s is string => s != null))];
@@ -388,7 +389,13 @@ function actionsFor (
   const proposedKeys = (candidateIds: string[]) => conversation.proposedValues
     .filter((p) => candidateIds.includes(p.candidateId))
     .map((p) => p.item.content.proposal?.itemKey);
-  const call = async (fn: () => Promise<unknown>): Promise<ConversationOutcome> => {
+  // one answer at a time: the next step may show, and be answered, while the last one is still being written
+  const call = (fn: () => Promise<unknown>): Promise<ConversationOutcome> => {
+    const result = answering.current.then(() => answerNow(fn));
+    answering.current = result.catch(() => {});
+    return result;
+  };
+  const answerNow = async (fn: () => Promise<unknown>): Promise<ConversationOutcome> => {
     try {
       return { ok: true, refused: refusedOf(await fn()) };
     } catch (e) {

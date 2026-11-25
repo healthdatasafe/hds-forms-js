@@ -222,6 +222,17 @@ describe('[CONV-UI] DocumentConversationCard', () => {
     expect(container.querySelector('[data-question="which-date"]')!.textContent).not.toContain('See the document');
   });
 
+  it('which-date about the whole document says what the day is used for; about one value it does not', async () => {
+    const hint = 'This day is used for every value of the document that has no day of its own.';
+    const q = question('which-date', { context: { dates: [] } });
+    await render(card(of([pv('c1'), q]), actions()));
+    expect(container.textContent).toContain(hint);
+    await render(card(of([pv('c1'), q, answer(q, 'confirm', { time: 1795003200, timePrecision: 'day' }, 200)]), actions()));
+    expect(container.textContent).not.toContain(hint);
+    await render(card(of([pv('c1'), question('which-date', { candidateId: 'c1', context: { dates: [] } })]), actions()));
+    expect(container.textContent).not.toContain(hint);
+  });
+
   it('a picture: how many results were read on it, beside its values, for her alone', async () => {
     const on = (backend: string | undefined, id: string, over: any = {}) => { const v = pv(id, over); v.content.extraction = { ...v.content.extraction, backend }; return v; };
     const line = () => container.querySelector('[data-picture-count]')?.textContent ?? null;
@@ -407,14 +418,14 @@ describe('[CONV-UI] bubbles and texts', () => {
     const c = of([v, q]);
     expect(conv.answerText(answer(v, 'confirm', { candidateIds: ['c1', 'c2'] }), c)).toBe('You confirmed 2 values');
     expect(conv.answerText(answer(v, 'correct', { candidateIds: ['c1'] }), c)).toBe('You corrected a value');
-    expect(conv.answerText(answer(q, 'confirm', { timePrecision: 'unknown' }), c)).toBe('You do not know the day of the sample');
+    expect(conv.answerText(answer(q, 'confirm', { timePrecision: 'unknown' }), c)).toBe('You do not know the day');
     expect(conv.answerText(answer(v, 'future-action'), c)).toBe('You answered');
   });
   it('her answers to questions the contact deleted since (R10) still say what they answered', () => {
     const gone = { id: 'deleted-question' };
     expect(conv.answerText(answer(gone, 'confirm', {}), of([]))).toBe('You said the document is yours');
     expect(conv.answerText(answer(gone, 'confirm', { basis: 'profile-match' }), of([]))).toBe('Matched to your profile');
-    expect(conv.answerText(answer(gone, 'confirm', { time: Date.parse('2026-11-18T12:00:00Z') / 1000, timePrecision: 'day' }), of([]), 'en-US')).toBe('You gave the day of the sample: November 18, 2026');
+    expect(conv.answerText(answer(gone, 'confirm', { time: Date.parse('2026-11-18T12:00:00Z') / 1000, timePrecision: 'day' }), of([]), 'en-US')).toBe('You gave the day: November 18, 2026');
   });
   it('the status line and the notice bubble', async () => {
     await render(<><conv.TaskStatusLine status='awaiting-answers' counts={{ proposed: 3, questions: 1 }} contactName='Dr Test' /><conv.NoticeBubble code='no-result-found' contactName='Dr Test' /></>);

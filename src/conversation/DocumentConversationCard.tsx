@@ -145,7 +145,7 @@ export function DocumentConversationCard ({
               const open = reviewing === pv.candidateId && !written;
               return (
                 <li key={pv.item.id} className='rounded-md border border-gray-200 p-3 dark:border-gray-700' data-candidate={pv.candidateId}>
-                  <ValueLine pv={pv} block={block} written={written} contactName={contactName} day={valueDayText(pv, conv.proposedValues, locale)} />
+                  <ValueLine pv={pv} block={block} written={written} contactName={contactName} day={valueDayText(pv, conv.proposedValues, locale, conv)} />
                   {!open && !written && (pv.state === 'open' || pv.state === 'skipped') && actions != null && (
                     <div className='mt-2 flex flex-wrap gap-2'>
                       {block == null && <button type='button' className={btn.outline} disabled={!can} onClick={() => { setReviewing(pv.candidateId); setCorrecting(false); setMessage(null); }}>{tx('review')}</button>}

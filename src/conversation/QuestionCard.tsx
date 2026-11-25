@@ -80,6 +80,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
   return (
     <div className={cx(variant === 'panel' && panel, className)} data-question={question.code}>
       <p className='text-sm font-semibold'>{questionText(question.code, contactName)}</p>
+      {question.code === 'which-date' && c.candidateId == null && open && <p className={cx(small, 'mt-1')}>{tx('which-date.whole')}</p>}
       {about != null && <p className={cx(small, 'mt-1')}>{tx('aboutValue', { label: printedText(about.item.content.printed) })}</p>}
 
       {identity != null && (
