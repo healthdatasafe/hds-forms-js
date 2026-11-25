@@ -41,14 +41,19 @@ export function waitText (seconds: number): string {
   return seconds < 3600 ? durationText(seconds) : tx('time.overHour');
 }
 
-/** A moment for a screen reader: its time today, its day and time else; it does not change as time passes */
-export function momentText (timeS: number, nowS: number, locale?: string): string {
+/** Since when, for a screen reader: "since 14:30" today, "since 23 November at 14:30" else; it does not change as time passes */
+export function sinceText (timeS: number, nowS: number, locale?: string): string {
   const d = new Date(timeS * 1000);
   const sameDay = d.toDateString() === new Date(nowS * 1000).toDateString();
   const opts: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit', ...(sameDay ? {} : { day: 'numeric', month: 'long' }) };
+  let format: Intl.DateTimeFormat;
   try {
-    return d.toLocaleString(locale, opts);
+    format = new Intl.DateTimeFormat(locale, opts);
   } catch {
-    return d.toLocaleString(undefined, opts);
+    format = new Intl.DateTimeFormat(undefined, opts);
   }
+  const moment = format.format(d);
+  if (!sameDay) return tx(d.getDate() === 8 || d.getDate() === 11 ? 'time.sinceDayVowel' : 'time.sinceDay', { moment });
+  const hour = Number(format.formatToParts(d).find((p) => p.type === 'hour')?.value);
+  return tx(hour === 1 ? 'time.sinceTimeOne' : 'time.sinceTime', { moment });
 }
