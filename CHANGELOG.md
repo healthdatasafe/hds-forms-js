@@ -2,7 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- **How many results were read on a picture.** A picture may not be read in full, and nothing in an answer says so: the
+  document's card, and its first step about values, say "12 results read on this picture. Compare with the page: a line may
+  be missing." Told by `extraction.backend` (anything but `text-layer`).
+
 ### Fixed
+
+- **A date question shows her document** ("See the document", as "Is this yours?"): the days may have been read from a
+  picture she has not open. On the value's line when it is about one, else on the first page.
+- The same day printed under two roles no longer shares a React key.
 
 - **A proposed cervical-fluid observation is said as it was read, with its frequency.** The line she confirms left it out
   ("10KL — … (Creighton)", the same for X1, X2 or none), and showed the observation converted to the method she displays.

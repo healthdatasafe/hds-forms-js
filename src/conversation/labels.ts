@@ -1,4 +1,5 @@
 import { cmcConversation, eventToShortText, getHDSModel, localizeText } from 'hds-lib';
+import type { DocumentConversation } from 'hds-lib';
 import { observationLabel } from '../schema/convertibleMethod';
 import { CONVERSATION_TEXTS, type ConversationTextKey } from './conversationTexts';
 
@@ -145,6 +146,19 @@ export function proposalText (p: { itemKey?: string; type?: string; content?: un
   } catch {
     return null;
   }
+}
+
+/**
+ * A picture may not be read in full, and nothing in an answer says so: how many results were read on it, for her to
+ * compare with the page. Null for a document read from its text (`extraction.backend` `text-layer`, or not given).
+ */
+export function pictureText (conv: DocumentConversation): string | null {
+  const n = conv.proposedValues.filter((pv) => {
+    const backend = pv.item.content.extraction?.backend;
+    return pv.state !== 'replaced' && typeof backend === 'string' && backend !== 'text-layer';
+  }).length;
+  if (n === 0) return null;
+  return n === 1 ? tx('picture.readOne', { n }) : tx('picture.read', { n });
 }
 
 /** The line as the document prints it: "Ferritine 48 ng/mL (30 - 400) H" */

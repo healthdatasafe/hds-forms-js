@@ -155,6 +155,8 @@ export const CONVERSATION_TEXTS = {
 
   // questions
   'question.is-this-yours': { en: 'Is this document about you?', fr: 'Ce document vous concerne-t-il ?' },
+  'picture.readOne': { en: '{n} result read on this picture. Compare with the page: a line may be missing.', fr: '{n} résultat lu sur cette image. Comparez avec la page : une ligne peut manquer.' },
+  'picture.read': { en: '{n} results read on this picture. Compare with the page: a line may be missing.', fr: '{n} résultats lus sur cette image. Comparez avec la page : une ligne peut manquer.' },
   'question.which-date': { en: 'On which day was the sample taken?', fr: 'Quel jour le prélèvement a-t-il été fait ?' },
   'question.which-specimen': { en: 'Which sample was this measured in?', fr: 'Dans quel prélèvement cela a-t-il été mesuré ?' },
   'question.which-unit': { en: 'Which unit is this value in?', fr: 'Dans quelle unité est cette valeur ?' },
