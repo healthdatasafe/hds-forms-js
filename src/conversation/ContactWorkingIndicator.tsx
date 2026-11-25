@@ -1,7 +1,7 @@
 import { tx } from './labels';
 import type { ConversationTextKey } from './conversationTexts';
 import { bubbleIn, cx } from './ui';
-import { counterText, durationText, momentText, useNowS, waitText } from './elapsed';
+import { counterText, durationText, sinceText, useNowS, waitText } from './elapsed';
 import { ON_HOLD, progressState } from './workInProgress';
 
 export interface ContactWorkingIndicatorProps {
@@ -51,7 +51,7 @@ export function ContactWorkingIndicator ({ contactName, status, documentTitle, s
   const said = (since: boolean) => {
     const full = `${key}${since ? 'Since' : ''}${doc ? '' : 'NoTitle'}` as ConversationTextKey;
     const age = now - (sinceS ?? now);
-    return tx(full, since ? { ...vars, moment: momentText(sinceS ?? now, now, locale) } : { ...vars, time: state === 'no-news' ? durationText(age) : waitText(age) });
+    return tx(full, since ? { ...vars, since: sinceText(sinceS ?? now, now, locale) } : { ...vars, time: state === 'no-news' ? durationText(age) : waitText(age) });
   };
   return (
     <div className={cx('flex justify-start', className)} data-working-indicator={state === 'working' ? '' : state}>

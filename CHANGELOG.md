@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **"Since 14:30" is one text per language, with its article** (plan 138): `time.sinceTime`, `sinceTimeOne`, `sinceDay`,
+  `sinceDayVowel`, read into `{since}` of the conversation texts (Italian "dalle 14:30", Spanish "desde la 1:30"). English is
+  unchanged; French says "depuis le 23 novembre", for a screen reader (it left the article out). `sinceText` replaces
+  `momentText` (neither is exported).
+
 ### Added
 
 - **How many results were read on a picture.** A picture may not be read in full, and nothing in an answer says so: the

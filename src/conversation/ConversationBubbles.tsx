@@ -3,7 +3,7 @@ import { errorText, noticeText, statusText, tx } from './labels';
 import { answerText, personNameOf, type ConversationViewer } from './answers';
 import type { ConversationTextKey } from './conversationTexts';
 import { bubbleIn, bubbleOut, cx, small } from './ui';
-import { counterText, durationText, momentText, useNowS, waitText } from './elapsed';
+import { counterText, durationText, sinceText, useNowS, waitText } from './elapsed';
 import { ON_HOLD, isInProgress, progressState } from './workInProgress';
 
 export interface TaskStatusLineProps {
@@ -79,7 +79,7 @@ export function TaskStatusLine ({ status, errorCode, counts, contactName, viewer
       {since != null && state !== 'working' && (
         <>
           <span aria-hidden='true'> · {tx(`${key}For` as ConversationTextKey, { time: state === 'no-news' ? durationText(now - since) : waitText(now - since) })}</span>
-          <span className='sr-only'>, {tx(`${key}Since` as ConversationTextKey, { moment: momentText(since, now, locale) })}</span>
+          <span className='sr-only'>, {tx(`${key}Since` as ConversationTextKey, { since: sinceText(since, now, locale) })}</span>
           {!contact && <span className='mt-0.5 block'>{tx(state === 'on-hold' ? 'status.onHoldKept' : 'status.kept')}</span>}
         </>
       )}
