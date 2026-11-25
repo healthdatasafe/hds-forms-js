@@ -4,7 +4,7 @@ import { RepresentationCell } from 'hds-feminine-cycle-ui';
 import { choices, compatible, pickedValue, resolve, toggle, type Selection } from '../schema/notationFacets';
 import { recordOf, type AnnotationPicks, type NotationModel } from '../schema/methodNotation';
 
-const HINT = { en: 'Incomplete: pick the rest of the record to save it.', fr: 'Incomplet : choisissez la suite de la notation pour l\'enregistrer.' };
+const HINT = { en: 'Incomplete: pick the rest of the record to save it.', fr: 'Incomplet : choisissez la suite de la notation pour l\'enregistrer.', es: 'Incompleto: elija el resto del registro para guardarlo.', it: 'Incompleto: scelga il resto della registrazione per salvarla.', 'pt-BR': 'Incompleto: escolha o restante do registro para salvá-lo.' };
 
 const tx = (t: any): string => (t == null ? '' : (localizeText(t) || (typeof t === 'string' ? t : (t.en ?? ''))));
 

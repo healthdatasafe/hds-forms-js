@@ -89,8 +89,8 @@ export interface BuildNotationInput {
   dayContext?: ComposeOptions['dayContext'];
 }
 
-const STICKER_ROW = { en: 'Sticker', fr: 'Tampon' };
-const BLEEDING_ROW = { en: 'Bleeding', fr: 'Saignement' };
+const STICKER_ROW = { en: 'Sticker', fr: 'Tampon', es: 'Pegatina', it: 'Bollino', 'pt-BR': 'Selo' };
+const BLEEDING_ROW = { en: 'Bleeding', fr: 'Saignement', es: 'Sangrado', it: 'Sanguinamento', 'pt-BR': 'Sangramento' };
 
 /** The facet value of a `parts` value: strings as they are, `true` as 'true'; `false` / null are absent. */
 function facetOf (v: unknown): FacetValue | undefined {

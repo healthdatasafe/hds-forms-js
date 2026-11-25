@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { getHDSModel } from 'hds-lib';
 
 /** Fill all fields or none: shown under a nested group that is started but not complete. */
-export const ALL_OR_NOTHING_HINT = { en: 'Fill in all these fields, or none.', fr: 'Remplissez tous ces champs, ou aucun.' };
+export const ALL_OR_NOTHING_HINT = { en: 'Fill in all these fields, or none.', fr: 'Remplissez tous ces champs, ou aucun.', es: 'Rellene todos estos campos, o ninguno.', it: 'Compili tutti questi campi, oppure nessuno.', 'pt-BR': 'Preencha todos estes campos, ou nenhum.' };
 
 /** The eventType's JSON schema (object types only), or undefined when the model has none. */
 export function eventTypeObjectSchema (eventType?: string): any {
