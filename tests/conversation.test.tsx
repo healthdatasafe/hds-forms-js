@@ -743,6 +743,21 @@ describe('a dated grid (data-model 4.36.0)', () => {
     expect(button('Change the day')).toBeNull();
   });
 
+  it('her answer comes before her document: Save and Confirm are above the picture, not under it on a phone', async () => {
+    const sourceOf = () => ({ kind: 'image', url: 'data:image/png;base64,AAAA' }) as any;
+    const bubble = (c: any) => <conv.ConversationStepBubble step={step(c)} conversation={c} contactName='Dr Test' title='Chart' sourceOf={sourceOf} actions={actions()} />;
+    const above = (a: Element | null, b: Element | null) => a != null && b != null && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    const region = () => container.querySelector('[role="region"]');
+    const q = rowDate(1);
+    await render(bubble(of([q, unread('n1', 1, 4)])));
+    expect(above(button('Save'), region())).toBe(true);
+    const v = box('v1', 1, 2, { status: 'check' });
+    v.content.proposal = { ...v.content.proposal, time: DAY.time };
+    await render(bubble(of([q, answer(q, 'confirm', DAY, 200), v])));
+    expect(above(button('Confirm'), region())).toBe(true);
+    expect(above(button('Later'), button('Hide the document'))).toBe(true);
+  });
+
   it('a box is named by its place, one read in part says so, the boxes not read are counted and are not results', async () => {
     const read = box('a', 3, 14);
     read.content.proposal = { ...read.content.proposal, time: DAY.time };

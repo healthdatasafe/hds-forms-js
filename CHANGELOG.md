@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.52.0] - 2026-11-25
+
+Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0, as 0.50.0.
+
+### Changed
+
+- **Her answer comes before her document.** In a step (a value, a proposed document) and in a question (`which-row-date`,
+  `which-date`, `is-this-yours`), the buttons, the correction editor and the date field are right under the text, and "See
+  it on the document" with the picture come after them. On a phone the picture took the screen and Confirm fell under it.
+
 ## [0.51.0] - 2026-11-25
 
 Needs hds-lib ≥ 2.70.0.

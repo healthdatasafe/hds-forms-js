@@ -350,7 +350,7 @@ npm run build:app        # build test app into dist/ for gh-pages
   `pdfjs-dist` ^6.4.299, `react` / `react-dom` ≥ 19:
 
   ```json
-  "hds-forms-js": "github:healthdatasafe/hds-forms-js#0.50.0",
+  "hds-forms-js": "github:healthdatasafe/hds-forms-js#0.52.0",
   "hds-lib": "github:healthdatasafe/hds-lib-js#2.70.0",
   "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.12.0",
   "pdfjs-dist": "6.4.299"
