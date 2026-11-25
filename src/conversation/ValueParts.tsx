@@ -16,7 +16,7 @@ export function ValueLine ({ pv, block, written, contactName, day = null }: {
   block: RowBlock | null;
   written: boolean;
   contactName: string;
-  /** Its sampling day, on a document of several days (`valueDayText`) */
+  /** The day it would be saved on, when it is said (`valueDayText`) */
   day?: string | null;
 }) {
   const c = pv.item.content;

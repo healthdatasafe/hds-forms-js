@@ -197,6 +197,25 @@ describe('useDocumentConversations: what an answer came to', () => {
     expect(await run(() => a.correct('c2', { itemKey: 'x', type: 'y', content: 1 } as any, 1))).toEqual({ ok: true, refused: [ANSWERED] });
   });
 
+  it('one answer at a time: the next waits for the last, also after a failure', async () => {
+    const a = await actions();
+    const order: string[] = [];
+    let finish = (): void => {};
+    lib.accept.mockImplementationOnce(() => new Promise((_resolve, reject) => { order.push('first'); finish = () => reject(Object.assign(new Error('w'), { innerObject: { reason: 'write-failed' } })); }));
+    lib.accept.mockImplementationOnce(async () => { order.push('second'); return { answers: [], refused: [] }; });
+    let outs: any[] = [];
+    await act(async () => {
+      const first = a.confirm(['c1'], 1);
+      const second = a.confirm(['c2'], 1);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      expect(order).toEqual(['first']);
+      finish();
+      outs = await Promise.all([first, second]);
+    });
+    expect(order).toEqual(['first', 'second']);
+    expect(outs).toEqual([{ ok: false, reason: 'write-failed' }, { ok: true, refused: [] }]);
+  });
+
   it('a write that failed is a failure', async () => {
     const a = await actions();
     lib.accept.mockRejectedValueOnce(Object.assign(new Error('w'), { innerObject: { reason: 'write-failed', refused: [ANSWERED] } }));

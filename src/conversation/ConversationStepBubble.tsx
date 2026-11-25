@@ -83,9 +83,9 @@ export function ConversationStepBubble ({
   const [showDoc, setShowDoc] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState<string | null>(null);
   const can = actions != null && busy == null;
-  // a cumulative report: each value says its day, "Ferritine 12" and "Ferritine 30" differ by it alone
+  // the day it would be saved on: a cumulative report ("Ferritine 12" and "Ferritine 30" differ by it alone), a picture
   const saveText = (pv: ProposedValueView, item: string, value: string, plain: 'step.save' | 'wouldSave', on: 'step.saveOn' | 'wouldSaveOn'): string => {
-    const day = valueDayText(pv, conversation.proposedValues, locale);
+    const day = valueDayText(pv, conversation.proposedValues, locale, conversation);
     return day != null ? tx(on, { item, value, day }) : tx(plain, { item, value });
   };
 

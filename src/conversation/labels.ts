@@ -153,10 +153,7 @@ export function proposalText (p: { itemKey?: string; type?: string; content?: un
  * compare with the page. Null for a document read from its text (`extraction.backend` `text-layer`, or not given).
  */
 export function pictureText (conv: DocumentConversation): string | null {
-  const n = conv.proposedValues.filter((pv) => {
-    const backend = pv.item.content.extraction?.backend;
-    return pv.state !== 'replaced' && typeof backend === 'string' && backend !== 'text-layer';
-  }).length;
+  const n = conv.proposedValues.filter((pv) => pv.state !== 'replaced' && readOnPicture(pv.item.content)).length;
   if (n === 0) return null;
   return n === 1 ? tx('picture.readOne', { n }) : tx('picture.read', { n });
 }
@@ -182,20 +179,33 @@ export function dayText (day: string, locale?: string): string {
   }
 }
 
+/** Whether a value was read from a picture: its `extraction.backend` is given, and is not the document's text */
+function readOnPicture (c: Record<string, any>): boolean {
+  const backend = c.extraction?.backend;
+  return typeof backend === 'string' && backend !== 'text-layer';
+}
+
 /**
- * The sampling day of a proposed value ("5 November 2020, 08:30"), only when its document's values were taken on
- * several days (a cumulative report): there, "Ferritine 12" and "Ferritine 30" differ by their day alone. Null for a
- * one-day document or a value with no day yet.
+ * The day a proposed value would be saved on ("5 November 2020, 08:30"): its own, else the one she answered. Said when
+ * its document has values of several days (a cumulative report: "Ferritine 12" and "Ferritine 30" differ by their day
+ * alone), and always for a value read from a picture, where the day was read too. Null otherwise, and without a day.
  */
 export function valueDayText (
-  pv: { item: { content: Record<string, any> } },
-  values: ReadonlyArray<{ state?: string; item: { content: Record<string, any> } }>,
-  locale?: string
+  pv: { candidateId?: string; item: { content: Record<string, any> } },
+  values: ReadonlyArray<{ candidateId?: string; state?: string; item: { content: Record<string, any> } }>,
+  locale?: string,
+  answered?: Pick<DocumentConversation, 'candidateDates' | 'documentDate'>
 ): string | null {
-  const dayOf = (c: Record<string, any>): string | null => typeof c.proposal?.time === 'number' ? new Date(c.proposal.time * 1000).toISOString().slice(0, 10) : null;
-  const days = new Set(values.filter((v) => v.state !== 'replaced').map((v) => dayOf(v.item.content)).filter((d): d is string => d != null));
-  const day = dayOf(pv.item.content);
-  if (days.size < 2 || day == null) return null;
+  const dayOf = (v: { candidateId?: string; item: { content: Record<string, any> } }): string | null => {
+    const own = v.item.content.proposal?.time;
+    const given = answered == null ? null : answered.candidateDates[v.candidateId ?? ''] ?? answered.documentDate;
+    const time = typeof own === 'number' ? own : given != null && given.timePrecision !== 'unknown' ? given.time : undefined;
+    return typeof time === 'number' ? new Date(time * 1000).toISOString().slice(0, 10) : null;
+  };
+  const day = dayOf(pv);
+  if (day == null) return null;
+  const days = new Set(values.filter((v) => v.state !== 'replaced').map(dayOf).filter((d): d is string => d != null));
+  if (days.size < 2 && !readOnPicture(pv.item.content)) return null;
   const time = pv.item.content.printed?.samplingTime;
   return dayText(day, locale) + (typeof time === 'string' && time !== '' ? `, ${time}` : '');
 }
