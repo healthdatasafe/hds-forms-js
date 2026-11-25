@@ -24,6 +24,10 @@
 
 ### Fixed
 
+- `FormBuilder` in another language: the item groups carry the label of their stream (they were the bare item prefix,
+  "activity"), and a new questionnaire and its first question start in the language shown. English groups change too
+  ("Physical Activity").
+
 - **A picture she confirms values on stayed on "Opening your document…"** from the second value on: a cached picture loads
   before the view waits for it.
 - **Answers are written one at a time.** The next step can be answered while the last one is still being written; two writes
