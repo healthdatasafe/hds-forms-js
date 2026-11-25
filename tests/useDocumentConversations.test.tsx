@@ -136,4 +136,24 @@ describe('useDocumentConversations: her notes on an unshared document', () => {
     await act(async () => { state.reload(); });
     expect(removed()).toEqual([{ about: DOC, unshared: true }]);
   });
+
+  it('[NOTE3] removed once a done is later than the answer, whatever the contact posted after it; not before', async () => {
+    const perms = [{ streamId: SHARE, level: 'read' }];
+    const at = (st: string, time: number) => ({ ...status, alertEventId: st + time, hds: { ...status.hds, status: st }, time });
+    for (const after of ['on-hold', 'reading', 'received']) {
+      lib.removeNotes.mockClear();
+      lib.alerts = [at('done', 10), at(after, 20)];
+      await read(perms);
+      await act(async () => { state.reload(); });
+      expect(removed(), after).toEqual([{ about: DOC, unshared: false }]);
+      act(() => root!.unmount());
+      root = null;
+    }
+    // answered while the work is in progress again: waits for the next done
+    lib.removeNotes.mockClear();
+    lib.alerts = [at('done', 10), at('on-hold', 20)];
+    lib.items = [question, { ...noted, created: 15, modified: 15 }];
+    await read(perms);
+    expect(removed()).toEqual([]);
+  });
 });

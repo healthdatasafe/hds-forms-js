@@ -317,7 +317,8 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
     })();
   }, [connection, state.documents, reload]);
 
-  // her notes (answer.note, 4.26.0) removed once the contact is done, or 24 h after on not-mine or an unshared document
+  // her notes (answer.note, 4.26.0) removed once a `done` of the contact is later, whatever follows it (shared again, on hold),
+  // or 24 h after on not-mine or an unshared document
   const notesTried = useRef(new Set<string>());
   useEffect(() => {
     if (connection == null || reads == null) return;
@@ -328,7 +329,7 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
         if (!conv.answers.some((a) => typeof a.content.note === 'string')) continue;
         // a document not read this time may still be one the grant reads: not taken for unshared
         const unshared = streamIds[about] !== undefined && !grantReads(rel, streamIds[about]) && !(sharedIn.get(rel.localCollectorStreamId ?? '')?.has(about) ?? false);
-        const due = cmcConversation.notesToRemove(conv, cmcConversation.taskStatusOf(alerts, about), { unshared }).map((a) => a.id).filter((id) => !notesTried.current.has(id));
+        const due = cmcConversation.notesToRemove(conv, cmcConversation.latestDoneOf(alerts, about), { unshared, current: cmcConversation.taskStatusOf(alerts, about) }).map((a) => a.id).filter((id) => !notesTried.current.has(id));
         if (due.length > 0) work.push({ rel, about, unshared, ids: due });
       }
     }
