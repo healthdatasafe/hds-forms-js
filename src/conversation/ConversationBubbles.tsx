@@ -4,7 +4,7 @@ import { answerText, personNameOf, type ConversationViewer } from './answers';
 import type { ConversationTextKey } from './conversationTexts';
 import { bubbleIn, bubbleOut, cx, small } from './ui';
 import { counterText, durationText, momentText, useNowS, waitText } from './elapsed';
-import { isInProgress, progressState } from './workInProgress';
+import { ON_HOLD, isInProgress, progressState } from './workInProgress';
 
 export interface TaskStatusLineProps {
   /** The latest `task-status` alert's `status` (R4); none yet: "sent, not opened yet"; unknown: in progress (R8) */
@@ -51,7 +51,7 @@ function countsText (counts: { proposed?: number; questions?: number }): string 
   return parts.join(', ');
 }
 
-const NO_NEWS_STATUS = new Set(['sent', 'received', 'reading']);
+const NO_NEWS_STATUS = new Set(['sent', 'received', 'reading', ON_HOLD]);
 
 /** A status in progress, once it is old: what is known (it started), never that it goes on ("Being read") */
 function oldStatusText (status: string | null | undefined, contact: boolean, name: string): string {
@@ -71,16 +71,16 @@ export function TaskStatusLine ({ status, errorCode, counts, contactName, viewer
   const now = useNowS(since, nowS);
   const state = since != null ? progressState(status, since, now) : 'working';
   // a contact's app never says there is no news from itself
-  const key = contact ? 'contact.status.noNews' : state === 'not-started' ? 'status.notStarted' : 'status.noNews';
+  const key = contact ? 'contact.status.noNews' : state === 'not-started' ? 'status.notStarted' : state === 'on-hold' ? 'status.onHold' : 'status.noNews';
   return (
     <p className={cx(small, className)} role='status' data-work-state={since != null ? state : undefined}>
       <span className='font-medium'>{state !== 'working' ? oldStatusText(status, contact, name) : contact ? contactStatusText(status, name) : statusText(status)}</span>
       {since != null && state === 'working' && <span className='tabular-nums' aria-hidden='true' data-working-counter=''> · {counterText(now - since)}</span>}
       {since != null && state !== 'working' && (
         <>
-          <span aria-hidden='true'> · {tx(`${key}For` as ConversationTextKey, { time: state === 'not-started' ? waitText(now - since) : durationText(now - since) })}</span>
+          <span aria-hidden='true'> · {tx(`${key}For` as ConversationTextKey, { time: state === 'no-news' ? durationText(now - since) : waitText(now - since) })}</span>
           <span className='sr-only'>, {tx(`${key}Since` as ConversationTextKey, { moment: momentText(since, now, locale) })}</span>
-          {!contact && <span className='mt-0.5 block'>{tx('status.kept')}</span>}
+          {!contact && <span className='mt-0.5 block'>{tx(state === 'on-hold' ? 'status.onHoldKept' : 'status.kept')}</span>}
         </>
       )}
       {status === 'awaiting-answers' && counts != null && countsText(counts) !== '' && <> · {countsText(counts)}</>}

@@ -2,6 +2,7 @@ import { cmcConversation } from 'hds-lib';
 import type { DocumentConversation, ProposedValueView, QuestionView } from 'hds-lib';
 import { alreadyInRecord, batchCandidates, isWritten, rowBlock, type RowBlock, type RowBlockOptions } from './rowBlock';
 import { tx } from './labels';
+import { ON_HOLD } from './workInProgress';
 
 /**
  * One step of a conversation shown one by one, as a chat (perki: "the questions should appear like if I was chatting
@@ -83,14 +84,17 @@ const openQuestion = (q: QuestionView, includeSkipped: boolean): boolean => q.an
  */
 export function nextStep (conv: DocumentConversation, engines: readonly string[], opts: StepOptions = {}): ConversationStep | null {
   if (conv.identity === 'not-mine') return null;
-  if (opts.status !== undefined && !SETTLED.has(opts.status ?? '')) return null;
+  // on hold (4.33.0), maybe after `done`: a proposed date and kind stays answerable (it does not hold up the work), no more
+  const held = opts.status === ON_HOLD;
+  if (opts.status !== undefined && !SETTLED.has(opts.status ?? '') && !held) return null;
+  if (held && conv.identity === 'open') return null;
   const includeSkipped = opts.includeSkipped === true;
   const blockOpts: RowBlockOptions = opts.status !== undefined ? { status: opts.status } : {};
   const pvOf = (candidateId: unknown): ProposedValueView | null => conv.proposedValues.find((p) => p.candidateId === candidateId) ?? null;
   const question = (q: QuestionView): ConversationStep => ({ kind: 'question', key: itemKey(q.item), question: q, about: pvOf(q.item.content.candidateId) });
 
   const identity = conv.questions.find((q) => q.code === 'is-this-yours' && openQuestion(q, includeSkipped));
-  if (identity != null) return question(identity);
+  if (identity != null) return held ? null : question(identity);
   const deferred = new Set(includeSkipped ? [] : opts.deferred ?? []);
   // the document itself (4.26.0): its kind and date asked, then the contact's proposal of both
   const proposed = (conv.proposedDocuments ?? []).find((pd) => !deferred.has(pd.candidateId) &&
@@ -102,6 +106,7 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
     const pending = cmcConversation.pendingFieldsOf(opts.document);
     return { kind: 'document', key: itemKey(proposed.item), proposed, pending };
   }
+  if (held) return null;
   const documentDate = conv.questions.find((q) => q.code === 'which-date' && q.item.content.candidateId == null && openQuestion(q, includeSkipped));
   if (documentDate != null) return question(documentDate);
   const aboutValues = conv.questions.filter((q) => q.item.content.candidateId != null && !DOCUMENT_CODES.has(q.code) && openQuestion(q, includeSkipped));

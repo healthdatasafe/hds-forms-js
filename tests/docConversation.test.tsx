@@ -86,6 +86,24 @@ describe('[DOC] nextStep: a proposed document', () => {
     expect(conv.nextStep(of([pv('a'), d]), E, { ...ready, deferred: ['d1'] })).toMatchObject({ kind: 'value' });
   });
 
+  it('on hold (4.33.0), also after done: it stays answerable, nothing else is a step', () => {
+    const d = pdoc('d1');
+    const kindQ = question('which-document-kind', { candidateId: 'd1', options: ['laboratory-report', 'other'] });
+    const hold = { status: 'on-hold', document: pending };
+    expect(conv.nextStep(of([pv('a'), d]), E, hold)).toMatchObject({ kind: 'document', proposed: { candidateId: 'd1' } });
+    expect(conv.nextStep(of([pv('a'), d, kindQ]), E, hold)).toMatchObject({ kind: 'question', question: { code: 'which-document-kind' } });
+    expect(conv.nextStep(of([pv('a')]), E, hold)).toBeNull();
+    expect(conv.nextStep(of([pv('a'), question('which-date')]), E, hold)).toBeNull();
+    expect(conv.nextStep(of([d, answer(d, 'confirm', { candidateIds: ['d1'], applied: ['time', 'kind'] })]), E, hold)).toBeNull();
+    // nothing is written before she says it is hers (R3)
+    expect(conv.nextStep(of([d, question('is-this-yours')]), E, hold)).toBeNull();
+    // while the contact reads, as before
+    expect(conv.nextStep(of([pv('a'), d]), E, { status: 'reading', document: pending })).toBeNull();
+    // nothing is confirmable on hold
+    const c = of([pv('a')]);
+    expect(conv.rowBlock(c, c.proposedValues[0], E, { status: 'on-hold' })).toBe('still-reading');
+  });
+
   it('its own questions (kind, date) come before it, and are not counted as questions about the values', () => {
     const d = pdoc('d1', { time: 1604577600, timePrecision: 'day' });
     const kindQ = question('which-document-kind', { candidateId: 'd1', options: ['laboratory-report', 'other'] });

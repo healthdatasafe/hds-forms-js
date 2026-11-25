@@ -287,11 +287,12 @@ contact runs: it must not say it stopped, nor promise what the contact will do.
 |---|---|---|
 | none yet (`sent`) | 5 min | "No news from … about “X” for 12 min." |
 | `received` | 5 min | "… has “X” and has not started reading it yet (12 min)." ("over an hour" past one: a contact that waits says so again every 12 h), and no news past 13 h |
+| `on-hold` (4.33.0) | at once, without dots | "… has “X” and cannot read it right now (12 min). You have nothing to do.", "over an hour" past one, and no news past 25 h (it is said again at least once per 24 h) |
 | `reading`, or one it does not know (R8) | 10 min | "No news from …" |
 
 Each is followed by "Your document is kept in your account." A new status is one more row of `workInProgress.ts`.
 
-`workState(status, nowS)` is `idle` (settled, or no status), `working`, `not-started` or `no-news`; `progressState` is the
+`workState(status, nowS)` is `idle` (settled, or no status), `working`, `not-started`, `on-hold` or `no-news`; `progressState` is the
 same from a status and a time. A host stops showing the indicator at the latest after `NO_NEWS_INDICATOR_MAX_S` (a day): the
 document's own line keeps saying it. The component moves its own clock; `nowS` fixes it. Announced politely, once per
 state: the moving time is hidden from screen readers, which hear since when. `isWorking` (hidden after 30 minutes) is
