@@ -5,7 +5,7 @@ import { HDSFormSection } from './HDSFormSection';
 import { ReminderEditor } from './ReminderEditor';
 import type { ReminderEditorConfig } from './ReminderEditor';
 import { QuestionnaireBuilder } from './QuestionnaireBuilder';
-import { REPEATABLE_OPTIONS, repeatableLabel, getItemGroup } from '../formBuilderUtils';
+import { REPEATABLE_OPTIONS, repeatableLabel, getItemGroup, itemGroupLabel } from '../formBuilderUtils';
 import { fill, localizeTable, withShownText } from '../textUtils';
 import { FORM_BUILDER_TEXTS as T } from './builderTexts';
 
@@ -111,12 +111,13 @@ export default function FormBuilder ({
   }, [request]);
 
   function addBundledQuestionnaire () {
-    const q = new Questionnaire({ title: { en: 'New questionnaire' } });
+    // in `en` alone, in the language shown: the doctor's own text replaces it whole, no default is left in another language
+    const q = new Questionnaire({ title: { en: l(T.newQuestionnaire) } });
     const firstItem = allItemDefs[0];
     if (firstItem) {
       // Stub one question so the draft is immediately valid + persistable.
       q.addQuestion('q1', {
-        label: { en: 'New question' },
+        label: { en: l(T.newQuestion) },
         itemRef: firstItem.key,
         scope: { type: 'ever' }
       });
@@ -305,7 +306,7 @@ export default function FormBuilder ({
   }
 
   const contentJson = useMemo(() => JSON.stringify(request.content, null, 2), [version]); // eslint-disable-line react-hooks/exhaustive-deps
-  const sortedGroups = useMemo(() => Object.keys(groupedItems).sort(), [groupedItems]);
+  const sortedGroups = useMemo(() => Object.keys(groupedItems).sort((a, b) => itemGroupLabel(a).localeCompare(itemGroupLabel(b))), [groupedItems]);
 
   return (
     <div className='flex gap-4' style={{ minHeight: '600px' }}>
@@ -331,7 +332,7 @@ export default function FormBuilder ({
                   onClick={() => toggleGroup(group)}
                   className='flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm font-semibold text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-600'
                 >
-                  <span>{expandedGroups.has(group) ? '▾' : '▸'} {group}</span>
+                  <span>{expandedGroups.has(group) ? '▾' : '▸'} {itemGroupLabel(group)}</span>
                   <span className='rounded-full bg-gray-200 px-1.5 text-xs text-gray-500 dark:bg-gray-600 dark:text-gray-400'>
                     {groupedItems[group].length}
                   </span>

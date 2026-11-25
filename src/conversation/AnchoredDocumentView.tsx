@@ -48,6 +48,7 @@ export function AnchoredDocumentView ({ source, anchor, label, children, loadPdf
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const canvasHost = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
   const [viewport, setViewport] = useState<Size>(FALLBACK_VIEWPORT);
   const [aspect, setAspect] = useState<number | null>(null);
   const [status, setStatus] = useState<Status>(source == null ? 'failed' : 'loading');
@@ -82,10 +83,22 @@ export function AnchoredDocumentView ({ source, anchor, label, children, loadPdf
   const pdfRef = useRef({ loadPdfJs, pdfOptions });
   pdfRef.current = { loadPdfJs, pdfOptions };
 
+  const onImageLoad = (img: HTMLImageElement): void => {
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      setAspect(img.naturalHeight / img.naturalWidth);
+      setStatus('shown');
+    } else setStatus('failed');
+  };
+
   // a PDF: its one anchored page, drawn once at a resolution that stays sharp when zoomed in
   useEffect(() => {
     if (sourceUrl == null) { setStatus('failed'); return; }
-    if (sourceKind !== 'pdf') { setStatus('loading'); setAspect(null); return; }
+    if (sourceKind !== 'pdf') {
+      // a picture the browser holds already may have loaded before this effect: its `load` event is past
+      if (imageRef.current?.complete && imageRef.current.naturalWidth > 0) onImageLoad(imageRef.current);
+      else { setStatus('loading'); setAspect(null); }
+      return;
+    }
     const { loadPdfJs, pdfOptions } = pdfRef.current;
     const run = { cancelled: false };
     let canvas: HTMLCanvasElement | null = null;
@@ -133,13 +146,6 @@ export function AnchoredDocumentView ({ source, anchor, label, children, loadPdf
       destroy?.().catch(() => {});
     };
   }, [sourceUrl, sourceKind, pageNumber]);
-
-  const onImageLoad = (img: HTMLImageElement): void => {
-    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-      setAspect(img.naturalHeight / img.naturalWidth);
-      setStatus('shown');
-    } else setStatus('failed');
-  };
 
   const zoom = useCallback((factor: number, point?: { x: number; y: number }) => {
     setView((v) => zoomAt(v, factor, point ?? { x: viewport.width / 2, y: viewport.height / 2 }, viewport, page));
@@ -220,6 +226,7 @@ export function AnchoredDocumentView ({ source, anchor, label, children, loadPdf
           {source?.kind === 'pdf' && <div ref={canvasHost} style={{ width: '100%', height: '100%' }} />}
           {source?.kind === 'image' && (
             <img
+              ref={imageRef}
               src={source.url}
               alt=''
               draggable={false}

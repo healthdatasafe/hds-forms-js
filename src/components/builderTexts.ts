@@ -12,6 +12,8 @@ export const FORM_BUILDER_TEXTS = {
   addRecurringSection: { en: 'Recurring section', fr: 'Section récurrente' },
   bundledQuestionnaires: { en: 'Bundled questionnaires', fr: 'Questionnaires joints' },
   addQuestionnaire: { en: 'Add questionnaire', fr: 'Ajouter un questionnaire' },
+  newQuestionnaire: { en: 'New questionnaire', fr: 'Nouveau questionnaire' },
+  newQuestion: { en: 'New question', fr: 'Nouvelle question' },
   removeQuestionnaire: { en: 'Remove', fr: 'Retirer' },
   sectionName: { en: 'Section name', fr: 'Nom de la section' },
   clickToAdd: { en: 'Click items in the browser to add them', fr: 'Cliquez sur les éléments du navigateur pour les ajouter' },

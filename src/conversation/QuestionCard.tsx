@@ -69,6 +69,10 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
   const identity = question.code === 'is-this-yours' ? c.context?.identity ?? null : null;
   const anchor = question.code === 'is-this-yours' ? anchorOn(c.context?.anchor, c.about) : null;
   const dated = question.code === 'which-date' || question.code === 'which-document-date';
+  // a date question shows her document too: the days may have been read from a picture. The contract anchors no date,
+  // so it opens on the value it is about, else on the first page
+  const dateAnchor = dated ? anchorOn(about?.item.content.anchor, c.about) : null;
+  const shownOn = anchor ?? dateAnchor;
   const dates: Array<{ day: string; text: string; label?: string; role?: string }> = dated && Array.isArray(c.context?.dates) ? c.context.dates : [];
   const options: string[] = Array.isArray(c.options) ? c.options : [];
   const matched = answer?.action === 'confirm' && answer?.basis === 'profile-match';
@@ -76,6 +80,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
   return (
     <div className={cx(variant === 'panel' && panel, className)} data-question={question.code}>
       <p className='text-sm font-semibold'>{questionText(question.code, contactName)}</p>
+      {question.code === 'which-date' && c.candidateId == null && open && <p className={cx(small, 'mt-1')}>{tx('which-date.whole')}</p>}
       {about != null && <p className={cx(small, 'mt-1')}>{tx('aboutValue', { label: printedText(about.item.content.printed) })}</p>}
 
       {identity != null && (
@@ -87,16 +92,16 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
       {/* the contact read no name or birth date (CONVERSATION.md: then the question carries no identity): she checks on
           the document itself */}
       {question.code === 'is-this-yours' && identity == null && <p className={cx(small, 'mt-1')}>{tx('identityNotRead')}</p>}
-      {question.code === 'is-this-yours' && sourceOf != null && (
+      {(question.code === 'is-this-yours' || (dated && open)) && sourceOf != null && (
         <>
           <button type='button' className={btn.link} aria-expanded={showDoc} onClick={() => setShowDoc((s) => !s)}>
-            {showDoc ? tx('hideDocument') : anchor != null ? tx('seeOnDocument') : tx('seeDocument')}
+            {showDoc ? tx('hideDocument') : shownOn != null ? tx('seeOnDocument') : tx('seeDocument')}
           </button>
           {showDoc && (
             <AnchoredDocumentView
-              source={sourceOf(anchor?.attachmentId)}
-              anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : { page: 1 }}
-              label={tx('printedName')}
+              source={sourceOf(shownOn?.attachmentId)}
+              anchor={shownOn != null ? { page: shownOn.page, bbox: shownOn.bbox } : { page: 1 }}
+              label={dated ? (about != null ? printedText(about.item.content.printed) : undefined) : tx('printedName')}
               loadPdfJs={loadPdfJs}
               pdfOptions={pdfOptions}
             />
@@ -121,8 +126,8 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
           )}
           {dated && (
             <>
-              {dates.map((d) => (
-                <button key={d.day + d.text} type='button' className={btn.outline} disabled={!can} onClick={() => send({ action: 'confirm', time: dayToTime(d.day), timePrecision: 'day' })}>
+              {dates.map((d, i) => (
+                <button key={i} type='button' className={btn.outline} disabled={!can} onClick={() => send({ action: 'confirm', time: dayToTime(d.day), timePrecision: 'day' })}>
                   <span className='text-left'>
                     <span className='block'>{dayText(d.day, locale)}</span>
                     <span className='block text-xs text-gray-600 dark:text-gray-400'>

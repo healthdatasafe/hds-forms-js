@@ -149,6 +149,20 @@ describe('AnchoredDocumentView', () => {
     expect(button('See the whole page')).not.toBeNull();
   });
 
+  it('a picture the browser holds already is shown, its load event past; one that is not waits for it', async () => {
+    const held = vi.spyOn(HTMLImageElement.prototype, 'complete', 'get').mockReturnValue(true);
+    const w = vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(1240);
+    const h = vi.spyOn(HTMLImageElement.prototype, 'naturalHeight', 'get').mockReturnValue(1754);
+    await render(<AnchoredDocumentView source={{ url: 'https://x/scan.jpg', kind: 'image' }} anchor={{ page: 1, bbox: HB }} />);
+    expect(container.querySelector('[data-testid="anchor-highlight"]')).not.toBeNull();
+    expect(container.querySelector('[role="status"]')).toBeNull();
+    held.mockReturnValue(false);
+    await act(async () => { root!.render(<AnchoredDocumentView source={{ url: 'https://x/other.jpg', kind: 'image' }} anchor={{ page: 1, bbox: HB }} />); });
+    expect(container.querySelector('[role="status"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="anchor-highlight"]')).toBeNull();
+    for (const spy of [held, w, h]) spy.mockRestore();
+  });
+
   it('[ADV8] French', async () => {
     lang = 'fr';
     const pdf = fakePdfJs();

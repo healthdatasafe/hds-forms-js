@@ -4,7 +4,7 @@ import type { ConversationAlert, DocumentConversation, ProposedValueView } from 
 import { DocumentFieldsEditor } from './DocumentFieldsEditor';
 import { AnchoredDocumentView, type AnchoredDocumentSource } from './AnchoredDocumentView';
 import type { PdfJsLike } from './pdfjs';
-import { documentKindLabel, itemLabel, noticeText, printedText, proposalText, proposedDateText, questionText, reasonText, tx, valueDayText } from './labels';
+import { documentKindLabel, itemLabel, noticeText, pictureText, printedText, proposalText, proposedDateText, questionText, reasonText, tx, valueDayText } from './labels';
 import { QuestionCard } from './QuestionCard';
 import { ValueCorrectionEditor } from './ValueCorrectionEditor';
 import { TaskStatusLine } from './ConversationBubbles';
@@ -59,6 +59,9 @@ export interface ConversationStepBubbleProps {
   bubbleClassName?: string;
 }
 
+/** States of a value she did not answer (`duplicate`: her app found it in her record) */
+const UNANSWERED = new Set(['open', 'replaced', 'duplicate']);
+
 /**
  * The step of the conversation that waits for her, as a bubble from the contact with replies she just taps (perki:
  * "like chatting with someone, one by one"): a question with its context and options; a value ("I read Ferritine 48
@@ -80,11 +83,16 @@ export function ConversationStepBubble ({
   const [showDoc, setShowDoc] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState<string | null>(null);
   const can = actions != null && busy == null;
-  // a cumulative report: each value says its day, "Ferritine 12" and "Ferritine 30" differ by it alone
+  // the day it would be saved on: a cumulative report ("Ferritine 12" and "Ferritine 30" differ by it alone), a picture
   const saveText = (pv: ProposedValueView, item: string, value: string, plain: 'step.save' | 'wouldSave', on: 'step.saveOn' | 'wouldSaveOn'): string => {
-    const day = valueDayText(pv, conversation.proposedValues, locale);
+    const day = valueDayText(pv, conversation.proposedValues, locale, conversation);
     return day != null ? tx(on, { item, value, day }) : tx(plain, { item, value });
   };
+
+  // a picture: how many results were read on it, until she answered one of them
+  const picture = step.kind !== 'question' && step.kind !== 'document' && conversation.proposedValues.every((pv) => UNANSWERED.has(pv.state))
+    ? pictureText(conversation)
+    : null;
 
   // her note sent on its own: the item set aside with it (a value, a question, a proposed document)
   const sendNoteAlone = ((): (() => void) | null => {
@@ -328,6 +336,7 @@ export function ConversationStepBubble ({
           {tx('step.about', { title })}
           {progress != null && progressText(progress) !== '' && <> · {progressText(progress)}</>}
         </p>
+        {picture != null && <p className={cx(small, 'mb-2')} data-picture-count=''>{picture}</p>}
         {body}
         {noteArg != null && step.kind !== 'summary' && (
           <div className='mt-2 rounded-md border border-dashed border-gray-300 p-2 text-sm dark:border-gray-600' data-note-draft=''>

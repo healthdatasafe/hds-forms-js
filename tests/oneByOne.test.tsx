@@ -331,10 +331,33 @@ describe('[OBO] ConversationStepBubble', () => {
     const multi = of([a, b, c]);
     expect(conv.valueDayText(multi.proposedValues[0], multi.proposedValues, 'en')).toBe('November 5, 2020, 08:30');
     await render(bubble(multi, conv.nextStep(multi, E, ready)));
-    expect(container.textContent).toContain('Would be saved as Ferritin: 1 µg/L, sampled January 14, 2021');
-    expect(container.textContent).toContain('sampled November 5, 2020, 08:30');
+    expect(container.textContent).toContain('Would be saved as Ferritin: 1 µg/L, on January 14, 2021');
+    expect(container.textContent).toContain('on November 5, 2020, 08:30');
     const one = of([pv('x', at(1)), pv('y', at(2))]);
     expect(conv.valueDayText(one.proposedValues[0], one.proposedValues, 'en')).toBeNull();
+  });
+
+  it('a picture: each value says the day it would be saved on, its own or the one she answered, also of one day alone', async () => {
+    const picture = { engine: 'hds-reader', engineVersion: '1.0.0', kbVersion: '1.0.0', backend: 'vision' };
+    const time = Date.parse('2026-11-18T12:00:00Z') / 1000;
+    const own = { itemKey: 'ferritin', type: 'concentration/ug-l', content: 1, time, clientData: { hdsTimePrecision: 'day' } };
+    const undated = { itemKey: 'ferritin', type: 'concentration/ug-l', content: 1 };
+    const a = pv('a', { ...at(1), proposal: own, extraction: picture });
+    const text = (c: any, i = 0): string | null => conv.valueDayText(c.proposedValues[i], c.proposedValues, 'en', c);
+    expect(text(of([a]))).toBe('November 18, 2026');
+    const b = pv('b', { ...at(1), proposal: undated, extraction: picture });
+    expect(text(of([b]))).toBeNull();
+    const q = question('which-date', {});
+    const given = { time: Date.parse('2026-01-05T12:00:00Z') / 1000, timePrecision: 'day' };
+    expect(text(of([q, b, answer(q, 'confirm', given, 200)]))).toBe('January 5, 2026');
+    expect(text(of([q, b, answer(q, 'confirm', { timePrecision: 'unknown' }, 200)]))).toBeNull();
+    // a value's own day is never the answered one
+    expect(text(of([q, a, answer(q, 'confirm', given, 200)]))).toBe('November 18, 2026');
+    // read from the text: one answered day is not repeated, two days are said
+    const c = pv('c', { ...at(1), proposal: undated });
+    expect(text(of([q, c, answer(q, 'confirm', given, 200)]))).toBeNull();
+    const d = pv('d', { ...at(2), proposal: own });
+    expect(text(of([q, c, d, answer(q, 'confirm', given, 200)]))).toBe('January 5, 2026');
   });
 
   it('the summary: the values her record already holds, each to add anyway', async () => {

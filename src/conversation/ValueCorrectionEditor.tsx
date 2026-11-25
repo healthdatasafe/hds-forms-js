@@ -15,6 +15,25 @@ export interface ValueCorrectionEditorProps {
   className?: string;
 }
 
+/** The content in one spelling: keys in order; an observation of a method by its method, reading and annotations */
+function spelled (content: unknown): string {
+  const source = (content as any)?.source;
+  if (typeof source?.key === 'string' && source.sourceData != null) {
+    const data = source.sourceData;
+    const reading = typeof data === 'object' && Object.keys(data).length === 1 ? Object.values(data)[0] : data;
+    return JSON.stringify(['source', source.key, reading, ordered(source.annotations ?? {})]);
+  }
+  return JSON.stringify(ordered(content));
+}
+
+function ordered (v: unknown): unknown {
+  if (Array.isArray(v)) return v.map(ordered);
+  if (v == null || typeof v !== 'object') return v;
+  return Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, x]) => [k, ordered(x)]));
+}
+
+const sameContent = (a: unknown, b: unknown): boolean => spelled(a) === spelled(b);
+
 /**
  * The value as she corrects it, with the item's own field (hds-forms `HDSFormField`, prefilled with the proposal) and
  * the item's units. Returns a `ValueCorrection` checked like a proposal (hds-lib `checkValueProposal`, R9); the host
@@ -33,9 +52,11 @@ export function ValueCorrectionEditor ({ proposal, busy = false, onSubmit, onCan
   const [error, setError] = useState(false);
 
   if (itemDef == null) return null;
+  const blocked = value == null || value === '' ? 'correct.incomplete' : type === proposal.type && sameContent(value, proposal.content) ? 'correct.unchanged' : null;
   const readMethod = (proposal.content as any)?.source?.key;
 
   const submit = (): void => {
+    if (blocked != null) return;
     const correction: ValueCorrection = { itemKey: proposal.itemKey, type, content: value, clientData: correctedClientData(proposal, type) };
     if (cmcConversation.checkValueProposal(correction) != null) { setError(true); return; }
     setError(false);
@@ -56,9 +77,10 @@ export function ValueCorrectionEditor ({ proposal, busy = false, onSubmit, onCan
       <HDSFormField itemData={itemDef.data as any} itemKey={proposal.itemKey} value={value} onChange={(v) => { setValue(v); setError(false); }} eventType={type} inputMethod={typeof readMethod === 'string' ? readMethod : undefined} prefilled={false} />
       {error && <p className={cx(small, 'text-red-700 dark:text-red-400')} role='alert'>{tx('failed')}</p>}
       <div className='flex flex-wrap gap-2'>
-        <button type='submit' className={btn.primary} disabled={busy}>{tx('save')}</button>
+        <button type='submit' className={btn.primary} disabled={busy || blocked != null}>{tx('save')}</button>
         <button type='button' className={btn.ghost} disabled={busy} onClick={onCancel}>{tx('cancel')}</button>
       </div>
+      <p className={small} role='status'>{blocked != null ? tx(blocked) : ''}</p>
     </form>
   );
 }

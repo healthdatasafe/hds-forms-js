@@ -122,6 +122,27 @@ describe('correcting an observation', () => {
     expect(out.mock.calls[0][0].content.source).toEqual({ key: 'creighton', sourceData: '10KL', annotations: { frequency: 'X3' } });
   });
 
+  it('Save waits for a change and for a complete value, and says which', async () => {
+    const out = vi.fn();
+    const c = await edit(value({ mucus: '10KL' }, { frequency: 'X2' }), out);
+    const save = () => button(c, /^Save$/) as HTMLButtonElement;
+    const said = () => c.querySelector('p[role="status"]')!.textContent;
+    const press = async (name: RegExp) => { await act(async () => { button(c, name)!.click(); }); for (let i = 0; i < 3; i++) await act(async () => {}); };
+    const submit = () => act(async () => { c.querySelector('form')!.requestSubmit(); });
+    expect([save().disabled, said()]).toEqual([true, 'Nothing is changed yet.']);
+    await submit();
+    await press(/X2 — seen twice/);
+    expect([save().disabled, said()]).toEqual([true, 'The value is not complete yet.']);
+    await submit();
+    expect(out).not.toHaveBeenCalled();
+    await press(/X1 — seen once/);
+    expect([save().disabled, said()]).toEqual([false, '']);
+    await press(/X1 — seen once/);
+    await press(/X2 — seen twice/);
+    // back to what was read, in another spelling
+    expect([save().disabled, said()]).toEqual([true, 'Nothing is changed yet.']);
+  });
+
   it('opens in her own method when the value names none, or one the converter does not know', async () => {
     settings[`preferred-input-${ITEM}`] = 'billings';
     const unknown = await edit({ vectors: { wetness: 1 }, source: { key: 'gone', sourceData: 'x' } });

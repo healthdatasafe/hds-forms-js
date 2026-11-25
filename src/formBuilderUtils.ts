@@ -1,4 +1,4 @@
-import { localizeText } from 'hds-lib';
+import { getHDSModel, localizeText } from 'hds-lib';
 import { REPEATABLE_TEXTS } from './components/builderTexts';
 
 /** The English labels, by `repeatable` value; `repeatableLabel` gives the one in the current language */
@@ -18,4 +18,10 @@ export const REPEATABLE_OPTIONS = Object.entries(REPEATABLE_TEXTS).map(([value, 
 export function getItemGroup (itemKey: string): string {
   if (!itemKey) return 'other';
   return itemKey.split('-')[0];
+}
+
+/** The group's name in the current language: the label of the stream its items are under, else its name, else the group itself */
+export function itemGroupLabel (group: string): string {
+  const stream = getHDSModel().streams?.getDataById(group, false);
+  return stream?.label ? localizeText(stream.label) : stream?.name ?? group;
 }
