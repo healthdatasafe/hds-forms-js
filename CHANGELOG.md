@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.51.0] - 2026-11-25
+
+Needs hds-lib ≥ 2.70.0.
+
+### Added
+
+- **Spanish, Italian and Brazilian Portuguese** for every text of the forms, the builders and the conversation (plan 138,
+  machine drafts, native review to follow), including the dated-grid texts of 0.50.0.
+
 ## [0.50.0] - 2026-11-25
 
 Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0.

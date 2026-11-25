@@ -2,21 +2,21 @@ import { useEffect, useId, useState } from 'react';
 import { durationToLabel, localizeText } from 'hds-lib';
 
 const TEXT = {
-  label: { en: 'Duration', fr: 'Durée' },
-  none: { en: 'No duration', fr: 'Sans durée' },
-  ongoing: { en: 'Ongoing', fr: 'En cours' },
-  length: { en: 'Length', fr: 'Longueur' },
-  endTime: { en: 'End time', fr: 'Fin' },
-  placeholder: { en: 'e.g. 30', fr: 'p. ex. 30' },
-  unit: { en: 'Unit', fr: 'Unité' },
-  tooLong: { en: 'Longer than {max}', fr: 'Plus long que {max}' },
-  endBeforeStart: { en: 'The end must be after the start', fr: 'La fin doit être après le début' },
-  seconds: { en: 'seconds', fr: 'secondes' },
-  minutes: { en: 'minutes', fr: 'minutes' },
-  hours: { en: 'hours', fr: 'heures' },
-  days: { en: 'days', fr: 'jours' },
-  months: { en: 'months', fr: 'mois' },
-  years: { en: 'years', fr: 'ans' }
+  label: { en: 'Duration', fr: 'Durée', es: 'Duración', it: 'Durata', 'pt-BR': 'Duração' },
+  none: { en: 'No duration', fr: 'Sans durée', es: 'Sin duración', it: 'Senza durata', 'pt-BR': 'Sem duração' },
+  ongoing: { en: 'Ongoing', fr: 'En cours', es: 'En curso', it: 'In corso', 'pt-BR': 'Em andamento' },
+  length: { en: 'Length', fr: 'Longueur', es: 'Duración', it: 'Durata', 'pt-BR': 'Tempo' },
+  endTime: { en: 'End time', fr: 'Fin', es: 'Hora de fin', it: 'Ora di fine', 'pt-BR': 'Término' },
+  placeholder: { en: 'e.g. 30', fr: 'p. ex. 30', es: 'p. ej. 30', it: 'ad es. 30', 'pt-BR': 'p. ex. 30' },
+  unit: { en: 'Unit', fr: 'Unité', es: 'Unidad', it: 'Unità', 'pt-BR': 'Unidade' },
+  tooLong: { en: 'Longer than {max}', fr: 'Plus long que {max}', es: 'Más de {max}', it: 'Durata superiore a {max}', 'pt-BR': 'Superior a {max}' },
+  endBeforeStart: { en: 'The end must be after the start', fr: 'La fin doit être après le début', es: 'El fin debe ser posterior al inicio', it: "La fine deve essere dopo l'inizio", 'pt-BR': 'O término deve ser depois do início' },
+  seconds: { en: 'seconds', fr: 'secondes', es: 'segundos', it: 'secondi', 'pt-BR': 'segundos' },
+  minutes: { en: 'minutes', fr: 'minutes', es: 'minutos', it: 'minuti', 'pt-BR': 'minutos' },
+  hours: { en: 'hours', fr: 'heures', es: 'horas', it: 'ore', 'pt-BR': 'horas' },
+  days: { en: 'days', fr: 'jours', es: 'días', it: 'giorni', 'pt-BR': 'dias' },
+  months: { en: 'months', fr: 'mois', es: 'meses', it: 'mesi', 'pt-BR': 'meses' },
+  years: { en: 'years', fr: 'ans', es: 'años', it: 'anni', 'pt-BR': 'anos' }
 };
 const tx = (k: keyof typeof TEXT) => localizeText(TEXT[k]) ?? TEXT[k].en;
 

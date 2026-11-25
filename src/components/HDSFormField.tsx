@@ -20,8 +20,8 @@ import { ratioGenericFieldValue } from '../schema/ratioGeneric';
 import { Convertible } from './fields/Convertible';
 import { Slider } from './fields/Slider';
 
-const NOT_EDITABLE_HERE = { en: 'Not editable here: add it as a document.', fr: 'Non modifiable ici : ajoutez-le comme document.' };
-const NOT_EDITABLE = { en: 'Not editable here.', fr: 'Non modifiable ici.' };
+const NOT_EDITABLE_HERE = { en: 'Not editable here: add it as a document.', fr: 'Non modifiable ici : ajoutez-le comme document.', es: 'No se puede modificar aquí: añádalo como documento.', it: 'Non modificabile qui: lo aggiunga come documento.', 'pt-BR': 'Não editável aqui: adicione como documento.' };
+const NOT_EDITABLE = { en: 'Not editable here.', fr: 'Non modifiable ici.', es: 'No se puede modificar aquí.', it: 'Non modificabile qui.', 'pt-BR': 'Não editável aqui.' };
 
 const l = localizeText;
 

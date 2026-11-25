@@ -92,11 +92,17 @@ export function ageInYears (dateOfBirth: string | null | undefined, at: Date = n
 const TEXT = {
   range: {
     en: '{value} looks unusual (expected between {min} and {max}). Check the value and its unit.',
-    fr: '{value} semble inhabituel (attendu entre {min} et {max}). Vérifiez la valeur et son unité.'
+    fr: '{value} semble inhabituel (attendu entre {min} et {max}). Vérifiez la valeur et son unité.',
+    es: '{value} parece inusual (se espera entre {min} y {max}). Compruebe el valor y su unidad.',
+    it: '{value} sembra insolito (atteso tra {min} e {max}). Controlli il valore e la sua unità.',
+    'pt-BR': '{value} parece incomum (esperado entre {min} e {max}). Confira o valor e a unidade.'
   },
   systolicNotAboveDiastolic: {
     en: 'The systolic ({systolic}) is usually higher than the diastolic ({diastolic}). Check that they are not swapped.',
-    fr: 'La systolique ({systolic}) est normalement plus haute que la diastolique ({diastolic}). Vérifiez qu’elles ne sont pas inversées.'
+    fr: 'La systolique ({systolic}) est normalement plus haute que la diastolique ({diastolic}). Vérifiez qu’elles ne sont pas inversées.',
+    es: 'La sistólica ({systolic}) suele ser más alta que la diastólica ({diastolic}). Compruebe que no estén invertidas.',
+    it: 'La sistolica ({systolic}) è di solito più alta della diastolica ({diastolic}). Controlli che non siano invertite.',
+    'pt-BR': 'A sistólica ({systolic}) normalmente é maior que a diastólica ({diastolic}). Confira se não estão trocadas.'
   }
 };
 

@@ -5,11 +5,11 @@ import type { FieldProps } from '../../types';
 type Precision = 'unknown' | 'year' | 'month' | 'day';
 
 const TEXTS = {
-  precision: { en: 'how precisely', fr: 'précision' },
-  unknown: { en: 'Not known', fr: 'Inconnue' },
-  year: { en: 'Year', fr: 'Année' },
-  month: { en: 'Month', fr: 'Mois' },
-  day: { en: 'Day', fr: 'Jour' }
+  precision: { en: 'how precisely', fr: 'précision', es: 'con qué precisión', it: 'con quale precisione', 'pt-BR': 'precisão' },
+  unknown: { en: 'Not known', fr: 'Inconnue', es: 'No se conoce', it: 'Non nota', 'pt-BR': 'Desconhecida' },
+  year: { en: 'Year', fr: 'Année', es: 'Año', it: 'Anno', 'pt-BR': 'Ano' },
+  month: { en: 'Month', fr: 'Mois', es: 'Mes', it: 'Mese', 'pt-BR': 'Mês' },
+  day: { en: 'Day', fr: 'Jour', es: 'Día', it: 'Giorno', 'pt-BR': 'Dia' }
 } as const;
 
 const PARTIAL = /^[0-9]{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?$/;

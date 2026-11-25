@@ -37,16 +37,19 @@ interface DatasetSearchProps extends FieldProps {
 const MAX_RECENT_EMPTY = 8;
 const MAX_RECENT_MATCHING = 6;
 const T = {
-  yours: { en: 'Your entries', fr: 'Vos saisies' },
-  results: { en: 'Search results', fr: 'Résultats' },
-  noMatch: { en: 'Nothing found', fr: 'Aucun résultat' },
-  useTyped: { en: 'Use “{text}”', fr: 'Utiliser « {text} »' },
-  typeToSearch: { en: 'Type at least {n} characters to search...', fr: 'Saisissez au moins {n} caractères pour rechercher...' },
-  typeToSearchOne: { en: 'Type at least 1 character to search...', fr: 'Saisissez au moins 1 caractère pour rechercher...' },
-  searching: { en: 'Searching...', fr: 'Recherche...' },
+  yours: { en: 'Your entries', fr: 'Vos saisies', es: 'Sus registros', it: 'Le sue registrazioni', 'pt-BR': 'Seus registros' },
+  results: { en: 'Search results', fr: 'Résultats', es: 'Resultados de la búsqueda', it: 'Risultati della ricerca', 'pt-BR': 'Resultados da pesquisa' },
+  noMatch: { en: 'Nothing found', fr: 'Aucun résultat', es: 'No se ha encontrado nada', it: 'Nessun risultato', 'pt-BR': 'Nada encontrado' },
+  useTyped: { en: 'Use “{text}”', fr: 'Utiliser « {text} »', es: 'Usar «{text}»', it: 'Usa “{text}”', 'pt-BR': 'Usar “{text}”' },
+  typeToSearch: { en: 'Type at least {n} characters to search...', fr: 'Saisissez au moins {n} caractères pour rechercher...', es: 'Escriba al menos {n} caracteres para buscar...', it: 'Inserisca almeno {n} caratteri per cercare...', 'pt-BR': 'Digite pelo menos {n} caracteres para buscar...' },
+  typeToSearchOne: { en: 'Type at least 1 character to search...', fr: 'Saisissez au moins 1 caractère pour rechercher...', es: 'Escriba al menos 1 carácter para buscar...', it: 'Inserisca almeno 1 carattere per cercare...', 'pt-BR': 'Digite pelo menos 1 caractere para buscar...' },
+  searching: { en: 'Searching...', fr: 'Recherche...', es: 'Buscando...', it: 'Ricerca in corso...', 'pt-BR': 'Buscando...' },
   pinMismatch: {
     en: 'Pinned concept belongs to datasource "{pinned}", but this field searches "{datasource}". Fix the form\'s itemCustomizations.',
-    fr: 'Le concept imposé appartient à la source « {pinned} », mais ce champ cherche dans « {datasource} ». Corrigez les itemCustomizations du formulaire.'
+    fr: 'Le concept imposé appartient à la source « {pinned} », mais ce champ cherche dans « {datasource} ». Corrigez les itemCustomizations du formulaire.',
+    es: 'El concepto fijado pertenece a la fuente de datos "{pinned}", pero este campo busca en "{datasource}". Corrija los itemCustomizations del formulario.',
+    it: 'Il concetto fissato appartiene alla fonte di dati "{pinned}", ma questo campo cerca in "{datasource}". Corregga gli itemCustomizations del modulo.',
+    'pt-BR': 'O conceito fixado pertence à fonte de dados "{pinned}", mas este campo busca em "{datasource}". Corrija os itemCustomizations do formulário.'
   }
 };
 
