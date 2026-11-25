@@ -1,5 +1,5 @@
 import { cmcConversation } from 'hds-lib';
-import type { DocumentConversation, ProposedValueView, QuestionView } from 'hds-lib';
+import type { ConversationItem, DocumentConversation, ProposedValueView, QuestionView } from 'hds-lib';
 import { alreadyInRecord, batchCandidates, isWritten, rowBlock, type RowBlock, type RowBlockOptions } from './rowBlock';
 import { tx } from './labels';
 import { ON_HOLD } from './workInProgress';
@@ -57,26 +57,32 @@ const LINE_STATUSES = new Set(['kept-aside', 'unmapped']);
 const VALUE_ACTIONS = new Set(['correct', 'skip', 'duplicate', 'request-item']);
 const itemKey = (i: { id: string; modified: number }): string => `${i.id}:${i.modified}`;
 
+/** Items in the order of the document: page, then the box of a dated grid (never from where a tilted page puts it), else the line's top */
+function byPlace (x: ConversationItem, y: ConversationItem): number {
+  const pos = (item: ConversationItem): number[] => {
+    const c = item.content;
+    const a = c.anchor ?? c.context?.anchor;
+    const grid = c.grid ?? c.context?.grid;
+    const page = typeof a?.page === 'number' ? a.page : Number.MAX_SAFE_INTEGER;
+    if (grid != null) return [page, grid.row, grid.column, item.created];
+    const top = Array.isArray(a?.bbox) && typeof a.bbox[1] === 'number' ? a.bbox[1] : Number.MAX_SAFE_INTEGER;
+    return [page, top, 0, item.created];
+  };
+  const [a, b] = [pos(x), pos(y)];
+  return a.map((v, i) => v - b[i]).find((d) => d !== 0) ?? 0;
+}
+
 /** Values in the order the document prints them: page, then the line's top; without an anchor, as they came */
 export function documentOrder (values: ProposedValueView[]): ProposedValueView[] {
-  const pos = (pv: ProposedValueView): [number, number, number] => {
-    const a = pv.item.content.anchor;
-    const page = typeof a?.page === 'number' ? a.page : Number.MAX_SAFE_INTEGER;
-    const top = Array.isArray(a?.bbox) && typeof a.bbox[1] === 'number' ? a.bbox[1] : Number.MAX_SAFE_INTEGER;
-    return [page, top, pv.item.created];
-  };
-  return [...values].sort((x, y) => {
-    const [p1, t1, c1] = pos(x);
-    const [p2, t2, c2] = pos(y);
-    return p1 - p2 || t1 - t2 || c1 - c2;
-  });
+  return [...values].sort((x, y) => byPlace(x.item, y.item));
 }
 
 const openQuestion = (q: QuestionView, includeSkipped: boolean): boolean => q.answerable && (q.state === 'open' || (includeSkipped && q.state === 'skipped'));
 
 /**
  * The next step about one document, or null when nothing waits for her (or the contact still works, or the document is
- * not hers). In order: `is-this-yours` (nothing is written before it, R3); the document's `which-date`; the questions
+ * not hers). In order: `is-this-yours` (nothing is written before it, R3); the document's `which-date`, or the
+ * `which-row-date` of each row of a dated grid; the questions
  * about one value (a `choose` brings a re-proposal while she goes on); the values to `check`; the values read clearly,
  * offered first as one batch (`batchMin`; never a value to check, never one asked about), then one by one; then one
  * summary of what she cannot answer here (kept aside, waiting for the contact, set aside, a question this version
@@ -109,6 +115,9 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
   if (held) return null;
   const documentDate = conv.questions.find((q) => q.code === 'which-date' && q.item.content.candidateId == null && openQuestion(q, includeSkipped));
   if (documentDate != null) return question(documentDate);
+  // a dated grid (4.36.0): the day of a box of each row, top to bottom; the contact proposes the row's values after it
+  const rowDates = conv.questions.filter((q) => q.code === 'which-row-date' && openQuestion(q, includeSkipped)).sort((x, y) => byPlace(x.item, y.item));
+  if (rowDates.length > 0) return question(rowDates[0]);
   const aboutValues = conv.questions.filter((q) => q.item.content.candidateId != null && !DOCUMENT_CODES.has(q.code) && openQuestion(q, includeSkipped));
   if (aboutValues.length > 0) {
     const order = documentOrder(conv.proposedValues).map((p) => p.candidateId);

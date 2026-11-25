@@ -661,3 +661,121 @@ describe('[CONV-UI] bubbles and texts', () => {
     expect(container.textContent).toBe('Terminé');
   });
 });
+
+describe('a dated grid (data-model 4.36.0)', () => {
+  const ENGINES = ['hds-reader'];
+  const at = (row: number, column: number, page = 1) => ({ grid: { row, column }, anchor: { eventId: DOC, page, bbox: [column * 2, 90 - row - column / 10, 2, 4] } });
+  const box = (id: string, row: number, column: number, over: any = {}): any => {
+    const v = pv(id, { ...at(row, column), printed: { label: String(column), value: '10KL x2' }, ...over });
+    v.content.extraction = { ...v.content.extraction, backend: 'vision' };
+    return v;
+  };
+  const unread = (id: string, row: number, column: number): any => {
+    const v = box(id, row, column, { status: 'unmapped', reason: 'not-read', printed: { label: String(column) } });
+    delete v.content.proposal;
+    return v;
+  };
+  const rowDate = (row: number, column = 1): any => question('which-row-date', { context: { grid: { row, column }, anchor: at(row, column).anchor } });
+  const step = (c: any, extra: any = {}): any => conv.nextStep(c, ENGINES, { status: 'awaiting-answers', ...extra });
+  const DAY = { time: Date.parse('2026-01-05T12:00:00Z') / 1000, timePrecision: 'day' };
+  const input = () => container.querySelector<HTMLInputElement>('input[type="date"]');
+  async function type (value: string) {
+    await act(async () => {
+      const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+      set.call(input()!, value);
+      input()!.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+  }
+
+  it('the rows are dated first, top to bottom of the pages, then the values follow the grid, not where the picture tilts them', () => {
+    const [q2, q1] = [rowDate(2), rowDate(1)];
+    const items = [q2, q1, unread('n1', 1, 4)];
+    expect(step(of(items))).toMatchObject({ kind: 'question', question: { item: { id: q1.id } } });
+    const one = [...items, answer(q1, 'confirm', DAY, 200)];
+    expect(step(of(one))).toMatchObject({ kind: 'question', question: { item: { id: q2.id } } });
+    const done = [...one, answer(q2, 'skip', {}, 210)];
+    const t = (id: string, row: number, column: number) => { const v = box(id, row, column, { status: 'check' }); v.content.proposal = { ...v.content.proposal, time: DAY.time }; return v; };
+    const c = of([...done, t('b', 1, 9), t('a', 1, 2), t('z', 2, 1)]);
+    expect(step(c)).toMatchObject({ kind: 'value', value: { candidateId: 'a' } });
+    expect(conv.documentOrder(c.proposedValues.filter((v: any) => v.item.content.proposal != null)).map((v: any) => v.candidateId)).toEqual(['a', 'b', 'z']);
+    // a skipped row stays answerable when she reviews what she set aside
+    expect(step(of(done), { includeSkipped: true })).toMatchObject({ kind: 'question', question: { item: { id: q2.id } } });
+  });
+
+  it('a row is dated on its box, with a whole day that is past; skipped, or changed until a value of the row is written', async () => {
+    const q = rowDate(3, 7);
+    const a = actions();
+    const sourceOf = vi.fn(() => ({ kind: 'image', url: 'data:image/png;base64,AAAA' }) as any);
+    await render(card(of([q, unread('n1', 3, 9)]), a, { sourceOf }));
+    expect(container.textContent).toContain('Which day is the marked box? Give its year too.');
+    expect(container.querySelector('[data-question="which-row-date"] [role="region"]')!.getAttribute('aria-label')).toBe('Your document, The day of the marked box');
+    const save = () => button('Save') as HTMLButtonElement;
+    expect(save().disabled).toBe(true);
+    for (const bad of ['0026-01-05', '2999-01-01']) {
+      await type(bad);
+      expect(save().disabled).toBe(true);
+    }
+    await type('2026-01-05');
+    await click(save());
+    expect(a.answer).toHaveBeenCalledWith(q.id, { action: 'confirm', ...DAY }, expect.any(Number));
+    expect(button('Skip')).not.toBeNull();
+
+    const answered = [q, answer(q, 'confirm', DAY, 200)];
+    const v = box('v1', 3, 7);
+    v.content.proposal = { ...v.content.proposal, time: DAY.time };
+    await render(card(of([...answered, v]), a, { sourceOf }));
+    expect(container.textContent).toContain('You gave the day: January 5, 2026');
+    expect(input()).toBeNull();
+    await click(button('Change the day'));
+    expect(input()!.value).toBe('2026-01-05');
+    await type('2026-02-05');
+    await click(button('Save'));
+    expect(a.answer).toHaveBeenLastCalledWith(q.id, { action: 'confirm', time: DAY.time + 31 * 86400, timePrecision: 'day' }, expect.any(Number));
+
+    const written = answer(v, 'confirm', { candidateIds: ['v1'], written: [{ candidateId: 'v1', eventId: 'e1' }] }, 300);
+    await render(card(of([...answered, v, written]), a, { sourceOf }));
+    expect(button('Change the day')).toBeNull();
+    // another row's value does not hold this one
+    const other = box('v2', 4, 7);
+    await render(card(of([...answered, v, other, answer(other, 'confirm', { candidateIds: ['v2'], written: [{ candidateId: 'v2', eventId: 'e2' }] }, 300)]), a, { sourceOf }));
+    expect(button('Change the day')).not.toBeNull();
+    await render(card(of([...answered, v]), null, { sourceOf }));
+    expect(button('Change the day')).toBeNull();
+  });
+
+  it('a box is named by its place, one read in part says so, the boxes not read are counted and are not results', async () => {
+    const read = box('a', 3, 14);
+    read.content.proposal = { ...read.content.proposal, time: DAY.time };
+    const c = of([read, unread('b', 3, 14), unread('d', 3, 15), box('e', 3, 16)]);
+    await render(card(c, actions()));
+    expect(container.querySelector('[data-candidate="a"]')!.textContent).toContain('Row 3, box 14: 10KL x2');
+    expect(container.querySelector('[data-candidate="a"]')!.textContent).toContain('Part of this box was not read');
+    expect(container.querySelector('[data-candidate="b"]')!.textContent).toContain('Row 3, box 14');
+    expect(container.querySelector('[data-candidate="b"]')!.textContent).not.toContain('Part of this box');
+    expect(container.querySelector('[data-candidate="e"]')!.textContent).not.toContain('Part of this box');
+    expect(container.querySelector('[data-picture-count]')!.textContent).toContain('2 results read on this picture.');
+    expect(container.querySelector('[data-not-read-count]')!.textContent).toBe('2 boxes with writing were not read.');
+    expect(button('Ask for it')).toBeNull();
+    const sourceOf = vi.fn(() => ({ kind: 'image', url: 'data:image/png;base64,AAAA' }) as any);
+    await render(card(of([unread('b', 3, 14)]), actions(), { sourceOf }));
+    expect(container.querySelector('[data-candidate="b"] [role="region"]')).toBeNull();
+    await click(button('See it on the document'));
+    expect(container.querySelector('[data-candidate="b"] [role="region"]')!.getAttribute('aria-label')).toBe('Your document, Row 3, box 14');
+    await click(button('Hide the document'));
+    expect(container.querySelector('[data-candidate="b"] [role="region"]')).toBeNull();
+    expect(container.querySelector('[data-picture-count]')).toBeNull();
+    expect(container.querySelector('[data-not-read-count]')!.textContent).toBe('1 box with writing was not read.');
+    // the same place on another page is another box
+    await render(card(of([read, { ...unread('p', 3, 14), content: { ...unread('p', 3, 14).content, anchor: at(3, 14, 2).anchor } }]), actions()));
+    expect(container.querySelector('[data-candidate="a"]')!.textContent).not.toContain('Part of this box');
+  });
+
+  it('a value without its own day is never dated by an answer on the document', () => {
+    const q = question('which-date', { context: { dates: [] } });
+    const undated = box('a', 1, 1);
+    delete undated.content.proposal.time;
+    const c = of([q, undated, answer(q, 'confirm', DAY, 200)]);
+    expect(conv.rowBlock(c, c.proposedValues[0], ENGINES)).toBe('no-date');
+    expect(conv.valueDayText(c.proposedValues[0], c.proposedValues, 'en', c)).toBeNull();
+  });
+});

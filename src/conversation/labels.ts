@@ -153,7 +153,7 @@ export function proposalText (p: { itemKey?: string; type?: string; content?: un
  * compare with the page. Null for a document read from its text (`extraction.backend` `text-layer`, or not given).
  */
 export function pictureText (conv: DocumentConversation): string | null {
-  const n = conv.proposedValues.filter((pv) => pv.state !== 'replaced' && readOnPicture(pv.item.content)).length;
+  const n = conv.proposedValues.filter((pv) => pv.state !== 'replaced' && readOnPicture(pv.item.content) && !notRead(pv.item.content)).length;
   if (n === 0) return null;
   return n === 1 ? tx('picture.readOne', { n }) : tx('picture.read', { n });
 }
@@ -179,6 +179,44 @@ export function dayText (day: string, locale?: string): string {
   }
 }
 
+/**
+ * A proposed line as she finds it on her document: as printed, or the box of a dated grid (4.36.0) and what is written in it
+ * ("Row 3, box 14: 10KL x2"; its printed label is the column number alone)
+ */
+export function lineText (c: Record<string, any>): string {
+  if (c.grid == null) return printedText(c.printed);
+  const box = tx('grid.box', { row: c.grid.row, column: c.grid.column });
+  return typeof c.printed?.value === 'string' && c.printed.value !== '' ? `${box}: ${c.printed.value}` : box;
+}
+
+/** A box with writing the contact proposes nothing from, or not from all of it (4.36.0) */
+export const notRead = (c: Record<string, any>): boolean => c.status === 'unmapped' && c.reason === 'not-read';
+
+/** The box of a dated grid a proposed value or a question is about: its attachment, its page and its place; null for none */
+function boxKey (c: Record<string, any>): string | null {
+  const anchor = c.anchor ?? c.context?.anchor;
+  const grid = c.grid ?? c.context?.grid;
+  return grid != null ? [anchor?.attachmentId ?? '', anchor?.page ?? '', grid.row, grid.column].join(':') : null;
+}
+
+/** The row of `boxKey` */
+export function gridRowKey (c: Record<string, any>): string | null {
+  return boxKey(c)?.split(':').slice(0, 3).join(':') ?? null;
+}
+
+/** Whether a proposed value is a part of a box that was not read in full (a `not-read` with the same `grid`) */
+export function isPartlyRead (c: Record<string, any>, conv: DocumentConversation): boolean {
+  const key = boxKey(c);
+  return key != null && !notRead(c) && conv.proposedValues.some((pv) => pv.state !== 'replaced' && notRead(pv.item.content) && boxKey(pv.item.content) === key);
+}
+
+/** How many boxes with writing were not read (a dated grid), null when none */
+export function notReadText (conv: DocumentConversation): string | null {
+  const n = conv.proposedValues.filter((pv) => pv.state !== 'replaced' && notRead(pv.item.content)).length;
+  if (n === 0) return null;
+  return n === 1 ? tx('grid.notReadOne', { n }) : tx('grid.notRead', { n });
+}
+
 /** Whether a value was read from a picture: its `extraction.backend` is given, and is not the document's text */
 function readOnPicture (c: Record<string, any>): boolean {
   const backend = c.extraction?.backend;
@@ -194,11 +232,11 @@ export function valueDayText (
   pv: { candidateId?: string; item: { content: Record<string, any> } },
   values: ReadonlyArray<{ candidateId?: string; state?: string; item: { content: Record<string, any> } }>,
   locale?: string,
-  answered?: Pick<DocumentConversation, 'candidateDates' | 'documentDate'>
+  conv?: DocumentConversation
 ): string | null {
   const dayOf = (v: { candidateId?: string; item: { content: Record<string, any> } }): string | null => {
     const own = v.item.content.proposal?.time;
-    const given = answered == null ? null : answered.candidateDates[v.candidateId ?? ''] ?? answered.documentDate;
+    const given = conv == null ? null : cmcConversation.answeredDateOf(conv, v.candidateId ?? '');
     const time = typeof own === 'number' ? own : given != null && given.timePrecision !== 'unknown' ? given.time : undefined;
     return typeof time === 'number' ? new Date(time * 1000).toISOString().slice(0, 10) : null;
   };

@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import type { ProposedValueView, QuestionView } from 'hds-lib';
 import { AnchoredDocumentView, type AnchoredDocumentSource } from './AnchoredDocumentView';
 import type { PdfJsLike } from './pdfjs';
-import { dayText, dayToTime, optionLabel, printedText, questionText, tx } from './labels';
+import { dayText, dayToTime, lineText, optionLabel, questionText, tx } from './labels';
 import type { ConversationTextKey } from './conversationTexts';
 import { questionAnswerText } from './answers';
 import { anchorOn } from './rowBlock';
@@ -33,12 +33,25 @@ export interface QuestionCardProps {
   loadPdfJs?: () => Promise<PdfJsLike>;
   pdfOptions?: Record<string, unknown>;
   className?: string;
+  /** An answered `which-row-date` may be changed: no value of its row is written yet */
+  canChangeDay?: boolean;
   /** `panel` (default): its own background, inside a card; `plain`: none, inside a bubble */
   variant?: 'panel' | 'plain';
 }
 
 const ROLES = new Set(['sampling', 'report', 'received', 'other']);
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Today where she is */
+function today (): string {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
+/** A whole day she may give a row: with its four-digit year (a date field accepts year 2), and not to come */
+function isRowDay (day: string): boolean {
+  return ISO_DAY.test(day) && day >= '1900' && day <= today();
+}
 
 /** The printed birth date as she reads dates: from its day (`birthDay`, or a printed ISO date), else as printed */
 function birthText (identity: { birthDate?: unknown; birthDay?: unknown }, locale?: string): string {
@@ -54,20 +67,23 @@ function birthText (identity: { birthDate?: unknown; birthDay?: unknown }, local
  * `which-date`, the options of a choice question, the printed line it is about. An unknown or third-party code is shown,
  * not answerable (R8). Answered: what she answered.
  */
-export function QuestionCard ({ question, about, contactName, sourceOf, busy = false, canUndoMatch = false, onAnswer, locale, loadPdfJs, pdfOptions, className, variant = 'panel' }: QuestionCardProps) {
+export function QuestionCard ({ question, about, contactName, sourceOf, busy = false, canUndoMatch = false, canChangeDay = false, onAnswer, locale, loadPdfJs, pdfOptions, className, variant = 'panel' }: QuestionCardProps) {
   const c = question.item.content;
   // no name or birth date read: the document's header block (`context.anchor`) is what she answers on, shown at once
-  const [showDoc, setShowDoc] = useState(question.code === 'is-this-yours' && c.context?.identity == null && question.state !== 'answered');
+  const rowDate = question.code === 'which-row-date';
+  // (and the box of a `which-row-date`: its day is written there)
+  const [showDoc, setShowDoc] = useState(((question.code === 'is-this-yours' && c.context?.identity == null) || rowDate) && question.state !== 'answered');
+  const [changing, setChanging] = useState(false);
   const [otherDay, setOtherDay] = useState('');
   const [pickingDay, setPickingDay] = useState(false);
   const dayId = useId();
   const answer = question.answer?.content ?? null;
-  const open = question.state !== 'answered';
+  const open = question.state !== 'answered' || changing;
   const can = onAnswer != null && question.answerable && !busy;
   const send = (a: QuestionAnswer): void => { if (can) onAnswer!(a); };
 
   const identity = question.code === 'is-this-yours' ? c.context?.identity ?? null : null;
-  const anchor = question.code === 'is-this-yours' ? anchorOn(c.context?.anchor, c.about) : null;
+  const anchor = question.code === 'is-this-yours' || rowDate ? anchorOn(c.context?.anchor, c.about) : null;
   const dated = question.code === 'which-date' || question.code === 'which-document-date';
   // a date question shows her document too: the days may have been read from a picture. The contract anchors no date,
   // so it opens on the value it is about, else on the first page
@@ -81,7 +97,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
     <div className={cx(variant === 'panel' && panel, className)} data-question={question.code}>
       <p className='text-sm font-semibold'>{questionText(question.code, contactName)}</p>
       {question.code === 'which-date' && c.candidateId == null && open && <p className={cx(small, 'mt-1')}>{tx('which-date.whole')}</p>}
-      {about != null && <p className={cx(small, 'mt-1')}>{tx('aboutValue', { label: printedText(about.item.content.printed) })}</p>}
+      {about != null && <p className={cx(small, 'mt-1')}>{tx('aboutValue', { label: lineText(about.item.content) })}</p>}
 
       {identity != null && (
         <dl className='mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm'>
@@ -92,7 +108,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
       {/* the contact read no name or birth date (CONVERSATION.md: then the question carries no identity): she checks on
           the document itself */}
       {question.code === 'is-this-yours' && identity == null && <p className={cx(small, 'mt-1')}>{tx('identityNotRead')}</p>}
-      {(question.code === 'is-this-yours' || (dated && open)) && sourceOf != null && (
+      {(question.code === 'is-this-yours' || ((dated || rowDate) && open)) && sourceOf != null && (
         <>
           <button type='button' className={btn.link} aria-expanded={showDoc} onClick={() => setShowDoc((s) => !s)}>
             {showDoc ? tx('hideDocument') : shownOn != null ? tx('seeOnDocument') : tx('seeDocument')}
@@ -101,7 +117,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
             <AnchoredDocumentView
               source={sourceOf(shownOn?.attachmentId)}
               anchor={shownOn != null ? { page: shownOn.page, bbox: shownOn.bbox } : { page: 1 }}
-              label={dated ? (about != null ? printedText(about.item.content.printed) : undefined) : tx('printedName')}
+              label={rowDate ? tx('row-date.label') : dated ? (about != null ? lineText(about.item.content) : undefined) : tx('printedName')}
               loadPdfJs={loadPdfJs}
               pdfOptions={pdfOptions}
             />
@@ -147,6 +163,13 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
               <button type='button' className={btn.ghost} disabled={!can} onClick={() => send({ action: 'confirm', timePrecision: 'unknown' })}>{tx('dateUnknown')}</button>
             </>
           )}
+          {rowDate && (
+            <span className='inline-flex flex-wrap items-center gap-2'>
+              <label htmlFor={dayId} className='sr-only'>{tx('row-date.label')}</label>
+              <input id={dayId} type='date' value={otherDay} max={today()} onChange={(e) => setOtherDay(e.target.value)} className='h-11 rounded-md border border-gray-300 bg-white px-2 text-sm dark:border-gray-600 dark:bg-gray-800' />
+              <button type='button' className={btn.primary} disabled={!can || !isRowDay(otherDay)} onClick={() => { setChanging(false); send({ action: 'confirm', time: dayToTime(otherDay), timePrecision: 'day' }); }}>{tx('save')}</button>
+            </span>
+          )}
           {['which-specimen', 'which-unit', 'which-analyte', 'is-fasting', 'which-document-kind'].includes(question.code) && (
             <>
               {options.map((o) => {
@@ -159,7 +182,8 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
               })}
             </>
           )}
-          {question.state !== 'skipped' && question.code !== 'is-this-yours' && (
+          {changing && <button type='button' className={btn.ghost} onClick={() => setChanging(false)}>{tx('cancel')}</button>}
+          {!changing && question.state !== 'skipped' && question.code !== 'is-this-yours' && (
             <button type='button' className={btn.ghost} disabled={!can} onClick={() => send({ action: 'skip' })}>{tx('skip')}</button>
           )}
         </div>
@@ -169,6 +193,9 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
         <p className={cx(muted, 'mt-2 font-medium')}>
           {answer.action === 'choose' ? tx('answer.choose', { option: optionLabel(question.code, answer.option).label }) : questionAnswerText(question.code, answer, locale)}
         </p>
+      )}
+      {rowDate && question.state === 'answered' && !changing && canChangeDay && can && (
+        <button type='button' className={btn.link} onClick={() => { setOtherDay(typeof answer?.time === 'number' ? new Date(answer.time * 1000).toISOString().slice(0, 10) : ''); setChanging(true); setShowDoc(true); }}>{tx('row-date.change')}</button>
       )}
       {question.state === 'skipped' && <p className={cx(small, 'mt-1')}>{tx('state.skipped')}</p>}
     </div>

@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0.
+
+### Added
+
+- **A dated grid is answered (data-model 4.36.0).** `which-row-date`: the box on her document, zoomed, and a date field (its
+  year too, not a day to come); a step of its own, row by row, before the values; its answer can be changed while no value of
+  the row is written. A box is named by its place ("Row 3, box 14: 10KL x2"), a box read in part says so, and the boxes with
+  writing that were not read are counted (they are not results read). Steps and values follow the grid, never where a tilted
+  picture puts a box. A value's day on such a document is its own alone (hds-lib `answeredDateOf`).
+
 ## [0.49.0] - 2026-11-25
 
 Needs hds-lib ≥ 2.69.0, data-model ≥ 4.33.0, as 0.48.0 (the texts of a dated grid show with data-model 4.36.0 and hds-lib 2.70.0).
