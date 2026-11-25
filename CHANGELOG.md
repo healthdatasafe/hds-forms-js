@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `FormBuilder` in another language: the item groups carry the label of their stream (they were the bare item prefix,
+  "activity"), and a new questionnaire and its first question start in the language shown. English groups change too
+  ("Physical Activity").
+
 ## [0.48.0] - 2026-11-25
 
 Needs hds-lib ≥ 2.69.0, data-model ≥ 4.33.0, as 0.47.0.
@@ -24,10 +30,6 @@ Needs hds-lib ≥ 2.69.0, data-model ≥ 4.33.0, as 0.47.0.
 - `which-date` about the whole document says what the day is used for.
 
 ### Fixed
-
-- `FormBuilder` in another language: the item groups carry the label of their stream (they were the bare item prefix,
-  "activity"), and a new questionnaire and its first question start in the language shown. English groups change too
-  ("Physical Activity").
 
 - **A picture she confirms values on stayed on "Opening your document…"** from the second value on: a cached picture loads
   before the view waits for it.
