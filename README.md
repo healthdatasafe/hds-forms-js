@@ -346,12 +346,12 @@ npm run build:app        # build test app into dist/ for gh-pages
 - Node.js >= 24
 - npm
 - Peer dependencies, installed by the host app (the library uses the host's copy):
-  `hds-lib` ≥ 2.69.0 (the HDS model must be initialized before using components), `hds-feminine-cycle-ui` ≥ 0.12.0,
+  `hds-lib` ≥ 2.70.0 (the HDS model must be initialized before using components), `hds-feminine-cycle-ui` ≥ 0.12.0,
   `pdfjs-dist` ^6.4.299, `react` / `react-dom` ≥ 19:
 
   ```json
-  "hds-forms-js": "github:healthdatasafe/hds-forms-js#0.49.0",
-  "hds-lib": "github:healthdatasafe/hds-lib-js#2.69.0",
+  "hds-forms-js": "github:healthdatasafe/hds-forms-js#0.50.0",
+  "hds-lib": "github:healthdatasafe/hds-lib-js#2.70.0",
   "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.12.0",
   "pdfjs-dist": "6.4.299"
   ```

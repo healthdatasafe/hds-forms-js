@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.50.0] - 2026-11-25
 
 Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0.
 
