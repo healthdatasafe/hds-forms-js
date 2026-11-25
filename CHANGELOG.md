@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **A proposed cervical-fluid observation is said as it was read, with its frequency.** The line she confirms left it out
+  ("10KL — … (Creighton)", the same for X1, X2 or none), and showed the observation converted to the method she displays.
+  `proposalText`: "10KL — Stretchy, clear, lubricative · X2 — seen twice (Creighton)".
+- **Correct opens in the method the value was read in.** With a method of her own it opened there, so a Creighton cell was
+  corrected to a Billings record. `HDSFormField` and `Convertible`: `inputMethod`, the method a field opens in and keeps.
+
 ## [0.47.0] - 2026-11-25
 
 Needs hds-lib ≥ 2.69.0, data-model ≥ 4.33.0.

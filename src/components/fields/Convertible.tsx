@@ -52,6 +52,8 @@ interface ConvertibleFieldProps extends FieldProps {
   converterEngine?: ConverterEngine;
   /** HDS item key (e.g. `body-vulva-mucus-inspect`): its `preferred-input-<itemKey>` setting is read first. */
   itemKey?: string;
+  /** The method the field opens in and keeps, over the person's own (a value corrected in the method it was read in). */
+  inputMethod?: string;
 }
 
 /**
@@ -67,7 +69,7 @@ interface ConvertibleFieldProps extends FieldProps {
  * - Selecting an observation calls convertMethodToEvent to produce the vector + source block.
  * - "_raw" virtual method shows dimension stop selectors.
  */
-export function Convertible ({ label, description, value, onChange, converterEngine, required, disabled, itemKey: hdsItemKey }: ConvertibleFieldProps) {
+export function Convertible ({ label, description, value, onChange, converterEngine, required, disabled, itemKey: hdsItemKey, inputMethod }: ConvertibleFieldProps) {
   const [engine, setEngine] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedMethod, setSelectedMethod] = useState<string>('');
@@ -86,7 +88,7 @@ export function Convertible ({ label, description, value, onChange, converterEng
         const eng = await model.converters.ensureEngine(itemKey);
         setEngine(eng);
         // Her method first; the recorded method only when she has none (B-2026-10-26-10).
-        setSelectedMethod(initialConvertibleMethod({ preferred: preferredMethod, sourceKey: source?.key, methodIds: eng.methodIds }));
+        setSelectedMethod(initialConvertibleMethod({ fixed: inputMethod, preferred: preferredMethod, sourceKey: source?.key, methodIds: eng.methodIds }));
       } catch (e) {
         console.error('Failed to load converter engine:', e);
       }
@@ -109,8 +111,8 @@ export function Convertible ({ label, description, value, onChange, converterEng
     });
   }, [engine]);
 
-  // Method selector hidden when her method is set (and known to the engine) — show its name instead
-  const hideMethodSelector = !!engine && isKnownMethod(preferredMethod, engine.methodIds);
+  // Method selector hidden when the host or her setting names the method (known to the engine) — show its name instead
+  const hideMethodSelector = !!engine && (isKnownMethod(inputMethod, engine.methodIds) || isKnownMethod(preferredMethod, engine.methodIds));
 
   // Get components (observation options) for the selected method
   const methodDef = selectedMethod && engine ? engine.getMethodDef(selectedMethod) : null;

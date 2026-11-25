@@ -143,6 +143,10 @@ describe('initialConvertibleMethod', () => {
   it('accepts _raw', () => {
     expect(initialConvertibleMethod({ preferred: '_raw', sourceKey: 'mira', methodIds })).toBe('_raw');
   });
+  it('keeps the method the host fixed, when the engine knows it', () => {
+    expect(initialConvertibleMethod({ fixed: 'mira', preferred: 'creighton', methodIds })).toBe('mira');
+    expect(initialConvertibleMethod({ fixed: 'gone', preferred: 'creighton', sourceKey: 'mira', methodIds })).toBe('creighton');
+  });
 });
 
 describe('observationLabel', () => {

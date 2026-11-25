@@ -1,4 +1,5 @@
 import { cmcConversation, eventToShortText, getHDSModel, localizeText } from 'hds-lib';
+import { observationLabel } from '../schema/convertibleMethod';
 import { CONVERSATION_TEXTS, type ConversationTextKey } from './conversationTexts';
 
 /** A conversation text in the host's locale, `{var}` replaced */
@@ -112,11 +113,33 @@ export function optionLabel (code: string, option: string): { label: string; sel
   return { label: option, selectable: false };
 }
 
+/**
+ * A proposed observation of a charting method as it was read, with its annotations (Creighton frequency): "10KL — Stretchy,
+ * clear, lubricative · X2 — seen twice (Creighton)". She confirms what would be saved, so never the observation converted to
+ * the method she displays (`eventToShortText` converts, and leaves the annotations out). Null for any other value.
+ */
+function readObservationText (itemData: any, content: any): string | null {
+  const source = content?.source;
+  if (itemData?.type !== 'convertible' || typeof source?.key !== 'string' || source.key === '_raw' || source.sourceData == null) return null;
+  const methodDef = getHDSModel().converters?.getEngine(itemData['converter-engine']?.models)?.getMethodDef(source.key) as any;
+  if (methodDef == null && typeof source.sourceData === 'object') return null;
+  const parts = [observationLabel(methodDef, source.sourceData)];
+  for (const [id, value] of Object.entries(source.annotations ?? {})) {
+    if (typeof value !== 'string' || value === '') continue;
+    const known = methodDef?.notation?.annotations?.find((a: any) => a.id === id)?.values?.find((v: any) => v.value === value);
+    const label = known != null ? localizeText(known.label) : null;
+    parts.push(label ? `${value} — ${label}` : value);
+  }
+  return `${parts.join(' · ')} (${localizeText(methodDef?.name) || source.key})`;
+}
+
 /** A proposed (or corrected) value as the app writes any value, e.g. "48 µg/L"; null when it cannot be said */
 export function proposalText (p: { itemKey?: string; type?: string; content?: unknown; clientData?: Record<string, unknown> } | null | undefined): string | null {
   if (p == null || typeof p.type !== 'string') return null;
   try {
     const def = typeof p.itemKey === 'string' ? getHDSModel().itemsDefs.forKey(p.itemKey, false) : null;
+    const read = readObservationText(def?.data, p.content);
+    if (read != null) return read;
     const text = eventToShortText({ type: p.type, content: p.content, streamIds: def != null ? [def.data.streamId] : [], clientData: p.clientData ?? {} } as any);
     return typeof text === 'string' && text !== '' ? text : null;
   } catch {

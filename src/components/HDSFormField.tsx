@@ -69,6 +69,11 @@ interface HDSFormFieldProps {
    */
   eventType?: string;
   /**
+   * The charting method a `convertible` field opens in and keeps (cervical fluid, mood), over the person's own: a host that
+   * has her correct a value in the method it was recorded in. Ignored when the converter does not know it.
+   */
+  inputMethod?: string;
+  /**
    * The value was pre-filled by the host (e.g. from the person's last entry) rather than typed.
    * Until the field is touched (focused, clicked or changed) its wrapper carries
    * `data-hds-prefilled="true"`, which the host styles (a tint), so the person sees which
@@ -178,7 +183,7 @@ export function HDSFormField (props: HDSFormFieldProps) {
   );
 }
 
-function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision, eventType, objectSchema }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched' | 'plausibility' | 'ageYears'>) {
+function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disabled, labelOverrides, pin, precision, eventType, inputMethod, objectSchema }: Omit<HDSFormFieldProps, 'prefilled' | 'onFieldTouched' | 'plausibility' | 'ageYears'>) {
   const overrideArray: FieldLabelOverridesWithSource[] | undefined = Array.isArray(labelOverrides)
     ? labelOverrides
     : undefined;
@@ -328,7 +333,7 @@ function HDSFormFieldInner ({ itemData, itemKey, value, onChange, required, disa
     }
     case 'convertible': {
       const converterEngine = (itemData as any)['converter-engine'];
-      return <Convertible {...baseProps} converterEngine={converterEngine} itemKey={itemKey} />;
+      return <Convertible {...baseProps} converterEngine={converterEngine} itemKey={itemKey} inputMethod={inputMethod} />;
     }
     case 'slider': {
       const s = itemData as any;
