@@ -308,6 +308,14 @@ describe('[CONV-UI] DocumentConversationCard', () => {
     expect(container.querySelector('[role="alert"]')?.textContent).toBe('This was updated meanwhile: look at it again.');
   });
 
+  it('a value answered meanwhile, refused, says it was updated, not that it failed', async () => {
+    const a = actions();
+    a.confirm.mockResolvedValueOnce({ ok: true, refused: [{ candidateId: 'c1', reason: 'answered' }] } as any);
+    await render(card(of([pv('c1')]), a));
+    await click(button('Confirm'));
+    expect(container.querySelector('[role="alert"]')?.textContent).toBe('This was updated meanwhile: look at it again.');
+  });
+
   it('while the contact reads, its values are listed, not confirmable', async () => {
     await render(card(of([pv('c1'), pv('c2')]), actions(), { status: statusAlert('reading') }));
     expect(container.textContent).toContain('Dr Test has not finished with this document yet.');
