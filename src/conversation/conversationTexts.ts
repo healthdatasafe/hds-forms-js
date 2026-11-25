@@ -166,6 +166,12 @@ export const CONVERSATION_TEXTS = {
   'which-date.whole': { en: 'This day is used for every value of the document that has no day of its own.', fr: 'Ce jour vaut pour toutes les valeurs du document qui n’ont pas leur propre jour.' },
   'question.which-date': { en: 'On which day was the sample taken?', fr: 'Quel jour le prélèvement a-t-il été fait ?' },
   // a dated grid (4.36.0): the day of one box, asked with the box shown
+  'grid.box': { en: 'Row {row}, box {column}', fr: 'Ligne {row}, case {column}' },
+  'grid.partly': { en: 'Part of this box was not read: look at it on your document.', fr: 'Une partie de cette case n’a pas été lue : regardez-la sur votre document.' },
+  'grid.notReadOne': { en: '{n} box with writing was not read.', fr: '{n} case écrite n’a pas été lue.' },
+  'grid.notRead': { en: '{n} boxes with writing were not read.', fr: '{n} cases écrites n’ont pas été lues.' },
+  'row-date.label': { en: 'The day of the marked box', fr: 'Le jour de la case marquée' },
+  'row-date.change': { en: 'Change the day', fr: 'Changer le jour' },
   'question.which-row-date': { en: 'Which day is the marked box? Give its year too.', fr: 'Quel jour est la case marquée ? Indiquez aussi l’année.' },
   'question.which-specimen': { en: 'Which sample was this measured in?', fr: 'Dans quel prélèvement cela a-t-il été mesuré ?' },
   'question.which-unit': { en: 'Which unit is this value in?', fr: 'Dans quelle unité est cette valeur ?' },

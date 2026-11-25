@@ -4,7 +4,7 @@ import type { ConversationAlert, DocumentConversation, ProposedValueView } from 
 import { DocumentFieldsEditor } from './DocumentFieldsEditor';
 import { AnchoredDocumentView, type AnchoredDocumentSource } from './AnchoredDocumentView';
 import type { PdfJsLike } from './pdfjs';
-import { documentKindLabel, itemLabel, noticeText, pictureText, printedText, proposalText, proposedDateText, questionText, reasonText, tx, valueDayText } from './labels';
+import { documentKindLabel, isPartlyRead, itemLabel, lineText, notReadText, noticeText, pictureText, proposalText, proposedDateText, questionText, reasonText, tx, valueDayText } from './labels';
 import { QuestionCard } from './QuestionCard';
 import { ValueCorrectionEditor } from './ValueCorrectionEditor';
 import { TaskStatusLine } from './ConversationBubbles';
@@ -91,7 +91,7 @@ export function ConversationStepBubble ({
 
   // a picture: how many results were read on it, until she answered one of them
   const picture = step.kind !== 'question' && step.kind !== 'document' && conversation.proposedValues.every((pv) => UNANSWERED.has(pv.state))
-    ? pictureText(conversation)
+    ? [pictureText(conversation), notReadText(conversation)].filter((t) => t != null).join(' ') || null
     : null;
 
   // her note sent on its own: the item set aside with it (a value, a question, a proposed document)
@@ -141,9 +141,10 @@ export function ConversationStepBubble ({
     const [readBefore, readAfter = ''] = tx('step.read').split('{printed}');
     body = (
       <div className='space-y-2'>
-        <p className='text-sm'>{readBefore}<span className='font-semibold'>{printedText(c.printed)}</span>{readAfter}</p>
+        <p className='text-sm'>{readBefore}<span className='font-semibold'>{lineText(c)}</span>{readAfter}</p>
         {item != null && value != null && <p className='text-sm font-semibold'>{saveText(pv, item, value, 'step.save', 'step.saveOn')}</p>}
         {c.status === 'check' && <p className='text-xs font-medium text-amber-700 dark:text-amber-400'>{tx('step.check')}</p>}
+        {isPartlyRead(c, conversation) && <p className='text-xs font-medium text-amber-700 dark:text-amber-400'>{tx('grid.partly')}</p>}
         <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>
           {docOpen ? tx('hideDocument') : tx('seeOnDocument')}
         </button>
@@ -151,7 +152,7 @@ export function ConversationStepBubble ({
           <AnchoredDocumentView
             source={sourceOf(anchor?.attachmentId)}
             anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : null}
-            label={printedText(c.printed)}
+            label={lineText(c)}
             loadPdfJs={loadPdfJs}
             pdfOptions={pdfOptions}
           />
@@ -237,7 +238,7 @@ export function ConversationStepBubble ({
               const value = c.proposal != null ? proposalText(c.proposal) : null;
               return (
                 <li key={pv.item.id} data-candidate={pv.candidateId}>
-                  <span className='font-medium'>{printedText(c.printed)}</span>
+                  <span className='font-medium'>{lineText(c)}</span>
                   {item != null && value != null && <span className={cx(small, 'block')}>{saveText(pv, item, value, 'wouldSave', 'wouldSaveOn')}</span>}
                 </li>
               );
@@ -262,7 +263,7 @@ export function ConversationStepBubble ({
             <ul className='mt-1 space-y-1'>
               {step.keptAside.map((pv) => (
                 <li key={pv.item.id} className='text-sm' data-candidate={pv.candidateId}>
-                  <span className='font-medium'>{printedText(pv.item.content.printed)}</span>
+                  <span className='font-medium'>{lineText(pv.item.content)}</span>
                   <span className={cx(small, 'block')}>{reasonText(pv.item.content.reason)}</span>
                   {actions != null && pv.item.content.requestKey != null && (
                     <button type='button' className={btn.link} disabled={!can} onClick={() => run('r' + pv.candidateId, () => actions.dismiss([pv.candidateId], 'request-item', shownAt, noteArg))}>{tx('requestItem')}</button>
@@ -278,7 +279,7 @@ export function ConversationStepBubble ({
             <ul className='mt-1 space-y-1'>
               {step.waiting.map(({ value: pv, block }) => (
                 <li key={pv.item.id} className='text-sm' data-candidate={pv.candidateId}>
-                  <span className='font-medium'>{printedText(pv.item.content.printed)}</span>
+                  <span className='font-medium'>{lineText(pv.item.content)}</span>
                   <span className={cx(small, 'block')}>{block === 'status' && pv.item.content.status === 'unit-missing' ? tx('block.unit-missing') : block === 'status' ? reasonText(pv.item.content.reason) : blockText(block, contactName)}</span>
                 </li>
               ))}
@@ -297,7 +298,7 @@ export function ConversationStepBubble ({
                 const value = c.proposal != null ? proposalText(c.proposal) : null;
                 return (
                   <li key={pv.item.id} className='text-sm' data-candidate={pv.candidateId}>
-                    <span className='font-medium'>{printedText(c.printed)}</span>
+                    <span className='font-medium'>{lineText(c)}</span>
                     {item != null && value != null && <span className={cx(small, 'block')}>{saveText(pv, item, value, 'wouldSave', 'wouldSaveOn')}</span>}
                     {actions != null && (
                       <button type='button' className={btn.link} disabled={!can} onClick={() => run('a' + pv.candidateId, () => actions.confirm([pv.candidateId], shownAt, noteArg))}>{tx('addAnyway')}</button>

@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ConversationAlert, DocumentConversation, ProposedValueView } from 'hds-lib';
 import type { AnchoredDocumentSource } from './AnchoredDocumentView';
 import type { PdfJsLike } from './pdfjs';
-import { noticeText, pictureText, tx, valueDayText } from './labels';
+import { gridRowKey, isPartlyRead, lineText, notRead, notReadText, noticeText, pictureText, tx, valueDayText } from './labels';
 import { QuestionCard, type QuestionAnswer } from './QuestionCard';
 import { TaskStatusLine } from './ConversationBubbles';
 import type { ConversationViewer } from './answers';
-import { batchCandidates, isWritten, rowBlock, shownAtOf } from './rowBlock';
+import { AnchoredDocumentView } from './AnchoredDocumentView';
+import { anchorOn, batchCandidates, isWritten, rowBlock, shownAtOf } from './rowBlock';
 import { ValueLine, ValueReview } from './ValueParts';
 import { useConversationRun, type ConversationActions } from './conversationRun';
 import { btn, card, cx, muted, small } from './ui';
@@ -68,6 +69,7 @@ export function DocumentConversationCard ({
   const { busy, message, setMessage, run } = useConversationRun();
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [correcting, setCorrecting] = useState(false);
+  const [looking, setLooking] = useState<string | null>(null);
 
   // an open review closes when its value changed meanwhile (a re-read by the contact)
   const reviewed = reviewing != null ? conv.proposedValues.find((p) => p.candidateId === reviewing) ?? null : null;
@@ -84,6 +86,7 @@ export function DocumentConversationCard ({
   }, [reviewing, reviewedKey, setMessage]);
 
   const can = actions != null && busy == null;
+  const boxAnchor = (pv: ProposedValueView) => anchorOn(pv.item.content.anchor, pv.item.content.about);
   const workStatus = status?.hds?.status as string | undefined;
   const done = workStatus === 'done';
   const identityQ = conv.questions.filter((q) => q.code === 'is-this-yours');
@@ -95,6 +98,8 @@ export function DocumentConversationCard ({
   // a replaced value is shown once, through what replaced it
   const shownValues = conv.proposedValues.filter((p) => p.state !== 'replaced');
   const picture = pictureText(conv);
+  const notReadBoxes = notReadText(conv);
+  const writtenRows = new Set(conv.proposedValues.filter((p) => isWritten(conv, p)).map((p) => gridRowKey(p.item.content)));
   const answerQ = (questionId: string) => (a: QuestionAnswer) => {
     if (actions != null) run('q:' + questionId, () => actions.answer(questionId, a, shownAt));
   };
@@ -122,7 +127,7 @@ export function DocumentConversationCard ({
           />
         ))}
         {conv.identity !== 'not-mine' && docQuestions.map((q) => (
-          <QuestionCard key={q.item.id} question={q} contactName={contactName} sourceOf={sourceOf} busy={busy != null} onAnswer={actions != null ? answerQ(q.item.id) : null} locale={locale} loadPdfJs={loadPdfJs} pdfOptions={pdfOptions} />
+          <QuestionCard key={q.item.id} question={q} contactName={contactName} sourceOf={sourceOf} busy={busy != null} canChangeDay={!done && !writtenRows.has(gridRowKey(q.item.content) ?? '')} onAnswer={actions != null ? answerQ(q.item.id) : null} locale={locale} loadPdfJs={loadPdfJs} pdfOptions={pdfOptions} />
         ))}
         {conv.identity !== 'not-mine' && valueQuestions.map((q) => (
           <QuestionCard key={q.item.id} question={q} about={pvOf(q.item.content.candidateId)} contactName={contactName} sourceOf={sourceOf} busy={busy != null} onAnswer={actions != null ? answerQ(q.item.id) : null} locale={locale} loadPdfJs={loadPdfJs} pdfOptions={pdfOptions} />
@@ -133,6 +138,7 @@ export function DocumentConversationCard ({
         <>
           <h4 className='mt-4 text-sm font-semibold'>{tx('proposedTitle')}</h4>
           {viewer === 'person' && picture != null && <p className={cx(small, 'mt-1')} data-picture-count=''>{picture}</p>}
+          {notReadBoxes != null && <p className={cx(small, 'mt-1')} data-not-read-count=''>{notReadBoxes}</p>}
           {batch.length > 1 && actions != null && (
             <button type='button' className={cx(btn.primary, 'mt-2 w-full')} disabled={!can} onClick={() => run('batch', () => actions.confirm(batch.map((p) => p.candidateId), shownAt))}>
               {tx('confirmAll', { n: batch.length })}
@@ -145,7 +151,7 @@ export function DocumentConversationCard ({
               const open = reviewing === pv.candidateId && !written;
               return (
                 <li key={pv.item.id} className='rounded-md border border-gray-200 p-3 dark:border-gray-700' data-candidate={pv.candidateId}>
-                  <ValueLine pv={pv} block={block} written={written} contactName={contactName} day={valueDayText(pv, conv.proposedValues, locale, conv)} />
+                  <ValueLine pv={pv} block={block} written={written} contactName={contactName} day={valueDayText(pv, conv.proposedValues, locale, conv)} partly={isPartlyRead(pv.item.content, conv)} />
                   {!open && !written && (pv.state === 'open' || pv.state === 'skipped') && actions != null && (
                     <div className='mt-2 flex flex-wrap gap-2'>
                       {block == null && <button type='button' className={btn.outline} disabled={!can} onClick={() => { setReviewing(pv.candidateId); setCorrecting(false); setMessage(null); }}>{tx('review')}</button>}
@@ -155,6 +161,19 @@ export function DocumentConversationCard ({
                       )}
                       {pv.state === 'open' && <button type='button' className={btn.ghost} disabled={!can} onClick={() => run('s:' + pv.candidateId, () => actions.dismiss([pv.candidateId], 'skip', shownAt))}>{tx('skip')}</button>}
                     </div>
+                  )}
+                  {viewer === 'person' && notRead(pv.item.content) && (
+                    <>
+                      <button type='button' className={btn.link} aria-expanded={looking === pv.candidateId} onClick={() => setLooking(looking === pv.candidateId ? null : pv.candidateId)}>
+                        {looking === pv.candidateId ? tx('hideDocument') : tx('seeOnDocument')}
+                      </button>
+                      {looking === pv.candidateId && (
+                        <AnchoredDocumentView
+                          source={sourceOf(boxAnchor(pv)?.attachmentId)} anchor={boxAnchor(pv)} label={lineText(pv.item.content)}
+                          loadPdfJs={loadPdfJs} pdfOptions={pdfOptions}
+                        />
+                      )}
+                    </>
                   )}
                   {!written && pv.state === 'duplicate' && block == null && actions != null && (
                     <div className='mt-2 flex flex-wrap gap-2'>

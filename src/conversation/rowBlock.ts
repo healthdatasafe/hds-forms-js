@@ -21,7 +21,8 @@ export interface RowBlockOptions {
  * the value itself is not confirmable (hds-lib `proposalRefusal`: answered, replaced, its status, its proposal, the
  * engine not vouched for this relationship); the document's `is-this-yours` waits for her; a question about this value
  * waits for her, or she answered a `choose` and the contact has not re-proposed it yet (an answer to a question writes
- * nothing: the re-proposal is what she confirms); no date (no `proposal.time` and no `which-date` answer).
+ * nothing: the re-proposal is what she confirms); no date (no `proposal.time` and no `which-date` answer; on a dated grid,
+ * 4.36.0, no `proposal.time`).
  */
 export function rowBlock (conv: DocumentConversation, pv: ProposedValueView, engines: readonly string[], opts: RowBlockOptions = {}): RowBlock | null {
   if (conv.identity === 'not-mine') return 'not-mine';
@@ -34,7 +35,7 @@ export function rowBlock (conv: DocumentConversation, pv: ProposedValueView, eng
   const about = conv.questions.filter((q) => q.item.content.candidateId === pv.candidateId);
   if (about.some((q) => q.state === 'open')) return 'question-open';
   if (about.some((q) => q.answer?.content.action === 'choose')) return 'awaiting-reproposal';
-  const date = conv.candidateDates[pv.candidateId] ?? conv.documentDate;
+  const date = cmcConversation.answeredDateOf(conv, pv.candidateId);
   if (pv.item.content.proposal?.time == null && date == null) return 'no-date';
   return null;
 }
