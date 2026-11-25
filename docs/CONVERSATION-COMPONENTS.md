@@ -60,7 +60,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { cmcDocuments } from 'hds-lib';
 import {
   useDocumentConversations, useStepChoices, nextStep, conversationProgress,
-  ConversationStepBubble, DocumentStatusBubble, ContactWorkingIndicator, isWorking
+  ConversationStepBubble, DocumentStatusBubble, ContactWorkingIndicator, workState
 } from 'hds-forms-js/conversation';
 
 function Thread ({ connection, rels, alertEventsKey, contactName, sourceOf }: ThreadProps) {
@@ -79,7 +79,7 @@ function Thread ({ connection, rels, alertEventsKey, contactName, sourceOf }: Th
       const step = doc.checking ? null : nextStep(doc.conversation, doc.engines, { status, document: doc.document, ...choices[doc.key] });
       return <Fragment key={doc.key}>
         <DocumentStatusBubble title='Lab report' status={doc.status} notices={doc.notices} progress={progress} contactName={contactName} />
-        {isWorking(doc.status, Date.now() / 1000) && <ContactWorkingIndicator contactName={contactName} status={status} documentTitle='Lab report' />}
+        {workState(doc.status, Date.now() / 1000) !== 'idle' && <ContactWorkingIndicator contactName={contactName} status={status} documentTitle='Lab report' sinceS={doc.status?.time} />}
         {step && <ConversationStepBubble key={step.key} step={step} conversation={doc.conversation} progress={progress}
           contactName={contactName} title='Lab report' sourceOf={sourceOf} actions={doc.actions} {...handlers(doc.key)} />}
       </Fragment>;
@@ -136,7 +136,7 @@ send button sends it alone (the contract's `skip` + `note`), after a one-line wa
 | `ValueCorrectionEditor` | the value as she corrects it, with the item's own field and units | answer `correct` (`hdsExtraction.corrected`) |
 | `DocumentValuesList` | a document's values: read from it, and also printed in it | `hdsDocumentValues`, `hdsPrintedIn` |
 | `AnchoredDocumentView` | her document zoomed and highlighted where a value (or the identity) is printed | `anchor` (= `clientData.hdsSourceAnchor`) |
-| `ContactWorkingIndicator` + `isWorking` | "HDS Reader is reading “Lab report”…" with moving dots, like a typing indicator | alert `task-status` `received` / `reading` |
+| `ContactWorkingIndicator` + `workState` | "HDS Reader is reading “Lab report”…" with moving dots and the time, like a typing indicator; then "No news from HDS Reader…" | alert `task-status` `received` / `reading` |
 | `TaskStatusLine` | the state of the contact's work | alert `task-status` (`status`, `counts`, `errorCode`), R4, R8 |
 | `NoticeBubble` | a notice from the contact | alert `notice` (`code`), R6, R12 |
 | `ConversationAnswerBubble` | one of her answers, in words, on her side | event `answer` (`action`, `written`, `timePrecision`, `basis`, `note`) |
@@ -269,22 +269,38 @@ to the whole page and back; pinch, drag, + / −. Props and the pdf.js setup: th
 document, {label}", the page a `role=img`, loading and errors a `role=status`. Anchors are read through
 `anchorOn(anchor, about)`: an anchor naming another document (`eventId`, data-model 4.25.0) is ignored (R11).
 
-### `ContactWorkingIndicator` and `isWorking`
+### `ContactWorkingIndicator` and `workState`
 
 ```tsx
-{cards.filter(c => isWorking(c.status, Date.now() / 1000)).map(c =>
-  <ContactWorkingIndicator key={c.key} contactName='HDS Reader' status={c.status?.hds?.status} documentTitle={c.title} />)}
+{cards.filter(c => workState(c.status, nowS) !== 'idle').map(c =>
+  <ContactWorkingIndicator key={c.key} contactName='HDS Reader' status={c.status?.hds?.status} documentTitle={c.title} sinceS={c.status?.time} />)}
 ```
 
-A typing indicator for the contact's work, at the end of the thread: "… received “X” and is starting on it…", "… is
-reading “X”…", "… is working…" (an unknown status). `isWorking(status, nowS, maxAgeS = WORKING_MAX_AGE_S /* 30 min */)`
-is true while the document's latest `task-status` is `received` or `reading` (or unknown: R8) and younger than `maxAgeS`,
-so a contact that stopped without a last status never shows as working for ever. `role=status`, `aria-live=polite`; the
-dots are `aria-hidden` and stand still under reduced motion.
+The contact at work on a document, at the end of the thread: three moving dots, "… received “X” and is starting on it…", "… is
+reading “X”…", "… is working…" (an unknown status), and the time since `sinceS`, the latest `task-status`'s `time`. With
+`status='sent'` and the time of her share: "Sent “X” to …", before the contact's first status.
+
+Past its time, it stops saying the contact works. Her app knows only the last status and its age, never whether the
+contact runs: it must not say it stopped, nor promise what the contact will do.
+
+| Last status | Reads as it says | Then |
+|---|---|---|
+| none yet (`sent`) | 5 min | "No news from … about “X” for 12 min." |
+| `received` | 5 min | "… has “X” and has not started reading it yet (12 min)." ("over an hour" past one: a contact that waits says so again every 12 h), and no news past 13 h |
+| `reading`, or one it does not know (R8) | 10 min | "No news from …" |
+
+Each is followed by "Your document is kept in your account." A new status is one more row of `workInProgress.ts`.
+
+`workState(status, nowS)` is `idle` (settled, or no status), `working`, `not-started` or `no-news`; `progressState` is the
+same from a status and a time. A host stops showing the indicator at the latest after `NO_NEWS_INDICATOR_MAX_S` (a day): the
+document's own line keeps saying it. The component moves its own clock; `nowS` fixes it. Announced politely, once per
+state: the moving time is hidden from screen readers, which hear since when. `isWorking` (hidden after 30 minutes) is
+deprecated.
 
 ### `TaskStatusLine`, `NoticeBubble`, `ConversationAnswerBubble`
 
-- `TaskStatusLine({ status, errorCode, counts, contactName })`: "Waiting for your answers · 5 values, 1 question",
+- `TaskStatusLine({ status, errorCode, counts, contactName, sinceS })`: "Waiting for your answers · 5 values, 1 question",
+  "Being read · 1:05" while in progress with `sinceS`, then "Reading started · no news for 12 min",
   "Done", "Could not be read" + the error (`no-attachment`, `write-failed`, `reading-failed`, else a generic text).
   `role=status`.
 - `NoticeBubble({ code, contactName, timeText?, bubbleClassName? })`: `ready`, `no-result-found`,
@@ -298,7 +314,7 @@ dots are `aria-hidden` and stand still under reduced motion.
 
 ### Helpers
 
-`rowBlock`, `batchCandidates`, `isWritten`, `alreadyInRecord`, `shownAtOf`, `anchorOn`, `isWorking`, `answerText`,
+`rowBlock`, `batchCandidates`, `isWritten`, `alreadyInRecord`, `shownAtOf`, `anchorOn`, `workState`, `answerText`,
 `questionAnswerText`, `answerRuns`, `optionLabel`, `unitText`, `statusText`, `noticeText`, `errorText`, `reasonText`,
 `questionText`, `itemLabel`, `proposalText`, `printedText`, `dayText`, `dayToTime`, `valueDayText`, `proposedDateText`,
 `documentKindLabel`, `documentKindOptions`, `correctedClientData`, `progressText`, `conversationText` (one text by key).
@@ -370,7 +386,7 @@ completeness tests (`tests/conversation.test.tsx`, `tests/docConversation.test.t
 |---|---|
 | a question code this version does not know, or `x-…` | "… asks a question this app cannot answer yet", no buttons |
 | an option it cannot label | shown, not selectable |
-| a `task-status` it does not know | "… is working…" while young (`isWorking`), "In progress" on the status line |
+| a `task-status` it does not know | "… is working…", "In progress" on the status line; with no newer one for 10 minutes, no news since |
 | a notice code it does not know | "{name} sent a message this app cannot show yet." |
 | an error code it does not know | "{name} could not finish this document." |
 | a specimen code outside `SPECIMEN_CODES` (other than `other`) | the option shown, not selectable |
@@ -384,7 +400,7 @@ own words (0.43.0). Pass `viewer='contact'` and her name (`personName`; "The per
   fasting" (`contact.answer.*`, `contact.note`); the bubble sits on the other side (`bubbleIn`) and reads "From Anna" to
   a screen reader. `answerText(answer, conversation, locale, { viewer: 'contact', personName })` gives the same words
   alone.
-- `TaskStatusLine`: its own work, "Not opened yet", "Waiting for Anna's answers · 5 values"; errors without naming itself
+- `TaskStatusLine`: its own work, "Not opened yet", "Reading started · no change for 12 min", "Waiting for Anna's answers · 5 values"; errors without naming itself
   ("This document could not be read yet; reading is tried again.").
 - `DocumentConversationCard`: always read-only (`actions` is ignored); the state of the work as above, the questions and
   values as she was asked them.

@@ -354,6 +354,8 @@ export interface DocumentStatusBubbleProps {
   title: string;
   /** The latest `task-status` of the document (R4) */
   status: ConversationAlert | null;
+  /** When she shared it (seconds): how long the contact has been silent, while there is no `status` */
+  sentAt?: number | null;
   notices?: ConversationAlert[];
   progress?: ConversationProgress | null;
   contactName: string;
@@ -365,6 +367,7 @@ export interface DocumentStatusBubbleProps {
   expanded?: boolean;
   onToggle?: () => void;
   children?: ReactNode;
+  locale?: string;
   className?: string;
   bubbleClassName?: string;
 }
@@ -373,7 +376,7 @@ export interface DocumentStatusBubbleProps {
  * One document in the conversation, from the contact: its title, the state of the work, its notices, where it stands
  * ("28 values · 1 question · 9 answered"), and "See everything" (every question and value of the document at once).
  */
-export function DocumentStatusBubble ({ title, status, notices = [], progress, contactName, onOpenDocument, saved = 0, expanded = false, onToggle, children, className, bubbleClassName }: DocumentStatusBubbleProps) {
+export function DocumentStatusBubble ({ title, status, sentAt, notices = [], progress, contactName, onOpenDocument, saved = 0, expanded = false, onToggle, children, locale, className, bubbleClassName }: DocumentStatusBubbleProps) {
   const done = status?.hds?.status === 'done';
   return (
     <div className={cx('flex justify-start', className)} data-document-status=''>
@@ -382,7 +385,7 @@ export function DocumentStatusBubble ({ title, status, notices = [], progress, c
         <p className='text-sm font-semibold'>
           {onOpenDocument != null ? <button type='button' className='text-left underline-offset-2 hover:underline' onClick={onOpenDocument}>{title}</button> : title}
         </p>
-        <TaskStatusLine status={(status?.hds?.status as string | undefined) ?? null} errorCode={status?.hds?.errorCode} contactName={contactName} />
+        <TaskStatusLine status={(status?.hds?.status as string | undefined) ?? null} errorCode={status?.hds?.errorCode} contactName={contactName} sinceS={status?.time ?? sentAt} locale={locale} />
         {progress != null && progressText(progress) !== '' && <p className={small}>{progressText(progress)}</p>}
         {notices.map((n) => <p key={n.alertEventId} className='mt-1 text-sm'>{noticeText(String(n.hds.code), contactName)}</p>)}
         {done && saved > 0 && (

@@ -316,7 +316,7 @@ describe('[CONV-UI] DocumentConversationCard', () => {
   });
 
   it('R8: an unknown status reads as in progress, an unknown notice and error get generic texts', async () => {
-    const status = { alertEventId: 'a1', kind: 'task-status', hds: { kind: 'task-status', about: DOC, status: 'thinking', attempt: 1 }, time: 1, direction: 'received', from: null };
+    const status = { alertEventId: 'a1', kind: 'task-status', hds: { kind: 'task-status', about: DOC, status: 'thinking', attempt: 1 }, time: Date.now() / 1000, direction: 'received', from: null };
     const notice = { alertEventId: 'a2', kind: 'notice', hds: { kind: 'notice', code: 'x-acme-hello', about: DOC }, time: 1, direction: 'received', from: null };
     await render(card(of([]), actions(), { status, notices: [notice] }));
     expect(container.textContent).toContain('In progress');
@@ -395,6 +395,137 @@ describe('[CONV-UI] bubbles and texts', () => {
     await render(<><conv.ContactWorkingIndicator contactName='Lecteur HDS' status='received' /><conv.ContactWorkingIndicator contactName='Dr Test' status='new-thing' documentTitle='Bilan' /></>);
     expect(container.textContent).toContain('Lecteur HDS a reçu votre document et s’y met…');
     expect(container.textContent).toContain('Dr Test travaille sur « Bilan »…');
+  });
+  describe('time and no news', () => {
+    const T = Date.parse('2026-11-24T10:00:00Z') / 1000;
+    // a number and its unit stay on one line: a no-break space
+    const text = () => (container.textContent ?? '').replaceAll('\u00a0', ' ');
+    const heard = () => [...container.querySelectorAll('[role="status"] > *:not([aria-hidden])')].map((e) => e.textContent).join(' ').trim();
+
+    it('workState: each status reads as it says for its time, then not started or no news; settled or none is idle', () => {
+      const at = (status: string) => ({ hds: { kind: 'task-status', status }, time: T });
+      const MIN = 60;
+      for (const st of ['reading', 'something-new']) {
+        expect(conv.workState(at(st), T + 10 * MIN - 1), st).toBe('working');
+        expect(conv.workState(at(st), T + 10 * MIN), st).toBe('no-news');
+        expect(conv.workState(at(st), T + 86400 * 30), st).toBe('no-news');
+      }
+      expect(conv.workState(at('received'), T + 5 * MIN - 1)).toBe('working');
+      expect(conv.workState(at('received'), T + 5 * MIN)).toBe('not-started');
+      expect(conv.workState(at('received'), T + 13 * 3600 - 1)).toBe('not-started');
+      expect(conv.workState(at('received'), T + 13 * 3600)).toBe('no-news');
+      for (const st of ['sent', null]) {
+        expect(conv.progressState(st, T, T + 5 * MIN - 1)).toBe('working');
+        expect(conv.progressState(st, T, T + 5 * MIN)).toBe('no-news');
+      }
+      for (const st of ['awaiting-answers', 'done', 'error']) expect(conv.workState(at(st), T + 86400), st).toBe('idle');
+      expect(conv.workState(null, T)).toBe('idle');
+      expect(conv.progressState('reading', T + 10, T)).toBe('working');
+    });
+
+    it('the indicator counts the time for the eye; a screen reader hears no moving time', async () => {
+      await render(<conv.ContactWorkingIndicator contactName='HDS Reader' status='reading' documentTitle='Lab report' sinceS={T} nowS={T + 125} />);
+      expect(container.querySelector('[data-working-counter]')!.textContent).toBe('2:05');
+      expect(container.querySelector('[data-working-counter]')!.getAttribute('aria-hidden')).toBe('true');
+      expect(heard()).toBe('HDS Reader is reading “Lab report”…');
+    });
+
+    it('without news for a while it says so, never that the contact reads or stopped', async () => {
+      for (const status of ['sent', 'reading', 'new-thing']) {
+        await render(<conv.ContactWorkingIndicator key={status} contactName='HDS Reader' status={status} documentTitle='Lab report' sinceS={T} nowS={T + 15 * 60 + 20} locale='en-US' />);
+        expect(text(), status).toContain('No news from HDS Reader about “Lab report” for 15 min.');
+        expect(text(), status).toContain('Your document is kept in your account.');
+        expect(text(), status).not.toMatch(/is reading|is working|is starting|stopped|down|later|nothing to do/);
+        expect(container.querySelector('.motion-safe\\:animate-bounce'), status).toBeNull();
+        expect(container.querySelector('[data-working-indicator="no-news"]'), status).not.toBeNull();
+        expect(heard(), status).toMatch(/^No news from HDS Reader about “Lab report” since .+\. Your document is kept/);
+        expect(heard(), status).not.toContain('15 min');
+      }
+    });
+
+    it('received and not started: said as such, and past an hour without an exact time', async () => {
+      await render(<conv.ContactWorkingIndicator contactName='HDS Reader' status='received' documentTitle='Lab report' sinceS={T} nowS={T + 720} locale='en-US' />);
+      expect(text()).toContain('HDS Reader has “Lab report” and has not started reading it yet (12 min).');
+      expect(container.querySelector('[data-working-indicator="not-started"]')).not.toBeNull();
+      expect(container.querySelector('.motion-safe\\:animate-bounce')).toBeNull();
+      expect(heard()).toMatch(/^HDS Reader has “Lab report” since .+ and has not started reading it yet\. Your document is kept/);
+      await render(<conv.ContactWorkingIndicator key='h' contactName='HDS Reader' status='received' sinceS={T} nowS={T + 3 * 3600} />);
+      expect(text()).toContain('HDS Reader has your document and has not started reading it yet (over an hour).');
+      await render(<conv.ContactWorkingIndicator key='d' contactName='HDS Reader' status='received' sinceS={T} nowS={T + 14 * 3600} />);
+      expect(text()).toContain('No news from HDS Reader about your document for 14 h.');
+      await render(<conv.TaskStatusLine key='l' status='received' contactName='HDS Reader' sinceS={T} nowS={T + 720} />);
+      expect(text()).toContain('Received · not started yet (12 min)');
+    });
+
+    it('what a screen reader hears does not change as time passes', async () => {
+      await render(<conv.ContactWorkingIndicator contactName='HDS Reader' status='reading' sinceS={T} nowS={T + 600} locale='en-US' />);
+      const before = heard();
+      await act(async () => { root!.render(<conv.ContactWorkingIndicator contactName='HDS Reader' status='reading' sinceS={T} nowS={T + 900} locale='en-US' />); });
+      expect(text()).toContain('15 min');
+      expect(heard()).toBe(before);
+    });
+
+    it('moves by itself, from the counter to no news', async () => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(T * 1000);
+        await render(<conv.ContactWorkingIndicator contactName='HDS Reader' status='reading' sinceS={T} />);
+        expect(container.querySelector('[data-working-counter]')!.textContent).toBe('0:00');
+        await act(async () => { vi.advanceTimersByTime(42_000); });
+        expect(container.querySelector('[data-working-counter]')!.textContent).toBe('0:42');
+        await act(async () => { vi.advanceTimersByTime(10 * 60_000); });
+        expect(text()).toContain('No news from HDS Reader about your document for 10 min.');
+        await act(async () => { vi.advanceTimersByTime(3 * 3600_000); });
+        expect(text()).toContain('for 3 h.');
+      } finally {
+        act(() => root!.unmount());
+        root = null;
+        vi.useRealTimers();
+      }
+    });
+
+    it('a device behind the server\'s clock counts from 0', async () => {
+      await render(<conv.ContactWorkingIndicator contactName='HDS Reader' status='reading' sinceS={T + 300} nowS={T} />);
+      expect(container.querySelector('[data-working-counter]')!.textContent).toBe('0:00');
+    });
+
+    it('the card\'s line: the counter, then no news in place of "Being read"', async () => {
+      await render(<conv.TaskStatusLine status='reading' contactName='HDS Reader' sinceS={T} nowS={T + 61} />);
+      expect(text()).toBe('Being read · 1:01');
+      await act(async () => { root!.render(<conv.TaskStatusLine status='reading' contactName='HDS Reader' sinceS={T} nowS={T + 86400 * 2} />); });
+      expect(text()).toContain('Reading started · no news for 2 days');
+      expect(text()).toContain('Your document is kept in your account.');
+      expect(text()).not.toContain('Being read');
+      await act(async () => { root!.render(<conv.TaskStatusLine status={null} contactName='HDS Reader' sinceS={T} nowS={T + 3600} />); });
+      expect(text()).toContain('Sent, not opened yet · no news for 1 h');
+      await act(async () => { root!.render(<conv.TaskStatusLine status='new-thing' contactName='HDS Reader' sinceS={T} nowS={T + 86400} />); });
+      expect(text()).toContain('Started · no news for 1 day');
+    });
+
+    it('a settled line, or one without a time, is as before', async () => {
+      for (const st of ['awaiting-answers', 'done', 'error']) {
+        await render(<conv.TaskStatusLine key={st} status={st} contactName='HDS Reader' sinceS={T} nowS={T + 86400} />);
+        expect(container.querySelector('[data-work-state]'), st).toBeNull();
+        expect(text(), st).not.toContain('no news');
+      }
+      await render(<conv.TaskStatusLine key='none' status='reading' contactName='HDS Reader' />);
+      expect(text()).toBe('Being read');
+    });
+
+    it('a contact\'s app: its own work without change, in its own words', async () => {
+      await render(<conv.TaskStatusLine status='reading' contactName='HDS Reader' viewer='contact' personName='Anna' sinceS={T} nowS={T + 720} />);
+      expect(text()).toContain('Reading started · no change for 12 min');
+      expect(text()).not.toContain('Your document');
+      expect(text()).not.toContain('news');
+    });
+
+    it('in French', async () => {
+      lang = 'fr';
+      await render(<conv.ContactWorkingIndicator contactName='Lecteur HDS' status='reading' documentTitle='Bilan' sinceS={T} nowS={T + 720} locale='fr-CH' />);
+      expect(text()).toContain('Pas de nouvelles de Lecteur HDS pour « Bilan » depuis 12 min.');
+      await render(<conv.TaskStatusLine key='l' status='reading' contactName='Lecteur HDS' sinceS={T} nowS={T + 720} locale='fr-CH' />);
+      expect(text()).toContain('Lecture commencée · pas de nouvelles depuis 12 min');
+    });
   });
   it('option labels: an item key by its name, yes / no, a specimen code', () => {
     expect(conv.optionLabel('which-analyte', 'body-blood-serum-ferritin')).toEqual({ label: 'Ferritin', selectable: true });

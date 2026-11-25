@@ -3,6 +3,8 @@ import { errorText, noticeText, statusText, tx } from './labels';
 import { answerText, personNameOf, type ConversationViewer } from './answers';
 import type { ConversationTextKey } from './conversationTexts';
 import { bubbleIn, bubbleOut, cx, small } from './ui';
+import { counterText, durationText, momentText, useNowS, waitText } from './elapsed';
+import { isInProgress, progressState } from './workInProgress';
 
 export interface TaskStatusLineProps {
   /** The latest `task-status` alert's `status` (R4); none yet: "sent, not opened yet"; unknown: in progress (R8) */
@@ -14,6 +16,15 @@ export interface TaskStatusLineProps {
   viewer?: ConversationViewer;
   /** Her name, for a contact's app ("Waiting for Anna's answers") */
   personName?: string | null;
+  /**
+   * When the last news came (seconds): the status's own time, or her share's while there is none. While the work is in
+   * progress, shows how long it has been, then that it has not started or that there is no news (`progressState`).
+   * Absent: neither.
+   */
+  sinceS?: number | null;
+  /** The time (seconds); default: the device's, moving by itself */
+  nowS?: number;
+  locale?: string;
   className?: string;
 }
 
@@ -40,13 +51,38 @@ function countsText (counts: { proposed?: number; questions?: number }): string 
   return parts.join(', ');
 }
 
-/** The state of the contact's work on one document */
-export function TaskStatusLine ({ status, errorCode, counts, contactName, viewer = 'person', personName, className }: TaskStatusLineProps) {
+const NO_NEWS_STATUS = new Set(['sent', 'received', 'reading']);
+
+/** A status in progress, once it is old: what is known (it started), never that it goes on ("Being read") */
+function oldStatusText (status: string | null | undefined, contact: boolean, name: string): string {
+  const s = status ?? 'sent';
+  if (contact && s === 'sent') return contactStatusText(null, name);
+  return tx(`status.noNews.${NO_NEWS_STATUS.has(s) ? s : 'unknown'}` as ConversationTextKey);
+}
+
+/**
+ * The state of the contact's work on one document. In progress, with `sinceS`: how long it has been, then that it has not
+ * started or that there is no news. The moving time is for the eye; a screen reader hears since when, once.
+ */
+export function TaskStatusLine ({ status, errorCode, counts, contactName, viewer = 'person', personName, sinceS, nowS, locale, className }: TaskStatusLineProps) {
   const contact = viewer === 'contact';
   const name = personNameOf({ personName });
+  const since = sinceS != null && (status == null || isInProgress(status)) ? sinceS : null;
+  const now = useNowS(since, nowS);
+  const state = since != null ? progressState(status, since, now) : 'working';
+  // a contact's app never says there is no news from itself
+  const key = contact ? 'contact.status.noNews' : state === 'not-started' ? 'status.notStarted' : 'status.noNews';
   return (
-    <p className={cx(small, className)} role='status'>
-      <span className='font-medium'>{contact ? contactStatusText(status, name) : statusText(status)}</span>
+    <p className={cx(small, className)} role='status' data-work-state={since != null ? state : undefined}>
+      <span className='font-medium'>{state !== 'working' ? oldStatusText(status, contact, name) : contact ? contactStatusText(status, name) : statusText(status)}</span>
+      {since != null && state === 'working' && <span className='tabular-nums' aria-hidden='true' data-working-counter=''> · {counterText(now - since)}</span>}
+      {since != null && state !== 'working' && (
+        <>
+          <span aria-hidden='true'> · {tx(`${key}For` as ConversationTextKey, { time: state === 'not-started' ? waitText(now - since) : durationText(now - since) })}</span>
+          <span className='sr-only'>, {tx(`${key}Since` as ConversationTextKey, { moment: momentText(since, now, locale) })}</span>
+          {!contact && <span className='mt-0.5 block'>{tx('status.kept')}</span>}
+        </>
+      )}
       {status === 'awaiting-answers' && counts != null && countsText(counts) !== '' && <> · {countsText(counts)}</>}
       {status === 'error' && <span className='mt-1 block text-red-700 dark:text-red-400'>{contact ? contactErrorText(errorCode, name) : errorText(errorCode, contactName)}</span>}
     </p>
