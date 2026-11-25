@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Texts for a dated grid (data-model 4.36.0, plan 128), en and fr:** the question `which-row-date` and her answer, the reason
+  `not-read`. Texts only: the question is not a step yet, and `rowBlock` does not read hds-lib `answeredDateOf` yet.
+
 ### Fixed
 
 - **A proposed cervical-fluid observation is said as it was read, with its frequency.** The line she confirms left it out

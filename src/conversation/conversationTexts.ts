@@ -156,6 +156,8 @@ export const CONVERSATION_TEXTS = {
   // questions
   'question.is-this-yours': { en: 'Is this document about you?', fr: 'Ce document vous concerne-t-il ?' },
   'question.which-date': { en: 'On which day was the sample taken?', fr: 'Quel jour le prélèvement a-t-il été fait ?' },
+  // a dated grid (4.36.0): the day of one box, asked with the box shown
+  'question.which-row-date': { en: 'Which day is the marked box? Give its year too.', fr: 'Quel jour est la case marquée ? Indiquez aussi l’année.' },
   'question.which-specimen': { en: 'Which sample was this measured in?', fr: 'Dans quel prélèvement cela a-t-il été mesuré ?' },
   'question.which-unit': { en: 'Which unit is this value in?', fr: 'Dans quelle unité est cette valeur ?' },
   'question.which-analyte': { en: 'Which test is this?', fr: 'De quel examen s’agit-il ?' },
@@ -226,6 +228,7 @@ export const CONVERSATION_TEXTS = {
   'reason.ambiguous-label': { en: 'Not saved: it is not clear which test this is.', fr: 'Non enregistré : on ne sait pas de quel examen il s’agit.' },
   'reason.qualitative-result': { en: 'Not saved: a result in words cannot be stored yet.', fr: 'Non enregistré : un résultat en mots ne peut pas encore être enregistré.' },
   'reason.derived-index': { en: 'Not saved: a computed index is not stored.', fr: 'Non enregistré : un indice calculé n’est pas enregistré.' },
+  'reason.not-read': { en: 'Not read: there is writing in this box. Look at it on your document.', fr: 'Non lu : quelque chose est écrit dans cette case. Regardez-la sur votre document.' },
   'reason.unknown': { en: 'Not saved.', fr: 'Non enregistré.' },
   // why a value cannot be confirmed now (rowBlock)
   'block.still-reading': { en: '{name} has not finished with this document yet.', fr: '{name} n’a pas encore terminé avec ce document.' },
@@ -252,6 +255,7 @@ export const CONVERSATION_TEXTS = {
   'answer.choose': { en: 'You answered: {option}', fr: 'Vous avez répondu : {option}' },
   'answer.confirmDate': { en: 'You gave the day of the sample', fr: 'Vous avez indiqué le jour du prélèvement' },
   'answer.dateUnknown': { en: 'You do not know the day of the sample', fr: 'Vous ne connaissez pas le jour du prélèvement' },
+  'answer.rowDate': { en: 'You gave the day of a box', fr: 'Vous avez indiqué le jour d’une case' },
   'answer.mine': { en: 'You said the document is yours', fr: 'Vous avez dit que le document est le vôtre' },
   'answer.mineAuto': { en: 'Matched to your profile', fr: 'Correspond à votre profil' },
   'answer.unknown': { en: 'You answered', fr: 'Vous avez répondu' },
@@ -268,6 +272,7 @@ export const CONVERSATION_TEXTS = {
   'contact.answer.choose': { en: '{name} answered: {option}', fr: '{name} a répondu : {option}' },
   'contact.answer.confirmDate': { en: '{name} gave the day of the sample', fr: '{name} a indiqué le jour du prélèvement' },
   'contact.answer.dateUnknown': { en: '{name} does not know the day of the sample', fr: '{name} ne connaît pas le jour du prélèvement' },
+  'contact.answer.rowDate': { en: '{name} gave the day of a box', fr: '{name} a indiqué le jour d’une case' },
   'contact.answer.mine': { en: '{name} said the document is theirs', fr: '{name} a dit que le document est le sien' },
   'contact.answer.mineAuto': { en: 'Matched to {name}’s profile', fr: 'Correspond au profil de {name}' },
   'contact.answer.unknown': { en: '{name} answered', fr: '{name} a répondu' },
