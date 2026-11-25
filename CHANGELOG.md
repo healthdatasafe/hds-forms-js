@@ -34,6 +34,8 @@
 
 ### Fixed
 
+- Her note on an answer is removed once the contact's `done` is later than it, also when the document is then read again or on
+  hold (hds-lib 2.69.0, the new peer floor: `latestDoneOf`). It waited for the next `done`.
 - `FormBuilder` and `QuestionnaireBuilder` keep the other languages of a text: an edit changes the language shown, as the
   host's own fields do. Before, an edit of a question or of a questionnaire's title was saved as English only and its
   other languages were lost, and a section's name was always shown and edited in English.
