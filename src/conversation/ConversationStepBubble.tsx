@@ -145,18 +145,7 @@ export function ConversationStepBubble ({
         {item != null && value != null && <p className='text-sm font-semibold'>{saveText(pv, item, value, 'step.save', 'step.saveOn')}</p>}
         {c.status === 'check' && <p className='text-xs font-medium text-amber-700 dark:text-amber-400'>{tx('step.check')}</p>}
         {isPartlyRead(c, conversation) && <p className='text-xs font-medium text-amber-700 dark:text-amber-400'>{tx('grid.partly')}</p>}
-        <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>
-          {docOpen ? tx('hideDocument') : tx('seeOnDocument')}
-        </button>
-        {docOpen && (
-          <AnchoredDocumentView
-            source={sourceOf(anchor?.attachmentId)}
-            anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : null}
-            label={lineText(c)}
-            loadPdfJs={loadPdfJs}
-            pdfOptions={pdfOptions}
-          />
-        )}
+        {/* her answer before her document: on a phone the picture takes the screen, and Confirm fell under it */}
         {correcting === step.key && c.proposal != null
           ? (
             <ValueCorrectionEditor
@@ -174,6 +163,18 @@ export function ConversationStepBubble ({
               <button type='button' className={btn.ghost} disabled={!can} onClick={() => { if (onLater != null) onLater(pv.candidateId); else run('s', () => actions.dismiss([pv.candidateId], 'skip', shownAt, noteArg)); }}>{tx('step.later')}</button>
             </div>
           )}
+        <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>
+          {docOpen ? tx('hideDocument') : tx('seeOnDocument')}
+        </button>
+        {docOpen && (
+          <AnchoredDocumentView
+            source={sourceOf(anchor?.attachmentId)}
+            anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : null}
+            label={lineText(c)}
+            loadPdfJs={loadPdfJs}
+            pdfOptions={pdfOptions}
+          />
+        )}
       </div>
     );
   } else if (step.kind === 'document') {
@@ -192,19 +193,6 @@ export function ConversationStepBubble ({
       <div className='space-y-2' data-proposed-document={pd.candidateId}>
         {c.status === 'check' && <p className='text-xs font-medium text-amber-700 dark:text-amber-400'>{tx('document.unsure')}</p>}
         {text != null && <p className='text-sm font-semibold'>{text}</p>}
-        {/* where the date is printed (its anchor), else the document from its first page */}
-        <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>
-          {docOpen ? tx('hideDocument') : anchor != null ? tx('seeOnDocument') : tx('seeDocument')}
-        </button>
-        {docOpen && (
-          <AnchoredDocumentView
-            source={sourceOf(anchor?.attachmentId)}
-            anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : { page: 1 }}
-            label={date ?? title}
-            loadPdfJs={loadPdfJs}
-            pdfOptions={pdfOptions}
-          />
-        )}
         {correcting === step.key && confirmDocument != null
           ? (
             <DocumentFieldsEditor
@@ -222,6 +210,19 @@ export function ConversationStepBubble ({
               {onLater != null && <button type='button' className={btn.ghost} disabled={!can} onClick={() => onLater(pd.candidateId)}>{tx('step.later')}</button>}
             </div>
           )}
+        {/* where the date is printed (its anchor), else the document from its first page */}
+        <button type='button' className={btn.link} aria-expanded={docOpen} onClick={() => setShowDoc(docOpen ? '' : step.key)}>
+          {docOpen ? tx('hideDocument') : anchor != null ? tx('seeOnDocument') : tx('seeDocument')}
+        </button>
+        {docOpen && (
+          <AnchoredDocumentView
+            source={sourceOf(anchor?.attachmentId)}
+            anchor={anchor != null ? { page: anchor.page, bbox: anchor.bbox } : { page: 1 }}
+            label={date ?? title}
+            loadPdfJs={loadPdfJs}
+            pdfOptions={pdfOptions}
+          />
+        )}
       </div>
     );
   } else if (step.kind === 'batch') {

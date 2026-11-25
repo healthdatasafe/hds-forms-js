@@ -108,22 +108,6 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
       {/* the contact read no name or birth date (CONVERSATION.md: then the question carries no identity): she checks on
           the document itself */}
       {question.code === 'is-this-yours' && identity == null && <p className={cx(small, 'mt-1')}>{tx('identityNotRead')}</p>}
-      {(question.code === 'is-this-yours' || ((dated || rowDate) && open)) && sourceOf != null && (
-        <>
-          <button type='button' className={btn.link} aria-expanded={showDoc} onClick={() => setShowDoc((s) => !s)}>
-            {showDoc ? tx('hideDocument') : shownOn != null ? tx('seeOnDocument') : tx('seeDocument')}
-          </button>
-          {showDoc && (
-            <AnchoredDocumentView
-              source={sourceOf(shownOn?.attachmentId)}
-              anchor={shownOn != null ? { page: shownOn.page, bbox: shownOn.bbox } : { page: 1 }}
-              label={rowDate ? tx('row-date.label') : dated ? (about != null ? lineText(about.item.content) : undefined) : tx('printedName')}
-              loadPdfJs={loadPdfJs}
-              pdfOptions={pdfOptions}
-            />
-          )}
-        </>
-      )}
 
       {question.answerable && matched && (
         <div className='mt-2 flex flex-wrap items-center gap-2'>
@@ -185,6 +169,24 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
           {changing && <button type='button' className={btn.ghost} onClick={() => setChanging(false)}>{tx('cancel')}</button>}
           {!changing && question.state !== 'skipped' && question.code !== 'is-this-yours' && (
             <button type='button' className={btn.ghost} disabled={!can} onClick={() => send({ action: 'skip' })}>{tx('skip')}</button>
+          )}
+        </div>
+      )}
+
+      {/* her answer before her document: on a phone the picture takes the screen, and the answer fell under it */}
+      {(question.code === 'is-this-yours' || ((dated || rowDate) && open)) && sourceOf != null && (
+        <div className='mt-2'>
+          <button type='button' className={btn.link} aria-expanded={showDoc} onClick={() => setShowDoc((s) => !s)}>
+            {showDoc ? tx('hideDocument') : shownOn != null ? tx('seeOnDocument') : tx('seeDocument')}
+          </button>
+          {showDoc && (
+            <AnchoredDocumentView
+              source={sourceOf(shownOn?.attachmentId)}
+              anchor={shownOn != null ? { page: shownOn.page, bbox: shownOn.bbox } : { page: 1 }}
+              label={rowDate ? tx('row-date.label') : dated ? (about != null ? lineText(about.item.content) : undefined) : tx('printedName')}
+              loadPdfJs={loadPdfJs}
+              pdfOptions={pdfOptions}
+            />
           )}
         </div>
       )}
