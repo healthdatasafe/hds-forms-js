@@ -2,12 +2,9 @@
 
 ## [Unreleased]
 
-### Changed
+## [0.48.0] - 2026-11-25
 
-- **"Since 14:30" is one text per language, with its article** (plan 138): `time.sinceTime`, `sinceTimeOne`, `sinceDay`,
-  `sinceDayVowel`, read into `{since}` of the conversation texts (Italian "dalle 14:30", Spanish "desde la 1:30"). English is
-  unchanged; French says "depuis le 23 novembre", for a screen reader (it left the article out). `sinceText` replaces
-  `momentText` (neither is exported).
+Needs hds-lib ≥ 2.69.0, data-model ≥ 4.33.0, as 0.47.0.
 
 ### Added
 
@@ -17,6 +14,10 @@
 
 ### Changed
 
+- **"Since 14:30" is one text per language, with its article** (plan 138): `time.sinceTime`, `sinceTimeOne`, `sinceDay`,
+  `sinceDayVowel`, read into `{since}` of the conversation texts (Italian "dalle 14:30", Spanish "desde la 1:30"). English is
+  unchanged; French says "depuis le 23 novembre", for a screen reader (it left the article out). `sinceText` replaces
+  `momentText` (neither is exported).
 - **The day beside a value**: `valueDayText` also says it for a value read from a picture, and for a value with no day of its
   own once she answered it (new optional argument: the conversation). "On {day}" replaces "sampled {day}", and the texts of
   the date answers no longer name a sample: the document may be a chart.
@@ -36,7 +37,6 @@
 - **A date question shows her document** ("See the document", as "Is this yours?"): the days may have been read from a
   picture she has not open. On the value's line when it is about one, else on the first page.
 - The same day printed under two roles no longer shares a React key.
-
 - **A proposed cervical-fluid observation is said as it was read, with its frequency.** The line she confirms left it out
   ("10KL — … (Creighton)", the same for X1, X2 or none), and showed the observation converted to the method she displays.
   `proposalText`: "10KL — Stretchy, clear, lubricative · X2 — seen twice (Creighton)".
