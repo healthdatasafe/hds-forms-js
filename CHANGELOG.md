@@ -1,6 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [0.49.0] - 2026-11-25
+
+Needs hds-lib ≥ 2.69.0, data-model ≥ 4.33.0, as 0.48.0 (the texts of a dated grid show with data-model 4.36.0 and hds-lib 2.70.0).
 
 ### Added
 
