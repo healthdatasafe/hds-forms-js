@@ -57,7 +57,7 @@ export function answerText (answer: ConversationItem, conv: DocumentConversation
 export function questionAnswerText (code: string, a: Record<string, any>, locale?: string, reader?: AnswerReader | null): string {
   if (a.action === 'not-mine') return at('answer.not-mine', {}, reader);
   if (code === 'is-this-yours') return a.basis === 'profile-match' ? at('answer.mineAuto', {}, reader) : at('answer.mine', {}, reader);
-  if (code === 'which-date' || code === 'which-document-date') {
+  if (code === 'which-date' || code === 'which-document-date' || code === 'which-row-date') {
     const ofDocument = code === 'which-document-date';
     if (a.timePrecision === 'unknown' || typeof a.time !== 'number') return at(ofDocument ? 'answer.documentDateUnknown' : 'answer.dateUnknown', {}, reader);
     return `${at(ofDocument ? 'answer.documentDate' : 'answer.confirmDate', {}, reader)}: ${dayText(new Date(a.time * 1000).toISOString().slice(0, 10), locale)}`;

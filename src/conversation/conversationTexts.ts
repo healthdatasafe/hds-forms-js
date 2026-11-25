@@ -165,6 +165,8 @@ export const CONVERSATION_TEXTS = {
   'picture.read': { en: '{n} results read on this picture. Compare with the page: a line may be missing.', fr: '{n} résultats lus sur cette image. Comparez avec la page : une ligne peut manquer.' },
   'which-date.whole': { en: 'This day is used for every value of the document that has no day of its own.', fr: 'Ce jour vaut pour toutes les valeurs du document qui n’ont pas leur propre jour.' },
   'question.which-date': { en: 'On which day was the sample taken?', fr: 'Quel jour le prélèvement a-t-il été fait ?' },
+  // a dated grid (4.36.0): the day of one box, asked with the box shown
+  'question.which-row-date': { en: 'Which day is the marked box? Give its year too.', fr: 'Quel jour est la case marquée ? Indiquez aussi l’année.' },
   'question.which-specimen': { en: 'Which sample was this measured in?', fr: 'Dans quel prélèvement cela a-t-il été mesuré ?' },
   'question.which-unit': { en: 'Which unit is this value in?', fr: 'Dans quelle unité est cette valeur ?' },
   'question.which-analyte': { en: 'Which test is this?', fr: 'De quel examen s’agit-il ?' },
@@ -235,6 +237,7 @@ export const CONVERSATION_TEXTS = {
   'reason.ambiguous-label': { en: 'Not saved: it is not clear which test this is.', fr: 'Non enregistré : on ne sait pas de quel examen il s’agit.' },
   'reason.qualitative-result': { en: 'Not saved: a result in words cannot be stored yet.', fr: 'Non enregistré : un résultat en mots ne peut pas encore être enregistré.' },
   'reason.derived-index': { en: 'Not saved: a computed index is not stored.', fr: 'Non enregistré : un indice calculé n’est pas enregistré.' },
+  'reason.not-read': { en: 'Not read: there is writing in this box. Look at it on your document.', fr: 'Non lu : quelque chose est écrit dans cette case. Regardez-la sur votre document.' },
   'reason.unknown': { en: 'Not saved.', fr: 'Non enregistré.' },
   // why a value cannot be confirmed now (rowBlock)
   'block.still-reading': { en: '{name} has not finished with this document yet.', fr: '{name} n’a pas encore terminé avec ce document.' },
