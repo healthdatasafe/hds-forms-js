@@ -45,9 +45,11 @@ export function isKnownMethod (methodId: string | undefined | null, methodIds: s
 /**
  * The method the field opens in. The person's preferred method wins over the method the value
  * was recorded in (`source.key`): opening a Mira observation must not switch a Creighton chart
- * to Mira (B-2026-10-26-10). The recorded method is used only when no preference is set.
+ * to Mira (B-2026-10-26-10). The recorded method is used only when no preference is set. The `fixed` method (the host's:
+ * a value corrected in the method it was read in) wins over both.
  */
-export function initialConvertibleMethod ({ preferred, sourceKey, methodIds }: { preferred?: string; sourceKey?: string; methodIds: string[] }): string {
+export function initialConvertibleMethod ({ fixed, preferred, sourceKey, methodIds }: { fixed?: string; preferred?: string; sourceKey?: string; methodIds: string[] }): string {
+  if (isKnownMethod(fixed, methodIds)) return fixed;
   if (isKnownMethod(preferred, methodIds)) return preferred;
   if (isKnownMethod(sourceKey, methodIds)) return sourceKey;
   return '';
