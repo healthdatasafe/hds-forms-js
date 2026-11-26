@@ -40,21 +40,22 @@ const radios = (c: HTMLElement, key: string) => [...c.querySelectorAll<HTMLInput
 const choiceTexts = (c: HTMLElement, key: string) => radios(c, key).map((r) => r.parentElement!.textContent);
 
 describe('HDSQuestionnaireForm texts', () => {
-  it('[QFL-1] shows the English defaults when no labels are given', async () => {
+  it('[QFL-1] shows the defaults in the current language when no labels are given (B-2026-11-24-9)', async () => {
     const c = await mount({ onSubmit: vi.fn() });
-    expect(choiceTexts(c, 'weight')).toEqual(['Yes', 'No', "I don't know", "I'd rather not say"]);
+    expect(choiceTexts(c, 'weight')).toEqual(['Oui', 'Non', 'Je ne sais pas', 'Je préfère ne pas répondre']);
     await act(async () => { radios(c, 'weight')[3].click(); });
-    expect(c.textContent).toContain(DEFAULT_QUESTIONNAIRE_LABELS.reason);
-    expect(c.querySelector<HTMLInputElement>('input[type="text"]')!.placeholder).toBe('e.g. privacy');
+    expect(c.textContent).toContain('Raison (facultatif)');
+    expect(c.textContent).not.toContain(DEFAULT_QUESTIONNAIRE_LABELS.reason);
+    expect(c.querySelector<HTMLInputElement>('input[type="text"]')!.placeholder).toBe('p. ex. confidentialité');
   });
 
-  it('[QFL-2] shows the labels it is given, and the English default for one left out', async () => {
+  it('[QFL-2] shows the labels it is given, and the default in the current language for one left out', async () => {
     const { reasonPlaceholder: _left, ...partial } = FR;
     const c = await mount({ onSubmit: vi.fn(), labels: partial });
     expect(choiceTexts(c, 'height')).toEqual(['Oui', 'Non', 'Je ne sais pas', 'Je préfère ne pas répondre']);
     await act(async () => { radios(c, 'height')[3].click(); });
     expect(c.textContent).toContain('Raison (facultatif)');
-    expect(c.querySelector<HTMLInputElement>('input[type="text"]')!.placeholder).toBe('e.g. privacy');
+    expect(c.querySelector<HTMLInputElement>('input[type="text"]')!.placeholder).toBe('p. ex. confidentialité');
   });
 });
 

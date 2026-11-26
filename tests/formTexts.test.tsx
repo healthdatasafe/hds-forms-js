@@ -54,7 +54,7 @@ describe('form texts (B-2026-11-20-8)', () => {
       root!.render(<ReminderEditor defaultReminder={{ cooldown: 'P1D', importance: 'should' }} override={undefined} onChange={() => {}} />);
     });
     expect(container.textContent).toContain('Rappel :');
-    expect(container.textContent).toContain('délai minimal : P1D, recommandé');
+    expect(container.textContent).toContain('délai minimal : 1 jour, recommandé');
     const options = [...container.querySelectorAll('option')].map((o) => o.textContent);
     expect(options).toContain('par défaut (recommandé)');
     expect(options).toContain('8 heures');

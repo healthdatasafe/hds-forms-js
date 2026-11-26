@@ -35,11 +35,20 @@ function importanceWord (importance: string): string {
   return text ? l(text) : importance;
 }
 
-const durationOptions = () => (
+/** A duration of the list in words; another one (e.g. P10D from the data model) as it is written */
+function durationLabel (duration: string): string {
+  return (DURATIONS as readonly string[]).includes(duration) ? l(T[`duration.${duration as typeof DURATIONS[number]}`]) : duration;
+}
+
+/** The list, plus the current value when it is not in it, so the select shows what is set */
+const durationOptions = (current?: string) => (
   <>
     <option value=''>—</option>
+    {current && !(DURATIONS as readonly string[]).includes(current) && (
+      <option value={current}>{current}</option>
+    )}
     {DURATIONS.map(d => (
-      <option key={d} value={d}>{l(T[`duration.${d}`])}</option>
+      <option key={d} value={d}>{durationLabel(d)}</option>
     ))}
   </>
 );
@@ -55,16 +64,17 @@ function detectType (config: Partial<ReminderEditorConfig> | null | undefined): 
   return 'none';
 }
 
-function describeDefault (config: ReminderEditorConfig | null): string {
+function describeDefault (config: ReminderEditorConfig | null, itemLabel: (key: string) => string): string {
   if (!config) return 'none';
   const parts: string[] = [];
-  if (config.cooldown) parts.push(fill(l(T.describeCooldown), { value: config.cooldown }));
+  if (config.cooldown) parts.push(fill(l(T.describeCooldown), { value: durationLabel(config.cooldown) }));
   if (config.expectedInterval) {
     const { min, max } = config.expectedInterval;
-    parts.push(fill(l(T.describeInterval), { min: min || '?', max: max || '?' }));
+    parts.push(fill(l(T.describeInterval), { min: min ? durationLabel(min) : '?', max: max ? durationLabel(max) : '?' }));
   }
   if (config.relativeTo) {
-    parts.push(fill(l(T.describeRelative), { item: config.relativeTo, days: String(config.relativeDays?.join(', ')) }));
+    const days = config.relativeDays?.length ? config.relativeDays.join(', ') : '—';
+    parts.push(fill(l(T.describeRelative), { item: itemLabel(config.relativeTo), days }));
   }
   if (config.importance) parts.push(importanceWord(config.importance));
   return parts.join(', ') || l(T.describeNoTiming);
@@ -76,6 +86,7 @@ const labelClass = 'text-gray-500 dark:text-gray-400';
 
 export function ReminderEditor ({ defaultReminder, override, onChange, availableItemKeys }: ReminderEditorProps) {
   const effective = override || defaultReminder;
+  const itemLabel = (key: string) => availableItemKeys?.find(i => i.key === key)?.label || key;
   const [enabled, setEnabled] = useState(
     override?.enabled === false ? false : (override != null || defaultReminder != null)
   );
@@ -143,8 +154,8 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
     <div className='mt-1 space-y-1'>
       <div className='flex items-center gap-2'>
         <label className='text-gray-600 dark:text-gray-400'>{l(T.reminder)}</label>
-        <span className='text-gray-400 dark:text-gray-500' title={defaultReminder ? describeDefault(defaultReminder) : undefined}>
-          {defaultReminder ? describeDefault(defaultReminder) : l(T.noneInModel)}
+        <span className='text-gray-400 dark:text-gray-500' title={defaultReminder ? describeDefault(defaultReminder, itemLabel) : undefined}>
+          {defaultReminder ? describeDefault(defaultReminder, itemLabel) : l(T.noneInModel)}
         </span>
         <input
           type='checkbox'
@@ -191,7 +202,7 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
                 onChange={e => update({ cooldown: e.target.value || undefined })}
                 className={selectClass}
               >
-                {durationOptions()}
+                {durationOptions(effective?.cooldown)}
               </select>
             </div>
           )}
@@ -205,7 +216,7 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
                   onChange={e => updateInterval('min', e.target.value)}
                   className={selectClass}
                 >
-                  {durationOptions()}
+                  {durationOptions(effective?.expectedInterval?.min)}
                 </select>
               </div>
               <div className='flex items-center gap-1'>
@@ -215,7 +226,7 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
                   onChange={e => updateInterval('max', e.target.value)}
                   className={selectClass}
                 >
-                  {durationOptions()}
+                  {durationOptions(effective?.expectedInterval?.max)}
                 </select>
               </div>
               <div className='flex items-center gap-1'>
@@ -225,7 +236,7 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
                   onChange={e => update({ cooldown: e.target.value || undefined })}
                   className={selectClass}
                 >
-                  {durationOptions()}
+                  {durationOptions(effective?.cooldown)}
                 </select>
               </div>
             </div>
@@ -235,7 +246,19 @@ export function ReminderEditor ({ defaultReminder, override, onChange, available
             <div className='flex flex-wrap items-center gap-3'>
               <div className='flex items-center gap-1'>
                 <label className={labelClass}>{l(T.relativeTo)}</label>
-                <span className='text-xs text-gray-700 dark:text-gray-300'>{effective?.relativeTo || '—'}</span>
+                <select
+                  value={effective?.relativeTo || ''}
+                  onChange={e => update({ relativeTo: e.target.value || undefined })}
+                  className={selectClass}
+                >
+                  <option value=''>—</option>
+                  {effective?.relativeTo && !availableItemKeys?.some(i => i.key === effective.relativeTo) && (
+                    <option value={effective.relativeTo}>{effective.relativeTo}</option>
+                  )}
+                  {(availableItemKeys || []).map(i => (
+                    <option key={i.key} value={i.key}>{i.label}</option>
+                  ))}
+                </select>
               </div>
               <div className='flex items-center gap-1'>
                 <label className={labelClass}>{l(T.days)}</label>

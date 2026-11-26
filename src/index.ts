@@ -4,7 +4,7 @@ export type { FieldLabelOverrides } from './components/HDSFormField';
 export { HDSFormSection } from './components/HDSFormSection';
 export type { ItemCustomization } from './components/HDSFormSection';
 export { HDSQuestionnaireForm } from './components/HDSQuestionnaireForm';
-export { DEFAULT_QUESTIONNAIRE_LABELS } from './components/questionnaireLabels';
+export { DEFAULT_QUESTIONNAIRE_LABELS, QUESTIONNAIRE_FORM_TEXTS, questionnaireFormLabels } from './components/questionnaireLabels';
 export type { QuestionnaireFormLabels } from './components/questionnaireLabels';
 export { QuestionnaireBuilder } from './components/QuestionnaireBuilder';
 export type { QuestionnaireBuilderProps, QuestionnaireBuilderLabels } from './components/QuestionnaireBuilder';
@@ -31,7 +31,7 @@ export type {
 } from './questionnaire/submit';
 export { EntryList } from './components/EntryList';
 export { ConsentPanel } from './components/ConsentPanel';
-export { DEFAULT_CONSENT_LABELS } from './components/consentLabels';
+export { DEFAULT_CONSENT_LABELS, CONSENT_TEXTS, consentLabels } from './components/consentLabels';
 export type { ConsentPanelProps, ConsentPanelLabels, ConsentPermission, ConsentPermissionLevel } from './components/ConsentPanel';
 export { ReminderEditor } from './components/ReminderEditor';
 export type { ReminderEditorConfig } from './components/ReminderEditor';

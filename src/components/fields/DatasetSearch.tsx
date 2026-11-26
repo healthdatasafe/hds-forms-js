@@ -584,7 +584,7 @@ export function DatasetSearch ({ label, description, value, onChange, required, 
                         onClick={handleFreeText}
                         className='block w-full px-3 py-2 text-left text-sm text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-600'
                       >
-                        {(l(T.useTyped) || '').replace('{text}', trimmedQuery)}
+                        {(l(T.useTyped) || '').replace('{text}', () => trimmedQuery)}
                       </button>
                       )
                     : (
