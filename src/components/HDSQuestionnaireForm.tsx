@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { localizeText, appTemplates } from 'hds-lib';
 import { FORM_TEXTS } from './formTexts';
-import { DEFAULT_QUESTIONNAIRE_LABELS } from './questionnaireLabels';
+import { questionnaireFormLabels } from './questionnaireLabels';
 import type { QuestionnaireFormLabels } from './questionnaireLabels';
 
 type QuestionDef = appTemplates.QuestionDef;
@@ -68,7 +68,7 @@ export function HDSQuestionnaireForm ({
   labels
 }: HDSQuestionnaireFormProps) {
   const [answers, setAnswers] = useState<Record<string, AnswerEntry>>(initialAnswers || {});
-  const texts: QuestionnaireFormLabels = { ...DEFAULT_QUESTIONNAIRE_LABELS, ...labels };
+  const texts: QuestionnaireFormLabels = { ...questionnaireFormLabels(), ...labels };
 
   useEffect(() => {
     if (initialAnswers) setAnswers(initialAnswers);

@@ -86,6 +86,7 @@ export const QUESTIONNAIRE_BUILDER_TEXTS = {
   remove: { en: 'Remove', fr: 'Retirer', es: 'Quitar', it: 'Rimuovi', 'pt-BR': 'Remover' },
   invalidKey: { en: 'Key must match [a-zA-Z0-9_-]+', fr: 'La clé doit correspondre à [a-zA-Z0-9_-]+', es: 'La clave debe corresponder a [a-zA-Z0-9_-]+', it: 'La chiave deve corrispondere a [a-zA-Z0-9_-]+', 'pt-BR': 'A chave deve corresponder a [a-zA-Z0-9_-]+' },
   invalidItemRef: { en: 'Pick an item from the list', fr: 'Choisissez un élément dans la liste', es: 'Elija un elemento de la lista', it: 'Scelga un elemento dall’elenco', 'pt-BR': 'Escolha um item da lista' },
+  duplicateKey: { en: 'A question already has this key', fr: 'Une question a déjà cette clé', es: 'Ya hay una pregunta con esta clave', it: 'Una domanda ha già questa chiave', 'pt-BR': 'Já existe uma pergunta com esta chave' },
 
   noLabel: { en: '(no label)', fr: '(sans libellé)', es: '(sin etiqueta)', it: '(senza etichetta)', 'pt-BR': '(sem rótulo)' },
   scopeEver: { en: 'Ever (lifetime)', fr: 'Depuis toujours (toute la vie)', es: 'Alguna vez (toda la vida)', it: 'In tutta la vita', 'pt-BR': 'Alguma vez (toda a vida)' },

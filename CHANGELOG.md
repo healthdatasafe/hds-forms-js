@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.54.0] - 2026-11-26
+
+Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0, as 0.50.0.
+
+### Changed
+
+- **`ConsentPanel` and `HDSQuestionnaireForm` show their default texts in the current language** (English, French,
+  Spanish, Italian, Brazilian Portuguese), labels a host does not pass included (hds-webapp passes neither `required`,
+  `expiresAfter`, `mismatchWarning`, `accepting` nor `refusing`). New exports `CONSENT_TEXTS` / `consentLabels()` and
+  `QUESTIONNAIRE_FORM_TEXTS` / `questionnaireFormLabels()`; `DEFAULT_CONSENT_LABELS` and `DEFAULT_QUESTIONNAIRE_LABELS`
+  stay English.
+
+### Fixed
+
+- `ReminderEditor`: "Relative to" is a picker of the form's other items (it showed the key only); the data model's
+  default reads its durations in words and its item by label, with no "[undefined]" when it has no days; a duration not
+  in the list (`P10D`) is selected and shown instead of "—".
+- `QuestionnaireBuilder`: a question key already used is refused in the builder's language; hds-lib's English message
+  goes to the console only.
+- `DatasetSearch`: "Use …" shows typed text holding `$&` or `$1` as typed.
+
 ## [0.53.0] - 2026-11-26
 
 Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0, as 0.50.0.

@@ -62,6 +62,7 @@ export interface QuestionnaireBuilderLabels {
   remove: string;
   invalidKey: string;
   invalidItemRef: string;
+  duplicateKey: string;
 }
 
 const MEDICATION_ITEM_PREFIX = 'medication-';
@@ -124,6 +125,10 @@ export function QuestionnaireBuilder ({
       setKeyError(lb.invalidKey);
       return;
     }
+    if (questionnaire.getQuestion(key) != null) {
+      setKeyError(lb.duplicateKey);
+      return;
+    }
     try {
       // Stub a minimal valid question — user fills item + scope after creation.
       const firstItem = allItemDefs[0];
@@ -141,7 +146,9 @@ export function QuestionnaireBuilder ({
       setEditingKey(key);
       refresh();
     } catch (e) {
-      setKeyError((e as Error).message);
+      // hds-lib's message is English and for developers: logged, the person gets the rule in her language
+      console.warn(`Question '${key}' could not be added:`, e);
+      setKeyError(lb.invalidKey);
     }
   }
 

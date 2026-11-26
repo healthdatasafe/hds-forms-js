@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { DEFAULT_CONSENT_LABELS } from './consentLabels';
+import { consentLabels } from './consentLabels';
 
 /**
  * ConsentPanel — the one "this app wants these permissions, allow?" body that
@@ -141,7 +141,7 @@ export function ConsentPanel ({
   const acceptSelection = (): void => {
     onAccept(selectable ? permissions.filter((p) => granted.has(permissionId(p))) : undefined);
   };
-  const lb: ConsentPanelLabels = { ...DEFAULT_CONSENT_LABELS, ...labels };
+  const lb: ConsentPanelLabels = { ...consentLabels(), ...labels };
   const isBusy = !!busy;
   const levelLabel = (level: ConsentPermissionLevel): string =>
     level === 'manage' ? lb.levelManage : level === 'contribute' ? lb.levelContribute : lb.levelRead;
