@@ -23,7 +23,7 @@ the item's kind and code, never on an app code.
 | 0.39.0, 0.40.0 | ≥ 2.63.0 | ≥ 4.26.0 |
 | 0.41.0 to 0.46.1 | ≥ 2.63.0 | ≥ 4.27.0 |
 | 0.47.0 to 0.49.0 | ≥ 2.69.0 | ≥ 4.33.0 |
-| 0.50.0 to 0.54.0 | ≥ 2.70.0 | ≥ 4.36.0 |
+| 0.50.0 to 0.54.1 | ≥ 2.70.0 | ≥ 4.36.0 |
 
 The components are **presentational**: they take hds-lib `cmcConversation` views and callbacks, and do no I/O. All the
 I/O sits in **one hook**, `useDocumentConversations` (§ 5), which reads every relationship's conversation and answers it
@@ -41,7 +41,7 @@ installs them and the library uses that one copy. Pin `hds-lib` at or above the 
 minimum in place of an older tag of the same repo, silently).
 
 ```json
-"hds-forms-js": "github:healthdatasafe/hds-forms-js#0.54.0",
+"hds-forms-js": "github:healthdatasafe/hds-forms-js#0.54.1",
 "hds-lib": "github:healthdatasafe/hds-lib-js#2.70.0",
 "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.13.1",
 "pdfjs-dist": "6.4.299"

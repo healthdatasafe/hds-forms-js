@@ -191,6 +191,26 @@ describe('MethodNotationPicker', () => {
     expect(el.querySelector('[data-hds-notation-record]')!.textContent).toContain('L 10 AD');
   });
 
+  it('[MNP-REC] a stored record the picker does not offer (H with a mucus code) is shown as recorded, nothing picked (B-2026-11-23-10)', async () => {
+    settings[CERVICAL_FLUID_METHOD_KEY] = 'creighton';
+    const values = { [MUCUS]: { vectors: {}, source: { key: 'creighton', sourceData: '6C', annotations: { frequency: 'AD' } } }, [BLEEDING]: 0.75 };
+    const calls: any[] = [];
+    const el = await mount(<Star itemKeys={[MUCUS, BLEEDING]} values={values} onChange={(p, s) => calls.push([p, s])} />);
+    expect(el.querySelector('[data-hds-notation-recorded]')!.getAttribute('data-hds-notation-recorded')).toBe('H 6C AD');
+    expect(el.textContent).toContain('Recorded as: H 6C AD');
+    expect(button(el, 'bleeding', 'H').getAttribute('aria-pressed')).not.toBe('true');
+    expect(calls).toEqual([]);
+    await tap(el, 'bleeding', 'L');
+    expect(el.querySelector('[data-hds-notation-recorded]')).toBeNull();
+  });
+
+  it('a stored record that is offered shows no "recorded as" line', async () => {
+    settings[CERVICAL_FLUID_METHOD_KEY] = 'creighton';
+    const values = { [MUCUS]: { vectors: {}, source: { key: 'creighton', sourceData: '6C', annotations: { frequency: 'AD' } } }, [BLEEDING]: 0.35 };
+    const el = await mount(<Star itemKeys={[MUCUS, BLEEDING]} values={values} onChange={() => {}} />);
+    expect(el.querySelector('[data-hds-notation-recorded]')).toBeNull();
+  });
+
   it('a stored record without frequency (before plan 131) opens incomplete: the frequency is asked', async () => {
     settings[CERVICAL_FLUID_METHOD_KEY] = 'creighton';
     const values = { [MUCUS]: { vectors: {}, source: { key: 'creighton', sourceData: '6C' } } };

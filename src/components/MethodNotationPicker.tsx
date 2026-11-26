@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getHDSModel } from 'hds-lib';
+import { getHDSModel, localizeText } from 'hds-lib';
+import { FORM_TEXTS } from './formTexts';
 import { registry, bleedingBandOf } from 'hds-feminine-cycle-ui';
 import { NotationPicker } from './NotationPicker';
 import { canonicalObservation } from '../schema/convertibleMethod';
@@ -66,11 +67,18 @@ export function MethodNotationPicker ({ notation, values, onChange, dayContext, 
 
   const [selection, setSelection] = useState<Selection | null>(null);
   const [annotations, setAnnotations] = useState<AnnotationPicks>({});
+  // A stored record the picker does not offer (B-2026-11-23-10: H or M bleeding with a mucus code, saved before the
+  // picker): shown as recorded, nothing picked, so she sees it and picks again.
+  const [recorded, setRecorded] = useState<string | null>(null);
   useEffect(() => {
     if (selection != null || !model || !seed) return;
     const c = candidateOf(model, seed.mucus, seed.bleeding);
     setSelection(c ? selectionOf(c, model.rows) : {});
     if (c?.payload.mucus != null && model.mucusItemKey) setAnnotations(storedAnnotations(model, values[model.mucusItemKey]));
+    if (!c && (seed.mucus != null || seed.bleeding != null)) {
+      const stored = seed.mucus != null && model.mucusItemKey ? storedAnnotations(model, values[model.mucusItemKey]) : {};
+      setRecorded([seed.bleeding, seed.mucus, ...model.annotations.map(a => stored[a.id])].filter(Boolean).join(' '));
+    }
   }, [model, seed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const seq = useRef(0);
@@ -102,7 +110,7 @@ export function MethodNotationPicker ({ notation, values, onChange, dayContext, 
   }
 
   if (!model || selection == null) return null;
-  return (
+  const picker = (
     <NotationPicker
       model={model}
       selection={selection}
@@ -111,5 +119,14 @@ export function MethodNotationPicker ({ notation, values, onChange, dayContext, 
       onAnnotationsChange={a => pick(selection, a)}
       disabled={disabled}
     />
+  );
+  if (!recorded || Object.keys(selection).length > 0) return picker;
+  return (
+    <>
+      <p data-hds-notation-recorded={recorded} className='mb-2 text-sm text-gray-700 dark:text-gray-300'>
+        {localizeText(FORM_TEXTS.recordedAs)}: <span className='font-medium'>{recorded}</span>
+      </p>
+      {picker}
+    </>
   );
 }
