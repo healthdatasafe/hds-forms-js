@@ -70,7 +70,10 @@ function birthText (identity: { birthDate?: unknown; birthDay?: unknown }, local
 export function QuestionCard ({ question, about, contactName, sourceOf, busy = false, canUndoMatch = false, canChangeDay = false, onAnswer, locale, loadPdfJs, pdfOptions, className, variant = 'panel' }: QuestionCardProps) {
   const c = question.item.content;
   // no name or birth date read: the document's header block (`context.anchor`) is what she answers on, shown at once
-  const rowDate = question.code === 'which-row-date';
+  // (a `which-column-date`, 4.39.0, is answered the same way: she types the day printed above the marked column)
+  const columnDate = question.code === 'which-column-date';
+  const rowDate = question.code === 'which-row-date' || columnDate;
+  const dayLabel = columnDate ? 'column-date.label' : 'row-date.label';
   // (and the box of a `which-row-date`: its day is written there)
   const [showDoc, setShowDoc] = useState(((question.code === 'is-this-yours' && c.context?.identity == null) || rowDate) && question.state !== 'answered');
   const [changing, setChanging] = useState(false);
@@ -149,7 +152,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
           )}
           {rowDate && (
             <span className='inline-flex flex-wrap items-center gap-2'>
-              <label htmlFor={dayId} className='sr-only'>{tx('row-date.label')}</label>
+              <label htmlFor={dayId} className='sr-only'>{tx(dayLabel)}</label>
               <input id={dayId} type='date' value={otherDay} max={today()} onChange={(e) => setOtherDay(e.target.value)} className='h-11 rounded-md border border-gray-300 bg-white px-2 text-sm dark:border-gray-600 dark:bg-gray-800' />
               <button type='button' className={btn.primary} disabled={!can || !isRowDay(otherDay)} onClick={() => { setChanging(false); send({ action: 'confirm', time: dayToTime(otherDay), timePrecision: 'day' }); }}>{tx('save')}</button>
             </span>
@@ -183,7 +186,7 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
             <AnchoredDocumentView
               source={sourceOf(shownOn?.attachmentId)}
               anchor={shownOn != null ? { page: shownOn.page, bbox: shownOn.bbox } : { page: 1 }}
-              label={rowDate ? tx('row-date.label') : dated ? (about != null ? lineText(about.item.content) : undefined) : tx('printedName')}
+              label={rowDate ? tx(dayLabel) : dated ? (about != null ? lineText(about.item.content) : undefined) : tx('printedName')}
               loadPdfJs={loadPdfJs}
               pdfOptions={pdfOptions}
             />

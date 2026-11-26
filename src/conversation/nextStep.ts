@@ -116,7 +116,8 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
   const documentDate = conv.questions.find((q) => q.code === 'which-date' && q.item.content.candidateId == null && openQuestion(q, includeSkipped));
   if (documentDate != null) return question(documentDate);
   // a dated grid (4.36.0): the day of a box of each row, top to bottom; the contact proposes the row's values after it
-  const rowDates = conv.questions.filter((q) => q.code === 'which-row-date' && openQuestion(q, includeSkipped)).sort((x, y) => byPlace(x.item, y.item));
+  // a table read per column on a picture (4.39.0): the day of each column, left to right, the same way
+  const rowDates = conv.questions.filter((q) => (q.code === 'which-row-date' || q.code === 'which-column-date') && openQuestion(q, includeSkipped)).sort((x, y) => byPlace(x.item, y.item));
   if (rowDates.length > 0) return question(rowDates[0]);
   const aboutValues = conv.questions.filter((q) => q.item.content.candidateId != null && !DOCUMENT_CODES.has(q.code) && openQuestion(q, includeSkipped));
   if (aboutValues.length > 0) {
