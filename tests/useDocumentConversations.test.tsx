@@ -8,7 +8,7 @@ import type { ConversationRel, DocumentConversationsState } from '../src/convers
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 /** R11: which documents a contact may talk about; hds-lib's real `readsDocument` and `conversationOf`, the reads faked */
-const lib = vi.hoisted(() => ({ alerts: [] as any[], items: [] as any[], removeNotes: vi.fn(async () => []), accept: vi.fn() }));
+const lib = vi.hoisted(() => ({ alerts: [] as any[], items: [] as any[], removeNotes: vi.fn(async () => []), accept: vi.fn(), acceptDocument: vi.fn() }));
 vi.mock('hds-lib', async (importOriginal) => {
   const real: any = await importOriginal();
   return {
@@ -20,7 +20,8 @@ vi.mock('hds-lib', async (importOriginal) => {
       conversationStreamsFor: async () => ({ received: 'conv-aaaaaaaaaaaa', sent: 'conv-bbbbbbbbbbbb' }),
       listConversationItems: async () => lib.items,
       removeNotes: lib.removeNotes,
-      acceptProposedValues: lib.accept
+      acceptProposedValues: lib.accept,
+      acceptProposedDocument: lib.acceptDocument
     }
   };
 });
@@ -111,6 +112,23 @@ describe('useDocumentConversations: the documents a contact may talk about (R11)
     lib.items = [{ ...question, id: 'p1', kind: 'proposed-document', content: { kind: 'proposed-document', about: DOC, candidateId: 'd1', document: { time: 1773316800, kind: 'laboratory-report' }, status: 'clear' } }];
     await act(async () => { state.reload(); });
     expect(state.documents[0].document).toEqual(one.event);
+  });
+});
+
+describe('useDocumentConversations: a proposed document', () => {
+  it('[FOC6] filed only with what she was told, beside her correction and her note', async () => {
+    lib.items = [{ ...question, id: 'p1', kind: 'proposed-document', content: { kind: 'proposed-document', about: DOC, candidateId: 'd1', proposal: { documentKind: 'laboratory-report' }, status: 'clear' } }];
+    await read([{ streamId: SHARE, level: 'read' }]);
+    lib.acceptDocument.mockResolvedValue({ applied: ['kind'], filed: null });
+    const { confirmDocument } = state.documents[0].actions;
+    const told = { place: 'documents-clinical', label: 'Clinical documents', gains: [], loses: [], complete: true };
+    const calls = () => lib.acceptDocument.mock.calls.map((c: any[]) => c[2]);
+    await act(async () => { expect((await confirmDocument!('d1', undefined, 100)).ok).toBe(true); });
+    await act(async () => { await confirmDocument!('d1', { documentKind: 'other' }, 100, 'a note', told); });
+    expect(calls()).toEqual([
+      { about: DOC, candidateId: 'd1', shownAt: 100 },
+      { about: DOC, candidateId: 'd1', correction: { documentKind: 'other' }, shownAt: 100, note: 'a note', file: true }
+    ]);
   });
 });
 

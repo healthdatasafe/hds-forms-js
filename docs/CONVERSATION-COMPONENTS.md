@@ -23,7 +23,7 @@ the item's kind and code, never on an app code.
 | 0.39.0, 0.40.0 | ≥ 2.63.0 | ≥ 4.26.0 |
 | 0.41.0 to 0.46.1 | ≥ 2.63.0 | ≥ 4.27.0 |
 | 0.47.0 to 0.49.0 | ≥ 2.69.0 | ≥ 4.33.0 |
-| 0.50.0 to 0.52.0 | ≥ 2.70.0 | ≥ 4.36.0 |
+| 0.50.0 to 0.53.0 | ≥ 2.70.0 | ≥ 4.36.0 |
 
 The components are **presentational**: they take hds-lib `cmcConversation` views and callbacks, and do no I/O. All the
 I/O sits in **one hook**, `useDocumentConversations` (§ 5), which reads every relationship's conversation and answers it
@@ -41,7 +41,7 @@ installs them and the library uses that one copy. Pin `hds-lib` at or above the 
 minimum in place of an older tag of the same repo, silently).
 
 ```json
-"hds-forms-js": "github:healthdatasafe/hds-forms-js#0.52.0",
+"hds-forms-js": "github:healthdatasafe/hds-forms-js#0.53.0",
 "hds-lib": "github:healthdatasafe/hds-lib-js#2.70.0",
 "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.13.1",
 "pdfjs-dist": "6.4.299"
@@ -172,7 +172,17 @@ import: hds-webapp's `ImportPopup pendingFields`). The contact proposes both; `n
 `check`: "I am not sure of the date." and the document on its anchor). Confirm → `actions.confirmDocument(candidateId,
 undefined, shownAt)`; Change → `DocumentFieldsEditor` → `confirmDocument(candidateId, { documentKind?, time?,
 timePrecision? }, shownAt)` (only what she changed); Later writes nothing. A host reads her documents again after an
-answer with `applied`. Document kinds come from the pack (`documentKindLabel`, `documentKindOptions`).
+answer with `applied`. Document kinds come from the pack (`documentKindLabel`, `documentKindOptions`). A field the
+proposal does not have is her answer to the question about it: said and confirmed with the rest.
+
+**Filing it too (data-model 4.35.0, DOCUMENTS.md § Filing).** Confirming a kind files nothing, unless the step says where
+the document goes and who newly sees it. Give `filingOf(documentKind)`: a `StepFiling` (`place`, `label`, `gains`, `loses`,
+`complete`), or null when filing is not offered (no stream for that kind, a document she filed already or its sender can
+still change, someone else managing the account). The step then shows a tick, off by default as soon as someone gains or
+loses the document or when not all its readers are known. What she ticked comes back as the last argument of
+`confirmDocument`. A host reads the document and the grants again before it writes, answers
+`{ ok: false, reason: 'changed-since-shown' }` when they changed, and says whether the document was filed (hds-lib files
+as best it can, after the kind).
 
 ### Her note (`answer.note`, at most `NOTE_MAX_LENGTH` characters)
 
@@ -242,7 +252,7 @@ An option the version cannot label is shown, not selectable. Every choice questi
 ### `DocumentFieldsEditor`
 
 The document's kind (the pack's `documentKinds`) and date with its precision, prefilled with the proposal; returns
-only what she changed, for `confirmDocument`.
+only what she changed, for `confirmDocument`, and what she ticked about filing (`filingOf`).
 
 ### `ValueCorrectionEditor`
 
@@ -370,6 +380,7 @@ The contract's rules (CONVERSATION.md § Rules) that a host can break by how it 
   and resolve anchors through `anchorOn` / `sourceOf` on her own files only.
 - **R6 and R12, nothing from alert words.** Show notices and errors only through `NoticeBubble` / `TaskStatusLine`
   (fixed texts by code); never render a contact's text from an alert.
+- **Filing is hers.** Never give `confirmDocument` a `filing` she did not tick, or one that says less than the grants do.
 - **R10, retention.** Do not treat a deleted question or value as unanswered: her answers keep what they answered.
 
 ## 7. Theming, texts, fallbacks

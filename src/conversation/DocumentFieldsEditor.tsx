@@ -1,6 +1,8 @@
 import { useId, useState } from 'react';
-import type { DocumentFields } from './conversationRun';
+import type { DocumentFields, StepFiling } from './conversationRun';
 import { dayToTime, documentKindOptions, tx } from './labels';
+import { StepFilingChoice } from './StepFilingChoice';
+import { useStepFiling, type StepFilingTick } from './useStepFiling';
 import { btn } from './ui';
 
 export interface DocumentFieldsEditorProps {
@@ -9,8 +11,12 @@ export interface DocumentFieldsEditorProps {
   /** The contact's proposal (`proposed-document.proposal`), as the starting values */
   proposal?: { documentKind?: string; time?: number; timePrecision?: string } | null;
   busy?: boolean;
-  /** Only what she changed (hds-lib `DocumentFields`): a kind key, a day, or `timePrecision: 'unknown'` */
-  onSubmit: (correction: DocumentFields) => void;
+  /** What filing it under a kind would do (`ConversationStepBubble`); null: not offered for that kind */
+  filingOf?: (documentKind: string) => StepFiling | null;
+  /** The step's own tick and its key (`ConversationStepBubble`): what she chose on the step holds here too, for the same place and readers */
+  filingTick?: { stepKey: string; tick: [StepFilingTick, (tick: StepFilingTick) => void] };
+  /** Only what she changed (hds-lib `DocumentFields`): a kind key, a day, or `timePrecision: 'unknown'`; `filing` when she ticked it */
+  onSubmit: (correction: DocumentFields, filing?: StepFiling) => void;
   onCancel: () => void;
 }
 
@@ -20,7 +26,7 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
  * Her own date and kind for a document, instead of the contact's proposal: the pack's kinds (not deprecated), a day, or
  * "I do not know the date". Only the fields still waiting on the document are offered; only what she changed is sent.
  */
-export function DocumentFieldsEditor ({ pending, proposal, busy = false, onSubmit, onCancel }: DocumentFieldsEditorProps) {
+export function DocumentFieldsEditor ({ pending, proposal, busy = false, filingOf, filingTick, onSubmit, onCancel }: DocumentFieldsEditorProps) {
   const kindId = useId();
   const dayId = useId();
   const initialDay = typeof proposal?.time === 'number' && proposal.timePrecision === 'day' ? new Date(proposal.time * 1000).toISOString().slice(0, 10) : '';
@@ -35,6 +41,8 @@ export function DocumentFieldsEditor ({ pending, proposal, busy = false, onSubmi
     else if (DAY.test(day) && day !== initialDay) { correction.time = dayToTime(day); correction.timePrecision = 'day'; }
   }
   const changed = Object.keys(correction).length > 0;
+  const filing = pending.includes('kind') && kind !== '' ? filingOf?.(kind) ?? null : null;
+  const file = useStepFiling(filingTick?.stepKey ?? 'editor', filing, filingTick?.tick);
   return (
     <div className='space-y-2' data-document-fields-editor=''>
       {pending.includes('kind') && (
@@ -56,8 +64,9 @@ export function DocumentFieldsEditor ({ pending, proposal, busy = false, onSubmi
           </label>
         </div>
       )}
+      {filing != null && <StepFilingChoice filing={filing} checked={file.checked} disabled={busy} onChange={(checked) => file.setChecked(checked)} />}
       <div className='flex flex-wrap gap-2'>
-        <button type='button' className={btn.primary} disabled={busy || !changed} onClick={() => onSubmit(correction)}>{tx('save')}</button>
+        <button type='button' className={btn.primary} disabled={busy || !changed} onClick={() => onSubmit(correction, file.chosen)}>{tx('save')}</button>
         <button type='button' className={btn.ghost} disabled={busy} onClick={onCancel}>{tx('cancel')}</button>
       </div>
     </div>
