@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.55.0] - 2026-11-26
+
+Needs hds-lib ≥ 2.74.0, data-model ≥ 4.39.0 (`which-column-date`, plan 128 PER-COLUMN-READING.md § 9).
+
+### Added
+
+- A `which-column-date` question is answered like a `which-row-date`: the document opens on the marked column's heading
+  (`context.anchor`), she types the day printed above it, with its year, or skips; she may change it until a value of the
+  column is written. Asked with the row dates, before the value questions. Texts `column-date.label`, `question.which-column-date`
+  (en, fr, es, it, pt-BR).
+
 ## [0.54.1] - 2026-11-26
 
 Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0, as 0.50.0.
