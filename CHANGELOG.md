@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.54.1] - 2026-11-26
+
+Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0, as 0.50.0.
+
+### Fixed
+
+- `MethodNotationPicker`: a stored record the picker does not offer (a Creighton H or M bleeding with a mucus code,
+  saved before the picker) opens with "Recorded as: H 6C AD" above an unpicked picker, instead of an unpicked picker
+  alone; the line goes once she picks. Test `[MNP-REC]`.
+
 ## [0.54.0] - 2026-11-26
 
 Needs hds-lib ≥ 2.70.0, data-model ≥ 4.36.0, as 0.50.0.
