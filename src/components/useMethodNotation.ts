@@ -25,14 +25,22 @@ export interface MethodNotation {
 
 const NONE: MethodNotation = { status: 'none', covers: [], writes: [] };
 
+export interface MethodNotationOptions {
+  /**
+   * The charting method to enter in (e.g. 'creighton'), instead of the signed-in person's own: a professional typing
+   * the chart of a person they follow, in that chart's method. Omitted: the person's preferred method.
+   */
+  methodId?: string;
+}
+
 /**
  * Which of `itemKeys` the person's charting method enters as one notation record (plan 134). Any method whose
  * definition carries `notation` and whose representation is registered gets the picker.
  */
-export function useMethodNotation (itemKeys: string[]): MethodNotation {
+export function useMethodNotation (itemKeys: string[], options: MethodNotationOptions = {}): MethodNotation {
   const keysId = itemKeys.join('\n');
   // read at each render: a method chosen while the form is open ("remember it?") takes over at the host's next render
-  const methodId = readPreferredMethod(NOTATION_MUCUS_ITEM, NOTATION_CONVERTER);
+  const methodId = options.methodId ?? readPreferredMethod(NOTATION_MUCUS_ITEM, NOTATION_CONVERTER);
   const [state, setState] = useState<MethodNotation>({ status: 'loading', covers: [], writes: [] });
   useEffect(() => {
     let live = true;

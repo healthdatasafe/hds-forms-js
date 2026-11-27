@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.58.0] - 2026-11-27
+
+### Added
+
+- `useMethodNotation(itemKeys, { methodId })`: the notation in a given charting method instead of the signed-in
+  person's preferred one, for a professional typing the chart of a person they follow in that chart's method. Without
+  it, nothing changes. Type `MethodNotationOptions` exported.
+
+### Changed
+
+- Tested against the released hds-feminine-cycle-ui 0.19.1 and hds-lib 2.78.0 (dev pins); peer ranges unchanged.
+
 ## [0.57.1] - 2026-11-27
 
 ### Changed
