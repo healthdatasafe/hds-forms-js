@@ -4,6 +4,9 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // One React for the tests too: a linked hds-feminine-cycle-ui (ensure-links.js) would otherwise resolve its own copy
+  // from its repo's node_modules, and its hooks fail on a null dispatcher (B-2026-11-27-12).
+  resolve: { dedupe: ['react', 'react-dom'] },
   build: {
     outDir: 'js',
     lib: {

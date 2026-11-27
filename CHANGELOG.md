@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Tests: `vite.config.ts` dedupes `react` and `react-dom`, so the suite also passes with `hds-feminine-cycle-ui` linked
+  into `node_modules` (two Reacts made the 12 `ChartReview` tests fail on `useId`). Test config only, nothing shipped.
+
 ## [0.64.0] - 2026-11-27
 
 One total per document in a conversation: the status bubble and the card under it no longer show two different counts.
