@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Development
+
+- Dev dependencies: vitest 3 → 4.1.12 and happy-dom 20 → 21.0.4, plus a lockfile refresh within the existing ranges
+  (vite 6.4.6, postcss, typescript-eslint, brace-expansion…), which clears all 21 `npm audit` findings (tinypool and
+  vitest critical, happy-dom, vite and postcss high). `allowScripts` now names every registry package with an install
+  script: `esbuild` and `@swc/core` are allowed (their postinstall checks or fetches the native binary vite and the
+  SWC React plugin build with), `fsevents` and `unrs-resolver` are denied (`fsevents` is macOS only and ships a
+  prebuilt binary; `unrs-resolver`'s binding already arrives as an optional dependency).
+
 ## [0.65.0] - 2026-11-27
 
 The status bubble's value count is the number of results read: "88 values", as "88 results read on this picture".
