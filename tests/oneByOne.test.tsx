@@ -37,6 +37,7 @@ vi.mock('../src/components/HDSFormField', () => ({ HDSFormField: () => <input ar
 
 const { cmcConversation } = await import('hds-lib');
 const conv = await import('../src/conversation/index');
+const labels = await import('../src/conversation/labels');
 
 const DOC = 'doc1';
 const EX = { engine: 'hds-reader', engineVersion: '1.0.0', kbVersion: '1.0.0', backend: 'text-layer' };
@@ -199,6 +200,21 @@ describe('[OBO] nextStep: what she answers next', () => {
     expect(conv.progressText({ ...base, openQuestions: 1, toDate: { rows: 0, columns: 0, pages: 0 } })).toBe('75 values · 1 question to answer · 2 answered');
     expect(conv.progressText({ ...base, openQuestions: 0 })).toBe('75 values · 2 answered');
     expect(conv.toDateText(base)).toBe('');
+  });
+
+  it('progress (D64): a box with writing that was not read is no value; the count is the one of "results read"', () => {
+    const PIC = { ...EX, backend: 'vision' };
+    const box = (id: string, row: number, column: number, extra: Record<string, any> = {}) =>
+      pv(id, { extraction: PIC, grid: { row, column }, anchor: { attachmentId: 'a', page: 1 }, ...extra });
+    const unread = (id: string, row: number, column: number) => box(id, row, column, { status: 'unmapped', reason: 'not-read', proposal: undefined });
+    const kept = pv('k', { extraction: PIC, status: 'kept-aside', reason: 'no-item', proposal: undefined });
+    const c = of([box('a', 1, 1), box('b', 1, 2), box('c', 1, 3), unread('n1', 1, 4), unread('n2', 1, 5), unread('nb', 1, 2), kept]);
+    const p = conv.conversationProgress(c, E, ready);
+    // a, b, c and the kept-aside line are read; the three not-read boxes have their own line
+    expect(p).toMatchObject({ values: 4, keptAside: 1 });
+    expect(labels.pictureText(c)).toMatch(/^4 results read/);
+    expect(labels.notReadText(c)).toBe('3 boxes with writing were not read.');
+    expect(conv.progressText(p)).toBe('4 values');
   });
 
   it('progress: a value re-proposed after her answer counts once', () => {
