@@ -91,7 +91,6 @@ export const CONVERSATION_TEXTS = {
   'progress.questions': { en: '{n} questions', fr: '{n} questions', es: '{n} preguntas', it: '{n} domande', 'pt-BR': '{n} perguntas' },
   'progress.questionsOne': { en: '1 question', fr: '1 question', es: '1 pregunta', it: '1 domanda', 'pt-BR': '1 pergunta' },
   'progress.answered': { en: '{n} answered', fr: '{n} répondu(s)', es: '{n} respondida(s)', it: '{n} con risposta', 'pt-BR': 'Respondidas: {n}' },
-  composerHint: { en: 'A message does not answer the question above.', fr: 'Un message ne répond pas à la question ci-dessus.', es: 'Un mensaje no responde a la pregunta anterior.', it: 'Un messaggio non risponde alla domanda qui sopra.', 'pt-BR': 'Uma mensagem não responde à pergunta acima.' },
   seeEverything: { en: 'See everything', fr: 'Tout voir', es: 'Ver todo', it: 'Vedi tutto', 'pt-BR': 'Ver tudo' },
   hideEverything: { en: 'Hide', fr: 'Masquer', es: 'Ocultar', it: 'Nascondi', 'pt-BR': 'Ocultar' },
 

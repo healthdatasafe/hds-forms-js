@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.59.0] - 2026-11-27
+
+### Added
+
+- `DocumentFieldsEditor` `initial?: { documentKind?, day? }`: starting values that are hers (e.g. read from the file by
+  the host), sent on Save unless she clears or changes them, so Save confirms them (the host shows they were read from
+  the file). Until now only what differed from `proposal` was sent, so a pre-filled value she kept was lost. A kind the
+  pack does not offer (unknown or deprecated), or a day that is not a real date, is ignored; read once, at mount. Without
+  it, nothing changes (plan 144, 135-1).
+
+### Removed
+
+- The conversation text `composerHint` (all locales): nothing read it (plan 144, 135-4). A host that overrides or reads
+  `CONVERSATION_TEXTS.composerHint` (or uses it as a `ConversationTextKey`) no longer typechecks; none in HDS does.
+
 ## [0.58.1] - 2026-11-27
 
 ### Fixed

@@ -25,7 +25,7 @@ the item's kind and code, never on an app code.
 | 0.47.0 to 0.49.0 | ≥ 2.69.0 | ≥ 4.33.0 |
 | 0.50.0 to 0.54.1 | ≥ 2.70.0 | ≥ 4.36.0 |
 | 0.55.0 | ≥ 2.74.0 | ≥ 4.39.0 |
-| 0.56.0 | ≥ 2.74.0 | ≥ 4.39.0, and hds-feminine-cycle-ui ≥ 0.18.0 |
+| 0.56.0 to 0.59.0 | ≥ 2.74.0 | ≥ 4.39.0, and hds-feminine-cycle-ui ≥ 0.18.0 |
 
 The components are **presentational**: they take hds-lib `cmcConversation` views and callbacks, and do no I/O. All the
 I/O sits in **one hook**, `useDocumentConversations` (§ 5), which reads every relationship's conversation and answers it
@@ -43,7 +43,7 @@ installs them and the library uses that one copy. Pin `hds-lib` at or above the 
 minimum in place of an older tag of the same repo, silently).
 
 ```json
-"hds-forms-js": "github:healthdatasafe/hds-forms-js#0.56.0",
+"hds-forms-js": "github:healthdatasafe/hds-forms-js#0.59.0",
 "hds-lib": "github:healthdatasafe/hds-lib-js#2.74.0",
 "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.18.0",
 "pdfjs-dist": "6.4.299"
@@ -254,7 +254,16 @@ An option the version cannot label is shown, not selectable. Every choice questi
 ### `DocumentFieldsEditor`
 
 The document's kind (the pack's `documentKinds`) and date with its precision, prefilled with the proposal; returns
-only what she changed, for `confirmDocument`, and what she ticked about filing (`filingOf`).
+what she changed (plus the `initial` values she kept, below), for `confirmDocument`, and what she ticked about filing
+(`filingOf`).
+
+`initial?: { documentKind?, day? }` gives starting values that are hers (e.g. read from the file by the host, outside a
+conversation): they take the place of the proposal's and are sent on Save unless she clears or changes them, even when
+the proposal says the same. So an `initial` value she keeps is **confirmed** on Save: it is written on the document and
+its pending entry goes. The host must therefore show that these values were read from the file, for her to check them.
+A kind the pack does not offer (unknown or deprecated), or a day that is not a real `YYYY-MM-DD` date (`2021-02-31`,
+`2021-13-01`), is ignored. Read once, when the editor mounts: mount it once the values are known (a later `initial` is
+not taken).
 
 ### `ValueCorrectionEditor`
 
