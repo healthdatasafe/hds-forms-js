@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.60.0] - 2026-11-27
+
+### Added
+
+- Texts for the notices of data-model 4.45.0 (plan 128 SUB-F), in en, fr, es, it, pt-BR: `several-result-columns`,
+  `lines-may-be-missing`, `grid-not-located` (never says the document is a chart), `kind-not-read`.
+
+### Fixed
+
+- `columns-not-read` (data-model 4.39.0, sent by engine 0.11.0 on demo) had no text: the app showed "sent a message
+  this app cannot show yet". It now has its own words.
+
 ## [0.59.0] - 2026-11-27
 
 ### Added
