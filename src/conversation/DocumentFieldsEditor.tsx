@@ -10,6 +10,12 @@ export interface DocumentFieldsEditorProps {
   pending: ReadonlyArray<'time' | 'kind'>;
   /** The contact's proposal (`proposed-document.proposal`), as the starting values */
   proposal?: { documentKind?: string; time?: number; timePrecision?: string } | null;
+  /**
+   * Starting values that are hers (e.g. read from the file by the host): shown in place of the proposal's and sent on Save
+   * unless she clears or changes them. A kind the pack does not list, or a day not `YYYY-MM-DD`, is ignored. Read when the
+   * editor mounts.
+   */
+  initial?: { documentKind?: string; day?: string } | null;
   busy?: boolean;
   /** What filing it under a kind would do (`ConversationStepBubble`); null: not offered for that kind */
   filingOf?: (documentKind: string) => StepFiling | null;
@@ -24,21 +30,24 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Her own date and kind for a document, instead of the contact's proposal: the pack's kinds (not deprecated), a day, or
- * "I do not know the date". Only the fields still waiting on the document are offered; only what she changed is sent.
+ * "I do not know the date". Only the fields still waiting on the document are offered; only what she changed is sent,
+ * plus the `initial` values she kept.
  */
-export function DocumentFieldsEditor ({ pending, proposal, busy = false, filingOf, filingTick, onSubmit, onCancel }: DocumentFieldsEditorProps) {
+export function DocumentFieldsEditor ({ pending, proposal, initial, busy = false, filingOf, filingTick, onSubmit, onCancel }: DocumentFieldsEditorProps) {
   const kindId = useId();
   const dayId = useId();
-  const initialDay = typeof proposal?.time === 'number' && proposal.timePrecision === 'day' ? new Date(proposal.time * 1000).toISOString().slice(0, 10) : '';
-  const [kind, setKind] = useState(proposal?.documentKind ?? '');
-  const [day, setDay] = useState(initialDay);
-  const [unknownDate, setUnknownDate] = useState(false);
   const kinds = documentKindOptions();
+  const proposalDay = typeof proposal?.time === 'number' && proposal.timePrecision === 'day' ? new Date(proposal.time * 1000).toISOString().slice(0, 10) : '';
+  const herKind = initial?.documentKind != null && kinds.some((k) => k.key === initial.documentKind) ? initial.documentKind : null;
+  const herDay = initial?.day != null && DAY.test(initial.day) ? initial.day : null;
+  const [kind, setKind] = useState(herKind ?? proposal?.documentKind ?? '');
+  const [day, setDay] = useState(herDay ?? proposalDay);
+  const [unknownDate, setUnknownDate] = useState(false);
   const correction: DocumentFields = {};
-  if (pending.includes('kind') && kind !== '' && kind !== proposal?.documentKind) correction.documentKind = kind;
+  if (pending.includes('kind') && kind !== '' && (herKind != null || kind !== proposal?.documentKind)) correction.documentKind = kind;
   if (pending.includes('time')) {
     if (unknownDate) correction.timePrecision = 'unknown';
-    else if (DAY.test(day) && day !== initialDay) { correction.time = dayToTime(day); correction.timePrecision = 'day'; }
+    else if (DAY.test(day) && (herDay != null || day !== proposalDay)) { correction.time = dayToTime(day); correction.timePrecision = 'day'; }
   }
   const changed = Object.keys(correction).length > 0;
   const filing = pending.includes('kind') && kind !== '' ? filingOf?.(kind) ?? null : null;

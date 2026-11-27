@@ -256,6 +256,11 @@ An option the version cannot label is shown, not selectable. Every choice questi
 The document's kind (the pack's `documentKinds`) and date with its precision, prefilled with the proposal; returns
 only what she changed, for `confirmDocument`, and what she ticked about filing (`filingOf`).
 
+`initial?: { documentKind?, day? }` gives starting values that are hers (e.g. read from the file by the host, outside a
+conversation): they take the place of the proposal's and are sent on Save unless she clears or changes them, even when
+the proposal says the same. A kind the pack does not list, or a day not `YYYY-MM-DD`, is ignored. Read when the editor
+mounts: mount it once the values are known.
+
 ### `ValueCorrectionEditor`
 
 The item's own field (`HDSFormField`, prefilled) and, when the item offers several, its units; the result is checked like

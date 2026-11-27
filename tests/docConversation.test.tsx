@@ -282,6 +282,58 @@ describe('[DOC] the document step and her note', () => {
     expect(acts.confirmDocument).toHaveBeenLastCalledWith('d1', { documentKind: 'administrative-document' }, 100, undefined, admin);
   });
 
+  describe('[135-1] DocumentFieldsEditor initial: starting values that are hers', () => {
+    const PROPOSAL = { documentKind: 'laboratory-report', time: 1604577600, timePrecision: 'day' };
+    const setDay = async (value: string) => {
+      const day = container.querySelector('input[type="date"]') as HTMLInputElement;
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(day, value);
+        day.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+    };
+    const editor = (props: Record<string, any>) => <conv.DocumentFieldsEditor pending={['time', 'kind']} onSubmit={vi.fn()} onCancel={vi.fn()} {...props} />;
+
+    it('kept as they are: shown and sent on Save', async () => {
+      const onSubmit = vi.fn();
+      await render(editor({ initial: { documentKind: 'administrative-document', day: '2021-03-04' }, onSubmit }));
+      expect((container.querySelector('select') as HTMLSelectElement).value).toBe('administrative-document');
+      expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2021-03-04');
+      await click(button('Save'));
+      expect(onSubmit).toHaveBeenLastCalledWith({ documentKind: 'administrative-document', time: Date.parse('2021-03-04T12:00:00Z') / 1000, timePrecision: 'day' }, undefined);
+    });
+
+    it('kept even when the proposal says the same; a cleared day is not sent; a changed one is', async () => {
+      const onSubmit = vi.fn();
+      await render(editor({ proposal: PROPOSAL, initial: { documentKind: 'laboratory-report', day: '2020-11-05' }, onSubmit }));
+      await setDay('');
+      await click(button('Save'));
+      expect(onSubmit).toHaveBeenLastCalledWith({ documentKind: 'laboratory-report' }, undefined);
+      await setDay('2020-12-01');
+      await click(button('Save'));
+      expect(onSubmit).toHaveBeenLastCalledWith({ documentKind: 'laboratory-report', time: Date.parse('2020-12-01T12:00:00Z') / 1000, timePrecision: 'day' }, undefined);
+    });
+
+    it('cleared or not usable: nothing to send, Save stays off; only the field she has a value for counts', async () => {
+      await render(editor({ initial: { day: '2021-03-04' } }));
+      await setDay('');
+      expect(button('Save')!.disabled).toBe(true);
+      await render(editor({ initial: { documentKind: 'x-not-in-pack', day: 'March 4' } }));
+      expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('');
+      expect(button('Save')!.disabled).toBe(true);
+      const onSubmit = vi.fn();
+      await render(editor({ proposal: PROPOSAL, initial: { day: '2021-03-04' }, onSubmit }));
+      await click(button('Save'));
+      expect(onSubmit).toHaveBeenLastCalledWith({ time: Date.parse('2021-03-04T12:00:00Z') / 1000, timePrecision: 'day' }, undefined);
+    });
+
+    it('with a proposal only, as before: nothing changed, nothing sent', async () => {
+      await render(editor({ proposal: PROPOSAL }));
+      expect((container.querySelector('select') as HTMLSelectElement).value).toBe('laboratory-report');
+      expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2020-11-05');
+      expect(button('Save')!.disabled).toBe(true);
+    });
+  });
+
   it('[FOC7] a tick she took off on the step stays off in Change; readers told apart by the host\'s key, not their names', async () => {
     const c = of([pdoc('d1')]);
     const acts = actions();

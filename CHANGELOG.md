@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+
+- `DocumentFieldsEditor` `initial?: { documentKind?, day? }`: starting values that are hers (e.g. read from the file by
+  the host), sent on Save unless she clears or changes them. Until now only what differed from `proposal` was sent, so a
+  pre-filled value she kept was lost. A kind the pack does not list, or a day not `YYYY-MM-DD`, is ignored. Without it,
+  nothing changes (plan 144, 135-1).
+
+### Removed
+
+- The conversation text `composerHint` (all locales): nothing read it (plan 144, 135-4).
+
 ## [0.58.0] - 2026-11-27
 
 ### Added
