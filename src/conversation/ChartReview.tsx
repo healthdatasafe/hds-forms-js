@@ -73,7 +73,7 @@ function refusalText (reason: string, contactName: string | undefined): string {
 
 /**
  * A chart read from paper (a dated grid of a charting method), checked day by day: the chart with her own records beside
- * it (hds-feminine-cycle-ui `CycleChart`), under it the day she taps with its box on her document and what was read, and
+ * it (hds-feminine-cycle-ui `CycleChart`), under the row of the day she taps that day's box on her document and what was read, and
  * her answers: Confirm, Change, Not on my chart; on a day she recorded otherwise, Keep mine or Replace (asked twice); on a
  * box not read, Enter it myself or Skip. A dated row can be confirmed at once, after its crop is shown, for its days read
  * in full that she did not record. Nothing is written without her tap; a value refused is said on its day. Needs the
@@ -108,7 +108,9 @@ export function ChartReview ({
     const name = rowName(r.ref as ChartRowRef);
     return { ...r, title: r.startDate != null ? tx('chart.rowFrom', { row: name, date: dayText(r.startDate, lang) }) : name };
   });
-  const model = buildCycleChart<ChartDraftEvent | ChartEvent>(recorded, rep, { dayOf: (e) => dayOf?.(e as ChartEvent) ?? null, today: today ?? localToday(), draftRows: rows });
+  const built = buildCycleChart<ChartDraftEvent | ChartEvent>(recorded, rep, { dayOf: (e) => dayOf?.(e as ChartEvent) ?? null, today: today ?? localToday(), draftRows: rows });
+  // her records on other days are not part of this chart: never said as "not on the chart"
+  const model = { ...built, unplaced: built.unplaced.filter((u) => u.reason !== 'outside-rows') };
   modelRef.current = model;
 
   const refOf = (day: ChartDay<any>): ChartDayRef | null => (day.draft?.ref as ChartDayRef | undefined) ?? null;
@@ -148,7 +150,8 @@ export function ChartReview ({
     let failed: Record<string, string> = {};
     try {
       const out = await fn();
-      if (!out.ok) failed = Object.fromEntries(ids.map((id) => [id, out.reason]));
+      // `in`, not `!out.ok`: a host compiling without strictNullChecks does not narrow on the boolean
+      if ('reason' in out) failed = Object.fromEntries(ids.map((id) => [id, out.reason]));
       else for (const r of out.refused ?? []) failed[r.candidateId] = r.reason;
     } catch {
       failed = Object.fromEntries(ids.map((id) => [id, 'failed']));
@@ -201,7 +204,15 @@ export function ChartReview ({
     );
   }
 
+  // the day's detail sits under its own row, above the next row and the legend: on a phone no scroll to reach it
   const rowNote = (c: ChartCycle<any>): ReactNode => {
+    const confirm = rowConfirm(c);
+    const here = cycle != null && day != null && c.id === cycle.id ? detail : null;
+    if (confirm == null && here == null) return null;
+    return <>{confirm}{here != null && <div className='mt-2'>{here}</div>}</>;
+  };
+
+  const rowConfirm = (c: ChartCycle<any>): ReactNode => {
     if (c.row == null) return null;
     const ref = (c.ref as ChartRowRef | undefined) ?? null;
     if (ref == null) return null;
@@ -276,7 +287,7 @@ export function ChartReview ({
         rowNote={rowNote}
         renderDay={renderDay}
       />
-      {detail}
+      {(cycle == null || day == null) && detail}
     </div>
   );
 }
