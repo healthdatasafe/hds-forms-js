@@ -113,9 +113,12 @@ export function QuestionCard ({ question, about, contactName, sourceOf, busy = f
   const c = question.item.content;
   // no name or birth date read: the document's header block (`context.anchor`) is what she answers on, shown at once
   // (a `which-column-date`, 4.39.0, is answered the same way: she types the day printed above the marked column)
+  // (and a `which-page-date`, 4.49.0: she types the day of the page shown, its top band when the contact located it; no
+  // date is offered)
   const columnDate = question.code === 'which-column-date';
-  const rowDate = question.code === 'which-row-date' || columnDate;
-  const dayLabel = columnDate ? 'column-date.label' : 'row-date.label';
+  const pageDate = question.code === 'which-page-date';
+  const rowDate = question.code === 'which-row-date' || columnDate || pageDate;
+  const dayLabel = pageDate ? 'page-date.label' : columnDate ? 'column-date.label' : 'row-date.label';
   // (and the box of a `which-row-date`: its day is written there)
   const [showDoc, setShowDoc] = useState(((question.code === 'is-this-yours' && c.context?.identity == null) || rowDate) && question.state !== 'answered');
   const [changing, setChanging] = useState(false);

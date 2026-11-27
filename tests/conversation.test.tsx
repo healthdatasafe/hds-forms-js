@@ -943,3 +943,69 @@ describe('[CONV-UI] data-model 4.47.0: "Remember this name" (R3)', () => {
     }
   });
 });
+
+describe('[CONV-UI] data-model 4.49.0: which-page-date, a document dated per page', () => {
+  const BAND = { eventId: DOC, attachmentId: 'att2', page: 2, bbox: [0, 0, 100, 12] };
+  // answerable from hds-lib 2.84.0 (QUESTION_CODES.WHICH_PAGE_DATE); set here so the card is tested on any hds-lib
+  const view = (q: any, items: any[] = [q]) => ({ ...of(items).questions.find((x: any) => x.item.id === q.id), answerable: true });
+  async function typeInto (el: Element, value: string) {
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  }
+  const qcard = (v: any, onAnswer: any, sourceOf: any = () => ({ url: 'https://x.backloop.dev/scan.jpg', kind: 'image' })) => (
+    <conv.QuestionCard question={v} contactName='Dr Test' sourceOf={sourceOf} onAnswer={onAnswer} />
+  );
+
+  it('[PD1] the page is shown at once, no date offered; a full day up to today answers confirm at 12:00 UTC, or skip', async () => {
+    const q = question('which-page-date', { context: { anchor: BAND } });
+    const onAnswer = vi.fn();
+    const sourceOf = vi.fn(() => ({ url: 'https://x.backloop.dev/scan.jpg', kind: 'image' }) as any);
+    await render(qcard(view(q), onAnswer, sourceOf));
+    expect(container.textContent).toContain('Which day are the results on this page from? Give its year too.');
+    expect(container.querySelector('[role="region"]')).not.toBeNull();
+    expect(sourceOf).toHaveBeenCalledWith('att2');
+    expect(buttons().map((b) => b.textContent?.trim()).filter((t) => t !== '−' && t !== '+')).toEqual(['Save', 'Skip', 'Hide the document']);
+    const input = container.querySelector('input[type="date"]') as HTMLInputElement;
+    expect(input.max).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(button('Save')!.disabled).toBe(true);
+    await typeInto(input, '2999-01-01');
+    expect(button('Save')!.disabled).toBe(true);
+    await typeInto(input, '2026-11-18');
+    await click(button('Save'));
+    expect(onAnswer).toHaveBeenLastCalledWith({ action: 'confirm', time: Date.parse('2026-11-18T12:00:00Z') / 1000, timePrecision: 'day' });
+    await click(button('Skip'));
+    expect(onAnswer).toHaveBeenLastCalledWith({ action: 'skip' });
+  });
+
+  it('[PD2] without a top band, the whole page; an anchor on another document is not used', async () => {
+    const sourceOf = vi.fn(() => ({ url: 'https://x.backloop.dev/scan.jpg', kind: 'image' }) as any);
+    await render(qcard(view(question('which-page-date', { context: { anchor: { eventId: DOC, attachmentId: 'att3', page: 3 } } })), vi.fn(), sourceOf));
+    expect(container.querySelector('[role="region"]')).not.toBeNull();
+    expect(sourceOf).toHaveBeenLastCalledWith('att3');
+    await render(qcard(view(question('which-page-date', { context: { anchor: { ...BAND, eventId: 'anotherdoc01' } } })), vi.fn(), sourceOf));
+    expect(sourceOf).toHaveBeenLastCalledWith(undefined);
+  });
+
+  it('[PD3] answered: the day she gave', async () => {
+    const q = question('which-page-date', { context: { anchor: BAND } });
+    const a = answer(q, 'confirm', { time: Date.parse('2026-11-18T12:00:00Z') / 1000, timePrecision: 'day' });
+    expect(conv.questionAnswerText('which-page-date', a.content, 'en')).toMatch(/^You gave the day: /);
+    await render(qcard({ ...view(q), state: 'answered', answer: a }, vi.fn()));
+    expect(container.textContent).toContain('You gave the day');
+    expect(container.querySelector('input[type="date"]')).toBeNull();
+  });
+
+  it('[PD4] one step per page, in page order, before the values', () => {
+    const p2 = question('which-page-date', { context: { anchor: BAND } });
+    const p1 = question('which-page-date', { context: { anchor: { ...BAND, page: 1 } } });
+    const c = of([pv('c1'), p2, p1]);
+    for (const q of c.questions) (q as any).answerable = true;
+    expect(conv.nextStep(c, ['hds-reader'], { status: 'awaiting-answers' })).toMatchObject({ kind: 'question', question: { item: { id: p1.id } } });
+  });
+
+  it('[PD5] its texts exist in every language', () => {
+    for (const key of ['question.which-page-date', 'page-date.label']) {
+      for (const l of ['en', 'fr', 'es', 'it', 'pt-BR']) expect((CONVERSATION_TEXTS as any)[key][l], key + ' ' + l).toBeTruthy();
+    }
+  });
+});

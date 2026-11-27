@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.63.0] - 2026-11-27
+
+### Added
+
+- **`which-page-date`** (data-model 4.49.0, a document dated per page): its card, like `which-column-date`'s. The page
+  is shown at once (`context.anchor`: its top band when the contact located it, else the whole page); no date is
+  offered; she types the day with its year (a full day, none later than today), answered `confirm` with `time` at 12:00
+  UTC and `timePrecision: day`, or `skip`. Its answered text ("You gave the day: …"); `nextStep` asks it with the row
+  and column days, in page order. Texts in en, fr, es, it, pt-BR. The code is a string literal here: it becomes
+  answerable with hds-lib 2.84.0 (`QUESTION_CODES.WHICH_PAGE_DATE`); with an older hds-lib it is shown, not answerable
+  (R8).
+
 ## [0.62.0] - 2026-11-27
 
 ### Changed

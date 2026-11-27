@@ -58,6 +58,9 @@ const VALUE_ACTIONS = new Set(['correct', 'skip', 'duplicate', 'request-item']);
 const itemKey = (i: { id: string; modified: number }): string => `${i.id}:${i.modified}`;
 
 /** Items in the order of the document: page, then the box of a dated grid (never from where a tilted page puts it), else the line's top */
+/** The questions asking the day of a part of the document: a grid's row, a column, a page (4.49.0, a string until hds-lib 2.84.0) */
+const ROW_DATE_CODES = new Set(['which-row-date', 'which-column-date', 'which-page-date']);
+
 function byPlace (x: ConversationItem, y: ConversationItem): number {
   const pos = (item: ConversationItem): number[] => {
     const c = item.content;
@@ -117,7 +120,8 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
   if (documentDate != null) return question(documentDate);
   // a dated grid (4.36.0): the day of a box of each row, top to bottom; the contact proposes the row's values after it
   // a table read per column on a picture (4.39.0): the day of each column, left to right, the same way
-  const rowDates = conv.questions.filter((q) => (q.code === 'which-row-date' || q.code === 'which-column-date') && openQuestion(q, includeSkipped)).sort((x, y) => byPlace(x.item, y.item));
+  // a document dated per page (4.49.0): the day of each page, in page order
+  const rowDates = conv.questions.filter((q) => ROW_DATE_CODES.has(q.code) && openQuestion(q, includeSkipped)).sort((x, y) => byPlace(x.item, y.item));
   if (rowDates.length > 0) return question(rowDates[0]);
   const aboutValues = conv.questions.filter((q) => q.item.content.candidateId != null && !DOCUMENT_CODES.has(q.code) && openQuestion(q, includeSkipped));
   if (aboutValues.length > 0) {
