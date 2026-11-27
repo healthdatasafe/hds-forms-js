@@ -15,9 +15,10 @@ import type { SectionEntry } from 'hds-forms/types';
 import FormBuilder from './FormBuilder';
 import DocumentPanel from './DocumentPanel';
 import ConversationPanel from './ConversationPanel';
+import ChartReviewPanel from './ChartReviewPanel';
 import { Timeline } from 'hds-react-timeline';
 
-type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'timeline' | 'settings' | 'document' | 'conversation';
+type Tab = 'fields' | 'section' | 'recurring' | 'datasets' | 'builder' | 'timeline' | 'settings' | 'document' | 'conversation' | 'chart';
 
 // Public read-only demo access on the throwaway `sample-mira` account, scoped to
 // the `mira-demo` stream. This bundle is published to gh-pages, so anything used
@@ -237,7 +238,7 @@ function SingleFieldPanel ({ items, emptyMessage = 'Select an item from the list
 export default function App () {
   const [tab, setTab] = useState<Tab>(() => {
     const asked = new URLSearchParams(window.location.search).get('tab');
-    return asked === 'document' || asked === 'conversation' ? asked : 'fields';
+    return asked === 'document' || asked === 'conversation' || asked === 'chart' ? asked : 'fields';
   });
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<ItemSearchPickerItem[]>([]);
@@ -360,6 +361,9 @@ export default function App () {
         <button className={tabClass('conversation')} onClick={() => setTab('conversation')}>
           Conversation
         </button>
+        <button className={tabClass('chart')} onClick={() => setTab('chart')}>
+          Chart review
+        </button>
       </div>
 
       <div className='rounded-b-lg border border-t-0 border-gray-200 bg-white p-6 dark:border-gray-600 dark:bg-gray-800'>
@@ -433,6 +437,7 @@ export default function App () {
         {tab === 'settings' && <SettingsPanel />}
         {tab === 'document' && <DocumentPanel />}
         {tab === 'conversation' && <ConversationPanel />}
+        {tab === 'chart' && <ChartReviewPanel />}
       </div>
     </div>
   );

@@ -1,5 +1,36 @@
 # Changelog
 
+## [Unreleased]
+
+## [0.56.0] - 2026-11-26
+
+Needs hds-lib ≥ 2.74.0, data-model ≥ 4.39.0, as 0.55.0, and hds-feminine-cycle-ui ≥ 0.18.0 (peer, was ≥ 0.12.0).
+
+### Added
+
+- **`ChartReview`**: a paper chart read as a dated grid (Creighton), checked as a chart beside her own records
+  (hds-feminine-cycle-ui `CycleChart`), the day she taps under it with its box on her document. Per day: Confirm, Change
+  (one value), Not on my chart; recorded otherwise: Keep mine (`duplicate`), Replace with the chart's only with
+  `onReplace`, asked twice; a box not read: Enter it myself (`onEnterDay`, her own form, then `skip`) or Skip; Previous /
+  Next. A dated row can be confirmed at once, after its crop is shown, for its days read in full and not recorded; an
+  undated row cannot. Refusals are kept per value: said on their day, marked "!" on the chart, counted above it. The host
+  imports `hds-feminine-cycle-ui/cycle-chart.css`. Texts `chart.*` (en, fr, es, it, pt-BR). A day the same as her
+  record stays one to check while its values are open: "Already in my record" (`duplicate`), on her tap.
+- **`chartDraftOf(conversation, { streamOf?, written? })`**: the rows of a chart draft from a dated grid's proposed values
+  (a row per page and `grid.row`, a day per box; `draft` / `edited` / `incomplete` / `unread`; dated by her
+  `which-row-date` answer), with each day's candidate ids, boxes not read and anchor. `boxKey` is exported from labels.
+### Fixed
+
+- `hds-feminine-cycle-ui` was bundled into `js/` though it is a peer dependency (since 0.42.0): a host loaded a second
+  copy. It is external now, like `hds-lib` and `pdfjs-dist`.
+- A proposed observation of one field (`{ mucus: '10KL' }`) read while the converter is not loaded was said as JSON
+  ("{"mucus":"10KL"} · X2"): it is said by its code ("10KL · X2 (creighton)").
+
+### Added (test app)
+
+- Test app: a Chart review tab (`?tab=chart`) on invented data; its hds-lib pin raised to 2.74.0 (2.69.0 has no
+  `isDatedGrid`).
+
 ## [0.55.0] - 2026-11-26
 
 Needs hds-lib ≥ 2.74.0, data-model ≥ 4.39.0 (`which-column-date`, plan 128 PER-COLUMN-READING.md § 9).

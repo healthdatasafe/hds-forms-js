@@ -25,6 +25,7 @@ the item's kind and code, never on an app code.
 | 0.47.0 to 0.49.0 | ≥ 2.69.0 | ≥ 4.33.0 |
 | 0.50.0 to 0.54.1 | ≥ 2.70.0 | ≥ 4.36.0 |
 | 0.55.0 | ≥ 2.74.0 | ≥ 4.39.0 |
+| 0.56.0 | ≥ 2.74.0 | ≥ 4.39.0, and hds-feminine-cycle-ui ≥ 0.18.0 |
 
 The components are **presentational**: they take hds-lib `cmcConversation` views and callbacks, and do no I/O. All the
 I/O sits in **one hook**, `useDocumentConversations` (§ 5), which reads every relationship's conversation and answers it
@@ -42,9 +43,9 @@ installs them and the library uses that one copy. Pin `hds-lib` at or above the 
 minimum in place of an older tag of the same repo, silently).
 
 ```json
-"hds-forms-js": "github:healthdatasafe/hds-forms-js#0.55.0",
+"hds-forms-js": "github:healthdatasafe/hds-forms-js#0.56.0",
 "hds-lib": "github:healthdatasafe/hds-lib-js#2.74.0",
-"hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.13.1",
+"hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.18.0",
 "pdfjs-dist": "6.4.299"
 ```
 
@@ -273,6 +274,22 @@ date in the host's words: read the event's `clientData.hdsTimePrecision` (a valu
 day), not its `time` alone. With `sourceOf`, a value read from
 this document that carries `clientData.hdsSourceAnchor` gets "See it on the document" / "Hide the document" (an
 `AnchoredDocumentView` under its row, `aria-expanded`); a value of the second group was read elsewhere and gets none.
+
+### `ChartReview` and `chartDraftOf` (a paper chart, a dated grid)
+
+A dated grid of a charting method (Creighton, data-model 4.36.0) checked as a chart, beside her own records:
+`chartDraftOf(conversation, { streamOf?, written? })` → `{ rows, days }`, the rows of hds-feminine-cycle-ui's
+`buildCycleChart({ draftRows })` (one per page and `grid.row`, a day per box; `draft`, `edited`, `incomplete`, `unread`;
+dated by her `which-row-date` answer). `ChartReview({ conversation, actions, recorded?, dayOf?, today?, sourceOf, columns?,
+lang?, contactName?, onEnterDay?, onReplace?, streamOf?, loadPdfJs?, pdfOptions? })` draws the chart (`CycleChart`) and,
+under it, the day she taps: what was read, her answers, its box on her document, Previous / Next. A draft day: Confirm,
+Change (one value, `ValueCorrectionEditor`), Not on my chart (`skip`). A day she recorded otherwise: Keep mine
+(`duplicate`), and Replace only with `onReplace`, asked twice (confirm, then the host removes her record). A box not read:
+Enter it myself (`onEnterDay({ date, candidateIds })`: her own entry form, then `skip`; dated rows only) or Skip. A dated row
+offers "Confirm row N at once" for its days read in full that she did not record, after its crop is shown; an undated row
+says its first day is asked first. A value refused is said on its day, marked "!" on the chart and counted above it. The
+host imports the chart's stylesheet: `import 'hds-feminine-cycle-ui/cycle-chart.css'`. Fixtures: the test app's Chart
+review tab (`?tab=chart`).
 
 ### `AnchoredDocumentView`
 

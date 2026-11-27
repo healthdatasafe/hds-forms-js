@@ -97,7 +97,9 @@ describe('proposalText of an observation', () => {
   it('says the code and the frequency while the converter is not loaded', () => {
     loaded = false;
     expect(textOf(value('10KL', { frequency: 'X2' }))).toBe('10KL · X2 (creighton)');
-    expect(textOf(value({ mucus: '10KL' }))).toBe('Peak (Billings <- Creighton)');
+    // a value of one field is said by its code, never as JSON; one of several fields is left to hds-lib
+    expect(textOf(value({ mucus: '10KL' }, { frequency: 'X2' }))).toBe('10KL · X2 (creighton)');
+    expect(textOf(value({ mucus: '10KL', other: 'x' }))).toBe('Peak (Billings <- Creighton)');
   });
 
   it('leaves a value without a method, and any other item, to hds-lib', () => {

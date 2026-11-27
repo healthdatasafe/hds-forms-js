@@ -40,5 +40,9 @@ export { fitPage, frameBox, clampView, zoomAt, panBy, isUsableBox, MAX_SCALE, MI
 export type { AnchorBox, View, Size } from './anchorFrame';
 export { loadPdfJs, DEFAULT_PDF_OPTIONS } from './pdfjs';
 export type { PdfJsLike, PdfDocumentLike, PdfPageLike } from './pdfjs';
+export { chartDraftOf } from './chartDraft';
+export type { ChartAnchor, ChartDayRef, ChartRowRef, ChartDraftEvent, ChartDraftOptions, ConversationChartDraft } from './chartDraft';
+export { ChartReview } from './ChartReview';
+export type { ChartReviewProps } from './ChartReview';
 export { CONVERSATION_TEXTS } from './conversationTexts';
 export type { ConversationTextKey } from './conversationTexts';
