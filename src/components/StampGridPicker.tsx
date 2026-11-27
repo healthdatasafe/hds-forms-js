@@ -24,10 +24,6 @@ export interface StampGridPickerProps {
   onChange: (value: any) => void;
 }
 
-export function isRepresentationAvailable (methodId: string): boolean {
-  return registry.has(methodId);
-}
-
 export const StampGridPicker: React.FC<StampGridPickerProps> = ({
   representationId,
   options,

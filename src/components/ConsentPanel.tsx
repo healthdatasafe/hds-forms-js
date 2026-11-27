@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { consentLabels } from './consentLabels';
+import { permissionId } from './consentPermission';
 
 /**
  * ConsentPanel — the one "this app wants these permissions, allow?" body that
@@ -66,11 +67,6 @@ export interface ConsentAnnotations {
   mandatory?: string[];
   /** Ids offered NOT pre-selected, so the user has to opt in. */
   optIn?: string[];
-}
-
-/** The id an annotation refers to: a stream permission's streamId, or a feature's name. */
-export function permissionId (p: ConsentPermission): string {
-  return (p as { feature?: string }).feature ?? p.streamId;
 }
 
 export interface ConsentPanelProps {
