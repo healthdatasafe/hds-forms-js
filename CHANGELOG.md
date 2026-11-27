@@ -19,6 +19,13 @@ Needs hds-lib ≥ 2.74.0, data-model ≥ 4.39.0, as 0.55.0, and hds-feminine-cyc
 - **`chartDraftOf(conversation, { streamOf?, written? })`**: the rows of a chart draft from a dated grid's proposed values
   (a row per page and `grid.row`, a day per box; `draft` / `edited` / `incomplete` / `unread`; dated by her
   `which-row-date` answer), with each day's candidate ids, boxes not read and anchor. `boxKey` is exported from labels.
+### Fixed
+
+- `hds-feminine-cycle-ui` was bundled into `js/` though it is a peer dependency (since 0.42.0): a host loaded a second
+  copy. It is external now, like `hds-lib` and `pdfjs-dist`.
+
+### Added (test app)
+
 - Test app: a Chart review tab (`?tab=chart`) on invented data; its hds-lib pin raised to 2.74.0 (2.69.0 has no
   `isDatedGrid`).
 

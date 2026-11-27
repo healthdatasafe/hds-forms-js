@@ -12,7 +12,8 @@ export default defineConfig({
       fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'mjs' : 'js'}`
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime', 'hds-lib', /^pdfjs-dist(\/|$)/],
+      // the peer dependencies: the host's one copy, never a second one in the bundle
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'hds-lib', /^pdfjs-dist(\/|$)/, /^hds-feminine-cycle-ui(\/|$)/],
       output: {
         globals: {
           react: 'React',
