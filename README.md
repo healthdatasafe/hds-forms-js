@@ -287,6 +287,8 @@ Every item of the standard conversation between a person and a contact (data-mod
 proposed values with confirm / correct, her answers, the contact's status, notices and working indicator, the zoomed
 document) is a component here, for any HDS app on either side of a conversation. What each renders, the kind and fields
 it maps to, props, texts and examples: **[docs/CONVERSATION-COMPONENTS.md](docs/CONVERSATION-COMPONENTS.md)**.
+A paper chart read as a dated grid is reviewed as a chart, day by day, with `<ChartReview>` (the host imports
+`hds-feminine-cycle-ui/cycle-chart.css`).
 
 #### `<AnchoredDocumentView>`
 
@@ -346,13 +348,13 @@ npm run build:app        # build test app into dist/ for gh-pages
 - Node.js >= 24
 - npm
 - Peer dependencies, installed by the host app (the library uses the host's copy):
-  `hds-lib` ≥ 2.70.0 (the HDS model must be initialized before using components), `hds-feminine-cycle-ui` ≥ 0.12.0,
+  `hds-lib` ≥ 2.70.0 (the HDS model must be initialized before using components), `hds-feminine-cycle-ui` ≥ 0.18.0,
   `pdfjs-dist` ^6.4.299, `react` / `react-dom` ≥ 19:
 
   ```json
   "hds-forms-js": "github:healthdatasafe/hds-forms-js#0.53.0",
   "hds-lib": "github:healthdatasafe/hds-lib-js#2.70.0",
-  "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.12.0",
+  "hds-feminine-cycle-ui": "github:healthdatasafe/hds-feminine-cycle-ui#0.18.0",
   "pdfjs-dist": "6.4.299"
   ```
 

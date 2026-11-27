@@ -193,7 +193,7 @@ export function lineText (c: Record<string, any>): string {
 export const notRead = (c: Record<string, any>): boolean => c.status === 'unmapped' && c.reason === 'not-read';
 
 /** The box of a dated grid a proposed value or a question is about: its attachment, its page and its place; null for none */
-function boxKey (c: Record<string, any>): string | null {
+export function boxKey (c: Record<string, any>): string | null {
   const anchor = c.anchor ?? c.context?.anchor;
   const grid = c.grid ?? c.context?.grid;
   return grid != null ? [anchor?.attachmentId ?? '', anchor?.page ?? '', grid.row, grid.column].join(':') : null;
