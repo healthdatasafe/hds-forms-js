@@ -12,8 +12,9 @@ export interface DocumentFieldsEditorProps {
   proposal?: { documentKind?: string; time?: number; timePrecision?: string } | null;
   /**
    * Starting values that are hers (e.g. read from the file by the host): shown in place of the proposal's and sent on Save
-   * unless she clears or changes them, so Save confirms them. A kind the pack does not offer (unknown or deprecated), or a
-   * day that is not a real `YYYY-MM-DD` date, is ignored. Read once, when the editor mounts.
+   * unless she clears or changes them, so Save confirms them. A kind given here can be declined ("—", then no kind is
+   * sent). A kind the pack does not offer (unknown or deprecated), or a day that is not a real `YYYY-MM-DD` date, is
+   * ignored. Read once, when the editor mounts.
    */
   initial?: { documentKind?: string; day?: string } | null;
   busy?: boolean;
@@ -67,7 +68,8 @@ export function DocumentFieldsEditor ({ pending, proposal, initial, busy = false
         <div className='flex flex-wrap items-center gap-2'>
           <label htmlFor={kindId} className='text-sm font-medium'>{tx('document.kind')}</label>
           <select id={kindId} value={kind} onChange={(e) => setKind(e.target.value)} className='h-11 rounded-md border border-gray-300 bg-white px-2 text-sm dark:border-gray-600 dark:bg-gray-800'>
-            <option value='' disabled>—</option>
+            {/* a kind given by `initial` (read from the file) can be declined: "—" sends no kind */}
+            <option value='' disabled={herKind == null}>—</option>
             {kinds.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
           </select>
         </div>

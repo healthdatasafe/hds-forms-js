@@ -345,6 +345,24 @@ describe('[DOC] the document step and her note', () => {
       }
     });
 
+    it('a kind given by initial can be declined: "—" sends no kind; without initial, "—" stays off', async () => {
+      const onSubmit = vi.fn();
+      await render(editor({ initial: { documentKind: 'laboratory-report', day: '2021-03-04' }, onSubmit }));
+      const empty = () => container.querySelector('select option[value=""]') as HTMLOptionElement;
+      expect(empty().disabled).toBe(false);
+      await choose('');
+      await click(button('Save'));
+      expect(onSubmit).toHaveBeenLastCalledWith({ time: Date.parse('2021-03-04T12:00:00Z') / 1000, timePrecision: 'day' }, undefined);
+      // the kind alone, declined: nothing left to send
+      await render(editor({ initial: { documentKind: 'laboratory-report' } }));
+      await choose('');
+      expect(button('Save')!.disabled).toBe(true);
+      await render(editor({ proposal: PROPOSAL }));
+      expect(empty().disabled).toBe(true);
+      await render(editor({}));
+      expect(empty().disabled).toBe(true);
+    });
+
     it('a deprecated kind is ignored', async () => {
       await render(editor({ proposal: PROPOSAL, initial: { documentKind: 'old-report' } }));
       expect((container.querySelector('select') as HTMLSelectElement).value).toBe('laboratory-report');
