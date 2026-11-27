@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.57.1] - 2026-11-27
+
+### Changed
+
+- French: the notation picker's sticker row reads "Timbre" (was "Tampon"), the word of the French Creighton material and
+  data-model (perki, 2026-11-27).
+
 ## [0.57.0] - 2026-11-27
 
 Needs hds-lib ≥ 2.77.0 for the Creighton change (it fetches converter v2); with an older one nothing changes.
