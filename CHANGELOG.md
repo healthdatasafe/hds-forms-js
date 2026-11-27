@@ -15,6 +15,17 @@
 - The conversation text `composerHint` (all locales): nothing read it (plan 144, 135-4). A host that overrides or reads
   `CONVERSATION_TEXTS.composerHint` (or uses it as a `ConversationTextKey`) no longer typechecks; none in HDS does.
 
+## [0.58.1] - 2026-11-27
+
+### Fixed
+
+- **`ChartReview`**: a day where she corrected one value while another was still open no longer asks "You recorded
+  this day otherwise · Keep mine / Replace with the chart's" (which offered to put the misread value back over her
+  correction). What she confirmed or corrected from this chart is the chart's own; a day is "recorded otherwise" only
+  by a record made elsewhere. Seen in a demo run with planted errors (plan 139 R6).
+- A proposed checkbox value without content (the mucus peak day) reads "Yes" ("Would be saved as Mucus peak day:
+  Yes"), not "NaN.NaN.NaN": its day is said beside it (`proposalText`).
+
 ## [0.58.0] - 2026-11-27
 
 ### Added
