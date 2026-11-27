@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.59.0] - 2026-11-27
+
 ### Added
 
 - `DocumentFieldsEditor` `initial?: { documentKind?, day? }`: starting values that are hers (e.g. read from the file by
