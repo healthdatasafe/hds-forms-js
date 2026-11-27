@@ -181,6 +181,26 @@ describe('[OBO] nextStep: what she answers next', () => {
     expect(conv.progressText({ values: 28, questions: 1, answered: 9, waitingOnContact: 0, keptAside: 0, alreadyInRecord: 3 })).toBe('28 values · 1 question · 9 answered · 3 already in your record');
   });
 
+  it('progress (B-2026-11-27-8): values so far, questions to answer, the rows still to date', () => {
+    const r1 = question('which-row-date', { grid: { row: 1, column: 0 } });
+    const r2 = question('which-row-date', { grid: { row: 2, column: 0 } });
+    const done = question('which-row-date', { grid: { row: 0, column: 0 } });
+    const unit = question('which-unit', { candidateId: 'a', options: ['mmol/L'] });
+    const c = of([pv('a'), pv('b'), r1, r2, done, answer(done, 'confirm', { time: 1773316800, timePrecision: 'day' }), unit]);
+    const p = conv.conversationProgress(c, E, ready);
+    expect(p).toMatchObject({ values: 2, questions: 4, openQuestions: 3, answered: 1, toDate: { rows: 2, columns: 0, pages: 0 } });
+    expect(conv.progressText(p)).toBe('2 values so far · 3 questions to answer · 1 answered');
+    expect(conv.toDateText(p)).toBe('2 rows to date first: their values come after.');
+    const base = { values: 75, questions: 7, answered: 2, waitingOnContact: 0, keptAside: 0, alreadyInRecord: 0 };
+    expect(conv.progressText({ ...base, openQuestions: 5, toDate: { rows: 4, columns: 0, pages: 0 } })).toBe('75 values so far · 5 questions to answer · 2 answered');
+    expect(conv.toDateText({ ...base, openQuestions: 1, toDate: { rows: 1, columns: 0, pages: 0 } })).toBe('1 row to date first: its values come after.');
+    expect(conv.toDateText({ ...base, toDate: { rows: 0, columns: 3, pages: 0 } })).toBe('3 columns to date first: their values come after.');
+    // nothing waits for a day: the values are all there, no "so far", no line
+    expect(conv.progressText({ ...base, openQuestions: 1, toDate: { rows: 0, columns: 0, pages: 0 } })).toBe('75 values · 1 question to answer · 2 answered');
+    expect(conv.progressText({ ...base, openQuestions: 0 })).toBe('75 values · 2 answered');
+    expect(conv.toDateText(base)).toBe('');
+  });
+
   it('progress: a value re-proposed after her answer counts once', () => {
     const old = pv('g', { proposal: undefined, status: 'unit-missing' });
     const unit = question('which-unit', { candidateId: 'g', options: ['mmol/L'] });
@@ -383,5 +403,13 @@ describe('[OBO] ConversationStepBubble', () => {
     expect(container.textContent).toContain('overview');
     await click(button('Hide'));
     expect(onToggle).toHaveBeenCalled();
+  });
+
+  it('the document bubble says what waits for a day, on its own line (B-2026-11-27-8)', async () => {
+    const status = { alertEventId: 's', kind: 'task-status', hds: { kind: 'task-status', about: DOC, status: 'awaiting-answers', attempt: 1, counts: { proposed: 153, questions: 5 } }, time: 1, direction: 'received', from: null } as any;
+    await render(<conv.DocumentStatusBubble title='Chart' status={status} contactName='Dr Test' progress={{ values: 75, questions: 7, openQuestions: 5, answered: 2, waitingOnContact: 0, keptAside: 0, alreadyInRecord: 0, toDate: { rows: 4, columns: 0, pages: 0 } }} />);
+    expect(container.textContent).toContain('75 values so far · 5 questions to answer · 2 answered');
+    expect(container.querySelector('[data-to-date]')?.textContent).toBe('4 rows to date first: their values come after.');
+    expect(container.textContent).not.toContain('153');
   });
 });

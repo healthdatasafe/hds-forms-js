@@ -163,26 +163,53 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
   return { kind: 'summary', key: 'summary:' + ids.join(','), keptAside, waiting, skipped, unanswerable, alreadyInRecord: inRecord };
 }
 
-/** Where one document's conversation stands, for "28 values · 1 question · 9 answered" (derived, never from `counts`) */
+/**
+ * Where one document's conversation stands, for "75 values so far · 5 questions to answer · 2 answered" (derived, never
+ * from the contact's `counts`, which also count the values of rows not dated yet: one total per document, B-2026-11-27-8)
+ */
 export interface ConversationProgress {
   values: number;
+  /** every question about the document's values, answered or not */
   questions: number;
+  /** the questions she can still answer here (open and answerable); absent: `questions` is shown as before */
+  openQuestions?: number;
   answered: number;
   /** values waiting for the contact (a re-proposal after her choice) */
   waitingOnContact: number;
   keptAside: number;
   /** values her record already holds (not counted in `answered`) */
   alreadyInRecord: number;
+  /** the rows, columns and pages still waiting for her day: their values come after (the contact proposes them then) */
+  toDate?: { rows: number; columns: number; pages: number };
 }
 
-/** "28 values · 1 question · 9 answered", each part left out when zero */
+const toDateTotal = (p: ConversationProgress): number => p.toDate != null ? p.toDate.rows + p.toDate.columns + p.toDate.pages : 0;
+
+/** "75 values so far · 5 questions to answer · 2 answered", each part left out when zero */
 export function progressText (p: ConversationProgress): string {
   const parts: string[] = [];
-  if (p.values > 0) parts.push(p.values === 1 ? tx('progress.valuesOne') : tx('progress.values', { n: p.values }));
-  if (p.questions > 0) parts.push(p.questions === 1 ? tx('progress.questionsOne') : tx('progress.questions', { n: p.questions }));
+  const soFar = toDateTotal(p) > 0;
+  if (p.values > 0) {
+    if (soFar) parts.push(p.values === 1 ? tx('progress.valuesSoFarOne') : tx('progress.valuesSoFar', { n: p.values }));
+    else parts.push(p.values === 1 ? tx('progress.valuesOne') : tx('progress.values', { n: p.values }));
+  }
+  if (p.openQuestions != null) {
+    if (p.openQuestions > 0) parts.push(p.openQuestions === 1 ? tx('progress.questionsLeftOne') : tx('progress.questionsLeft', { n: p.openQuestions }));
+  } else if (p.questions > 0) parts.push(p.questions === 1 ? tx('progress.questionsOne') : tx('progress.questions', { n: p.questions }));
   if (p.answered > 0) parts.push(tx('progress.answered', { n: p.answered }));
   if (p.alreadyInRecord > 0) parts.push(p.alreadyInRecord === 1 ? tx('progress.inRecordOne') : tx('progress.inRecord', { n: p.alreadyInRecord }));
   return parts.join(' · ');
+}
+
+/** "4 rows to date first: their values come after.", or '' when nothing waits for a day */
+export function toDateText (p: ConversationProgress): string {
+  if (p.toDate == null) return '';
+  const { rows, columns, pages } = p.toDate;
+  const parts: string[] = [];
+  if (rows > 0) parts.push(rows === 1 ? tx('progress.rowsToDateOne') : tx('progress.rowsToDate', { n: rows }));
+  if (columns > 0) parts.push(columns === 1 ? tx('progress.columnsToDateOne') : tx('progress.columnsToDate', { n: columns }));
+  if (pages > 0) parts.push(pages === 1 ? tx('progress.pagesToDateOne') : tx('progress.pagesToDate', { n: pages }));
+  return parts.join(' ');
 }
 
 /**
@@ -233,5 +260,8 @@ export function conversationProgress (conv: DocumentConversation, engines: reado
   // the document's own questions (its kind, its date) are not about its values: as the contact's `counts`, left out
   const questions = conv.questions.filter((q) => !DOCUMENT_CODES.has(q.code));
   answered += questions.filter((q) => q.state === 'answered').length;
-  return { values: candidates.size, questions: questions.length, answered, waitingOnContact, keptAside, alreadyInRecord: duplicates.size };
+  const open = questions.filter((q) => openQuestion(q, false));
+  const openCode = (code: string): number => open.filter((q) => q.code === code).length;
+  const toDate = { rows: openCode('which-row-date'), columns: openCode('which-column-date'), pages: openCode('which-page-date') };
+  return { values: candidates.size, questions: questions.length, openQuestions: open.length, answered, waitingOnContact, keptAside, alreadyInRecord: duplicates.size, toDate };
 }

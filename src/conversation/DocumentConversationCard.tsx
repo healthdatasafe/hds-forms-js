@@ -103,6 +103,9 @@ export function DocumentConversationCard ({
   const picture = pictureText(conv);
   const notReadBoxes = notReadText(conv);
   const writtenRows = new Set(conv.proposedValues.filter((p) => isWritten(conv, p)).map((p) => gridRowKey(p.item.content)));
+  // the contact's `counts` also count the values of rows not dated yet: once her conversation lists values or questions,
+  // the status bubble's own total is the one she reads, the card says only the state (B-2026-11-27-8)
+  const counts = viewer === 'person' && (conv.proposedValues.length > 0 || conv.questions.length > 0) ? null : status?.hds?.counts;
   const answerQ = (questionId: string) => (a: QuestionAnswer) => {
     if (actions != null) run('q:' + questionId, () => actions.answer(questionId, a, shownAt));
   };
@@ -114,7 +117,7 @@ export function DocumentConversationCard ({
           <h3 className='break-words text-base font-semibold'>
             {onOpenDocument != null ? <button type='button' className='text-left underline-offset-2 hover:underline' onClick={onOpenDocument}>{title}</button> : title}
           </h3>
-          <TaskStatusLine status={workStatus ?? null} errorCode={status?.hds?.errorCode} counts={status?.hds?.counts} contactName={contactName} viewer={viewer} personName={personName} sinceS={status?.time ?? sentAt} locale={locale} />
+          <TaskStatusLine status={workStatus ?? null} errorCode={status?.hds?.errorCode} counts={counts} contactName={contactName} viewer={viewer} personName={personName} sinceS={status?.time ?? sentAt} locale={locale} />
         </div>
       </div>
 

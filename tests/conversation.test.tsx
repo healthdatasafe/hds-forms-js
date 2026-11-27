@@ -170,6 +170,18 @@ describe('[CONV-UI] rowBlock: when a value can be confirmed', () => {
 });
 
 describe('[CONV-UI] DocumentConversationCard', () => {
+  it('one total per document (B-2026-11-27-8): her card drops the contact\'s counts once it lists values; a contact\'s keeps them', async () => {
+    const counted = { ...statusAlert('awaiting-answers'), hds: { ...statusAlert('awaiting-answers').hds, counts: { proposed: 153, questions: 5 } } };
+    await render(card(of([pv('c1')]), actions(), { status: counted }));
+    const line = () => container.querySelector('[role="status"]')?.textContent ?? '';
+    expect(line()).toContain('Waiting for your answers');
+    expect(line()).not.toContain('153');
+    await render(card(of([]), actions(), { status: counted }));
+    expect(line()).toContain('153 values, 5 questions');
+    await render(card(of([pv('c1')]), null, { status: counted, viewer: 'contact', personName: 'Anna' }));
+    expect(line()).toContain('153 values, 5 questions');
+  });
+
   it('is-this-yours shows the printed name and birth date; values wait for it; "Yes, it is mine" answers it', async () => {
     const q = question('is-this-yours', { context: { identity: { name: 'DUPONT Marie', birthDate: '14.03.1985' }, anchor: { attachmentId: 'att1', page: 1, bbox: [6, 8, 40, 4] } } });
     const a = actions();

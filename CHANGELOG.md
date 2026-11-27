@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+## [0.64.0] - 2026-11-27
+
+One total per document in a conversation: the status bubble and the card under it no longer show two different counts.
+
+### Changed
+
+- `DocumentConversationCard`: in her app, once the conversation lists a value or a question, the status line no longer
+  shows the contact's `task-status.counts` (they also count the values of rows not dated yet); it reads just the state
+  ("Waiting for your answers"). A contact's app keeps them.
+- `progressText`: "75 values so far · 5 questions to answer · 2 answered". "so far" while a row, column or page still
+  waits for her day; the questions are the ones she can still answer (`ConversationProgress.openQuestions`). Without
+  `openQuestions` (a progress built by the host) it reads as before.
+
+### Fixed
+
+- Convertible field: the source line reads "0 — Seco (Creighton)", with a real space before the method's name (a screen
+  reader read "0 — Seco(Creighton)").
+
+### Added
+
+- `ConversationProgress.openQuestions` and `ConversationProgress.toDate` (`{ rows, columns, pages }`, the day questions
+  still open), set by `conversationProgress`.
+- `toDateText`: "4 rows to date first: their values come after." (columns and pages alike), on its own line in
+  `DocumentStatusBubble`.
+- Texts in en, fr, es, it, pt-BR: `progress.valuesSoFar(One)`, `progress.questionsLeft(One)`,
+  `progress.rowsToDate(One)`, `progress.columnsToDate(One)`, `progress.pagesToDate(One)`.
+
 ## [0.63.0] - 2026-11-27
 
 ### Added
