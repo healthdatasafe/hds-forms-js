@@ -24,9 +24,12 @@ export interface AnchoredDocumentViewProps {
   loadPdfJs?: () => Promise<PdfJsLike>;
   pdfOptions?: Record<string, unknown>;
   className?: string;
+  /** Told whether the document is shown: a host offers what she checks on it only once she can see it */
+  onStatus?: (status: AnchoredDocumentStatus) => void;
 }
 
-type Status = 'loading' | 'shown' | 'failed' | 'page-missing';
+export type AnchoredDocumentStatus = 'loading' | 'shown' | 'failed' | 'page-missing';
+type Status = AnchoredDocumentStatus;
 
 /** The widest a PDF page is drawn, in canvas pixels: sharp when zoomed in, without holding a poster in memory */
 const MAX_CANVAS_WIDTH = 3000;
@@ -39,7 +42,7 @@ const FALLBACK_VIEWPORT: Size = { width: 320, height: 360 };
  * with large touch targets. A PDF's page is drawn by pdf.js in the page (the file never opens in another app); a
  * picture is shown as it is, after its EXIF orientation, as the anchor's box is measured.
  */
-export function AnchoredDocumentView ({ source, anchor, label, children, loadPdfJs = defaultLoadPdfJs, pdfOptions = DEFAULT_PDF_OPTIONS, className }: AnchoredDocumentViewProps) {
+export function AnchoredDocumentView ({ source, anchor, label, children, loadPdfJs = defaultLoadPdfJs, pdfOptions = DEFAULT_PDF_OPTIONS, className, onStatus }: AnchoredDocumentViewProps) {
   const pageNumber = source?.kind === 'image' ? 1 : Math.max(1, anchor?.page ?? 1);
   // by value: a box the host rebuilds on each render must not send the view back to the value
   const rawBox = anchor?.bbox;
@@ -54,6 +57,9 @@ export function AnchoredDocumentView ({ source, anchor, label, children, loadPdf
   const [status, setStatus] = useState<Status>(source == null ? 'failed' : 'loading');
   const [numPages, setNumPages] = useState(1);
   const [view, setView] = useState<View>({ s: 1, x: 0, y: 0 });
+  const statusRef = useRef(onStatus);
+  statusRef.current = onStatus;
+  useEffect(() => { statusRef.current?.(status); }, [status]);
 
   // the page at the viewport's width; its height from the document's own proportions
   const page = useMemo<Size>(() => ({ width: viewport.width, height: viewport.width * (aspect ?? 1.414) }), [viewport.width, aspect]);

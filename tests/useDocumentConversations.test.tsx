@@ -8,14 +8,23 @@ import type { ConversationRel, DocumentConversationsState } from '../src/convers
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 /** R11: which documents a contact may talk about; hds-lib's real `readsDocument` and `conversationOf`, the reads faked */
-const lib = vi.hoisted(() => ({ alerts: [] as any[], items: [] as any[], removeNotes: vi.fn(async () => []), accept: vi.fn(), acceptDocument: vi.fn() }));
+const lib = vi.hoisted(() => ({
+  alerts: [] as any[],
+  items: [] as any[],
+  removeNotes: vi.fn(async () => []),
+  accept: vi.fn(),
+  acceptDocument: vi.fn(),
+  profile: { isHooked: false, getAll: () => ({ name: 'Marie', surname: 'Dupont', dateOfBirth: '1985-03-14' }) },
+  autoConfirm: vi.fn(async () => null)
+}));
 vi.mock('hds-lib', async (importOriginal) => {
   const real: any = await importOriginal();
   return {
     ...real,
-    HDSProfile: { isHooked: false },
+    HDSProfile: lib.profile,
     cmcConversation: {
       ...real.cmcConversation,
+      autoConfirmIdentity: lib.autoConfirm,
       listConversationAlerts: async () => lib.alerts,
       conversationStreamsFor: async () => ({ received: 'conv-aaaaaaaaaaaa', sent: 'conv-bbbbbbbbbbbb' }),
       listConversationItems: async () => lib.items,
@@ -174,6 +183,46 @@ describe('useDocumentConversations: her notes on an unshared document', () => {
     lib.items = [question, { ...noted, created: 15, modified: 15 }];
     await read(perms);
     expect(removed()).toEqual([]);
+  });
+});
+
+describe('useDocumentConversations: her other names in the profile match (4.47.0, R3)', () => {
+  const isThisYours = { ...question, id: 'iy1', content: { kind: 'question', about: DOC, code: 'is-this-yours', context: { identity: { name: 'MARTIN Marie', birthDay: '1985-03-14' } } } };
+  let names: any;
+  function NamesHost ({ rels }: { rels: ConversationRel[] }) {
+    state = useDocumentConversations(connection, rels, { alertEventsKey: '', documentAlerts: NONE, otherNames: names });
+    return null;
+  }
+  const rels = [rel([{ streamId: 'documents', level: 'read' }])];
+  const show = async () => {
+    root ??= createRoot(document.createElement('div'));
+    await act(async () => { root!.render(<NamesHost rels={rels} />); });
+  };
+  const profiles = () => lib.autoConfirm.mock.calls.map((c: any[]) => c[2].profile);
+  beforeEach(() => { lib.profile.isHooked = true; lib.items = [isThisYours]; lib.autoConfirm.mockClear(); names = undefined; });
+  afterEach(() => { lib.profile.isHooked = false; });
+
+  it('[ON1] her profile alone without them; with them once the host gives them (the document tried again), once per list', async () => {
+    await show();
+    expect(profiles()).toEqual([{ name: 'Marie', surname: 'Dupont', dateOfBirth: '1985-03-14' }]);
+    names = [{ given: null, family: 'MARTIN', use: 'maiden' }];
+    await show();
+    expect(profiles()[1]).toEqual({ name: 'Marie', surname: 'Dupont', dateOfBirth: '1985-03-14', otherNames: [{ family: 'MARTIN', use: 'maiden' }] });
+    names = [{ given: null, family: 'MARTIN', use: 'maiden' }];
+    await show();
+    await act(async () => { state.reload(); });
+    expect(profiles().length).toBe(2);
+  });
+
+  it('[ON2] off with autoConfirmIdentity false, whatever the names', async () => {
+    names = [{ family: 'MARTIN' }];
+    function Off ({ rels }: { rels: ConversationRel[] }) {
+      state = useDocumentConversations(connection, rels, { alertEventsKey: '', documentAlerts: NONE, otherNames: names, autoConfirmIdentity: false });
+      return null;
+    }
+    root ??= createRoot(document.createElement('div'));
+    await act(async () => { root!.render(<Off rels={rels} />); });
+    expect(lib.autoConfirm).not.toHaveBeenCalled();
   });
 });
 

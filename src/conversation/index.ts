@@ -1,7 +1,11 @@
 // hds-forms-js/conversation: the person's side of a standard conversation with a contact (data-model 4.22.0
 // CONVERSATION.md), for any relationship: questions, proposed values, her answers, the state of the work, notices
 export { AnchoredDocumentView } from './AnchoredDocumentView';
-export type { AnchoredDocumentViewProps, AnchoredDocumentSource } from './AnchoredDocumentView';
+export type { AnchoredDocumentViewProps, AnchoredDocumentSource, AnchoredDocumentStatus } from './AnchoredDocumentView';
+export { RememberNameOffer } from './RememberNameOffer';
+export type { RememberNameOfferProps } from './RememberNameOffer';
+export { nameToRemember, isKnownName, splitPrintedName, namesOf } from './otherNames';
+export type { OtherName, NamesForMatch, RememberedName, RememberNameOptions } from './otherNames';
 export { DocumentConversationCard } from './DocumentConversationCard';
 export type { DocumentConversationCardProps, ConversationActions, ConversationOutcome } from './DocumentConversationCard';
 export { QuestionCard } from './QuestionCard';

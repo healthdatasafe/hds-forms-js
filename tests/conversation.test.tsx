@@ -447,8 +447,8 @@ describe('[CONV-UI] bubbles and texts', () => {
     expect(container.textContent).toContain('one column per day');
     expect(container.textContent).not.toContain('cannot show yet');
   });
-  it('data-model 4.39.0 and 4.45.0 notices have their own words in every language, with the contact\'s name', () => {
-    const codes = ['columns-not-read', 'several-result-columns', 'lines-may-be-missing', 'grid-not-located', 'kind-not-read'];
+  it('data-model 4.39.0, 4.45.0 and 4.47.0 notices have their own words in every language, with the contact\'s name', () => {
+    const codes = ['columns-not-read', 'several-result-columns', 'lines-may-be-missing', 'grid-not-located', 'kind-not-read', 'pages-not-read'];
     for (const l of ['en', 'fr', 'es', 'it', 'pt-BR']) {
       lang = l;
       const unknown = conv.noticeText('x-acme-hello', 'Dr Test');
@@ -458,6 +458,9 @@ describe('[CONV-UI] bubbles and texts', () => {
         expect(text, l + ' ' + code).toContain('Dr Test');
         expect(text, l + ' ' + code).not.toMatch(/chart|graphique|gráfico|grafico/i);
       }
+      // 4.47.0: pages-not-read names no page and no date (R6)
+      expect(conv.noticeText('pages-not-read', 'Dr Test'), l).not.toMatch(/\d/);
+      expect(conv.noticeText('pages-not-read', 'Dr Test'), l).not.toBe(conv.noticeText('columns-not-read', 'Dr Test'));
     }
     lang = 'en';
   });
@@ -806,5 +809,137 @@ describe('a dated grid (data-model 4.36.0)', () => {
     const c = of([q, undated, answer(q, 'confirm', DAY, 200)]);
     expect(conv.rowBlock(c, c.proposedValues[0], ENGINES)).toBe('no-date');
     expect(conv.valueDayText(c.proposedValues[0], c.proposedValues, 'en', c)).toBeNull();
+  });
+});
+
+describe('[CONV-UI] data-model 4.47.0: a date with its crop (R8, § Question codes)', () => {
+  const ANCHOR = { eventId: DOC, attachmentId: 'att1', page: 1, bbox: [60, 6, 30, 2] };
+  const read = { day: '2026-11-18', text: '18.11.2026', role: 'sampling', anchor: ANCHOR };
+  const typed = { day: '2026-11-17', text: '17.11.2026', role: 'report' };
+  const dateButton = (text: string) => buttons().find((b) => b.textContent?.includes(text)) ?? null;
+  const image = () => ({ url: 'https://x.backloop.dev/scan.jpg', kind: 'image' }) as any;
+
+  it('[D47-1] a date read on a picture is shown with its crop, and offered once the crop shows; one without anchor as before', async () => {
+    const q = question('which-date', { context: { dates: [read, typed] } });
+    const a = actions();
+    const sourceOf = vi.fn(image);
+    await render(card(of([q]), a, { sourceOf }));
+    const block = container.querySelector('[data-anchored-date]')!;
+    expect(block).not.toBeNull();
+    expect(block.querySelector('[role="region"]')).not.toBeNull();
+    expect(sourceOf).toHaveBeenCalledWith('att1');
+    expect(dateButton('17.11.2026')).not.toBeNull();
+    expect(dateButton('18.11.2026')).toBeNull();
+    const img = block.querySelector('img')!;
+    Object.defineProperty(img, 'naturalWidth', { value: 1240 });
+    Object.defineProperty(img, 'naturalHeight', { value: 1754 });
+    await act(async () => { img.dispatchEvent(new Event('load')); });
+    expect(block.querySelector('[data-testid="anchor-highlight"]')).not.toBeNull();
+    await click(dateButton('18.11.2026'));
+    expect(a.answer).toHaveBeenLastCalledWith(q.id, { action: 'confirm', time: Date.parse('2026-11-18T12:00:00Z') / 1000, timePrecision: 'day' }, 100);
+  });
+
+  it('[D47-2] no crop, no one-tap date: a file she cannot read, an anchor on another document or with no box, a picture that fails', async () => {
+    const q = (anchor: any) => question('which-date', { context: { dates: [{ ...read, anchor }, typed] } });
+    const offered = () => ({ anchored: container.querySelector('[data-anchored-date]') != null, read: dateButton('18.11.2026') != null, typed: dateButton('17.11.2026') != null, other: button('Another day') != null });
+    await render(card(of([q(ANCHOR)]), actions(), { sourceOf: () => null }));
+    expect(offered()).toEqual({ anchored: false, read: false, typed: true, other: true });
+    await render(card(of([q({ ...ANCHOR, eventId: 'anotherdoc01' })]), actions(), { sourceOf: image }));
+    expect(offered()).toEqual({ anchored: false, read: false, typed: true, other: true });
+    await render(card(of([q({ eventId: DOC, attachmentId: 'att1', page: 1 })]), actions(), { sourceOf: image }));
+    expect(offered()).toEqual({ anchored: false, read: false, typed: true, other: true });
+    await render(card(of([q(ANCHOR)]), actions(), { sourceOf: image }));
+    await act(async () => { container.querySelector('[data-anchored-date] img')!.dispatchEvent(new Event('error')); });
+    expect(offered()).toEqual({ anchored: false, read: false, typed: true, other: true });
+  });
+
+  it('[D47-3] which-document-date reads its anchored dates the same way', async () => {
+    const q = question('which-document-date', { candidateId: 'd1', context: { dates: [read] } });
+    await render(card(of([q]), actions(), { sourceOf: () => null }));
+    expect(dateButton('18.11.2026')).toBeNull();
+    expect(button('Another day')).not.toBeNull();
+  });
+});
+
+describe('[CONV-UI] data-model 4.47.0: "Remember this name" (R3)', () => {
+  const names = { profile: { name: 'Marie', surname: 'Dupont' }, otherNames: [{ family: 'MARTIN', use: 'maiden' }, { given: 'Mimi', use: 'nickname' }] };
+  const iy = (name?: string) => question('is-this-yours', name != null ? { context: { identity: { name, birthDate: '14.03.1985' } } } : {});
+  async function typeInto (el: Element, value: string) {
+    const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    await act(async () => { set.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); });
+  }
+
+  it('[RN1] offered after her own Yes on a name none of hers; saved by the host as she accepts or changes it, never automatically', async () => {
+    const q = iy('DURAND Marie');
+    const onRemember = vi.fn(async () => {});
+    await render(card(of([pv('c1'), q]), actions(), { rememberName: { ...names, onRemember } }));
+    expect(button('Remember this name')).toBeNull();
+    await render(card(of([pv('c1'), q, answer(q, 'confirm')]), actions(), { rememberName: { ...names, onRemember } }));
+    expect(container.textContent).toContain('“DURAND Marie”');
+    await click(button('Remember this name'));
+    expect(onRemember).not.toHaveBeenCalled();
+    const [given, family] = [...container.querySelectorAll('[data-remember-name] input')] as HTMLInputElement[];
+    expect([given.value, family.value]).toEqual(['Marie', 'DURAND']);
+    await typeInto(family, 'Durand-Lefèvre');
+    await click(button('Save'));
+    expect(onRemember).toHaveBeenCalledWith({ given: 'Marie', family: 'Durand-Lefèvre' });
+    expect(container.textContent).toContain('Name remembered');
+    expect(button('Remember this name')).toBeNull();
+  });
+
+  it('[RN2] "Not now" puts it away; a failed save says so and keeps her name', async () => {
+    const q = iy('DURAND Marie');
+    const onRemember = vi.fn(async () => { throw new Error('denied'); });
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await render(card(of([q, answer(q, 'confirm')]), actions(), { rememberName: { ...names, onRemember } }));
+    await click(button('Not now'));
+    expect(container.querySelector('[data-remember-name]')).toBeNull();
+    await render(card(of([q, answer(q, 'confirm')]), actions(), { rememberName: { ...names, onRemember } }));
+    await click(button('Remember this name'));
+    await click(button('Save'));
+    expect(container.querySelector('[data-remember-name] [role="alert"]')).not.toBeNull();
+    expect(button('Save')).not.toBeNull();
+    vi.restoreAllMocks();
+  });
+
+  it('[RN3] not offered: off by default, an automatic match, a name already hers (a nickname too), no printed name, not mine, a contact\'s app', async () => {
+    const onRemember = vi.fn();
+    const rn = { rememberName: { ...names, onRemember } };
+    const none = () => container.querySelector('[data-remember-name]') == null;
+    const q = iy('DURAND Marie');
+    await render(card(of([q, answer(q, 'confirm')]), actions()));
+    expect(none()).toBe(true);
+    await render(card(of([q, answer(q, 'confirm', { basis: 'profile-match' })]), actions(), rn));
+    expect(none()).toBe(true);
+    for (const name of ['DUPONT Marie', 'Marie MARTIN', 'dupont, marie', 'Mimi DUPONT']) {
+      const mine = iy(name);
+      await render(card(of([mine, answer(mine, 'confirm')]), actions(), rn));
+      expect(none(), name).toBe(true);
+    }
+    const picture = iy();
+    await render(card(of([picture, answer(picture, 'confirm')]), actions(), rn));
+    expect(none()).toBe(true);
+    await render(card(of([q, answer(q, 'not-mine')]), actions(), rn));
+    expect(none()).toBe(true);
+    await render(card(of([q, answer(q, 'confirm')]), null, { ...rn, viewer: 'contact', personName: 'Anna' }));
+    expect(none()).toBe(true);
+    expect(onRemember).not.toHaveBeenCalled();
+  });
+
+  it('[RN4] nameToRemember and splitPrintedName, for a host that offers it elsewhere in its thread', () => {
+    const q = iy('DURAND Marie');
+    expect(conv.nameToRemember(of([q]), names)).toBeNull();
+    expect(conv.nameToRemember(of([q, answer(q, 'confirm')]), names)).toEqual({ questionId: q.id, printed: 'DURAND Marie' });
+    expect(conv.nameToRemember(of([q, answer(q, 'confirm', { basis: 'profile-match' })]), names)).toBeNull();
+    expect(conv.splitPrintedName('DUPONT Marie Claire')).toEqual({ given: 'Marie Claire', family: 'DUPONT' });
+    expect(conv.splitPrintedName('Marie Dupont')).toEqual({ given: 'Marie', family: 'Dupont' });
+    expect(conv.splitPrintedName('DUPONT, MARIE')).toEqual({ given: 'MARIE', family: 'DUPONT' });
+    expect(conv.isKnownName('Durand Marie', { profile: names.profile, otherNames: [{ family: 'Durand' }] })).toBe(true);
+  });
+
+  it('[RN5] its texts exist in every language', () => {
+    for (const key of ['rememberName.offer', 'rememberName.action', 'rememberName.notNow', 'rememberName.check', 'rememberName.given', 'rememberName.family', 'rememberName.saved']) {
+      for (const l of ['en', 'fr', 'es', 'it', 'pt-BR']) expect((CONVERSATION_TEXTS as any)[key][l], key + ' ' + l).toBeTruthy();
+    }
   });
 });

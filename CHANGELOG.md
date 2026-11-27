@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+## [0.61.0] - 2026-11-27
+
+The forms side of data-model 4.47.0 (plan 128 SUB-F, L6). Released before any contact lists an anchored date (R8,
+release order: forms and the webapp, then the engine).
+
+### Added
+
+- Text for the notice `pages-not-read` (4.47.0, a document read page by page) in en, fr, es, it, pt-BR; it names no
+  page and no date (R6).
+- **A date with its crop** (`which-date`, `which-document-date`; `context.dates[].anchor`, 4.47.0): a date carrying
+  `anchor` is shown with the crop of her document where it is printed (`AnchoredDocumentView`), and its button
+  appears only once the crop is shown. A date whose crop cannot be shown (the file cannot be read, the picture fails,
+  an anchor on another document or without a usable box) is not offered as a one-tap date; "Another day" stays. A date
+  without `anchor` is shown as before.
+- `AnchoredDocumentView` `onStatus?: (status) => void` (`loading`, `shown`, `failed`, `page-missing`), and the type
+  `AnchoredDocumentStatus`.
+- `useDocumentConversations` option `otherNames?: OtherName[] | null` (default absent): her other names
+  (`contact/other-name-v1` contents) are passed to hds-lib's profile match as `profile.otherNames` (R3, 4.47.0); a
+  document tried before they arrived is tried again with them. Absent: her profile only, as before. Read by an hds-lib
+  whose `ProfileForMatch` has `otherNames`; an older one ignores it.
+- **"Remember this name"** (R3, 4.47.0): `QuestionCard` and `DocumentConversationCard` prop
+  `rememberName?: { profile, otherNames, onRemember } | null`, **off by default**. When given, after her own `confirm`
+  (no `basis`) on an `is-this-yours` whose printed name is none of her names, the card offers to save it; she accepts
+  or changes its given and family parts, and `onRemember({ given?, family? })` is called (the host writes the event;
+  nothing reaches the contact). Never in a contact's app. Also exported: `RememberNameOffer`, `nameToRemember`,
+  `isKnownName`, `splitPrintedName`, `namesOf` and the types `OtherName`, `NamesForMatch`, `RememberedName`,
+  `RememberNameOptions`. A host turns it on only after the production sweep of PROFILE.md § Other names.
+
 ## [0.60.0] - 2026-11-27
 
 ### Added

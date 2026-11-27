@@ -10,6 +10,7 @@ import { AnchoredDocumentView } from './AnchoredDocumentView';
 import { anchorOn, batchCandidates, isWritten, rowBlock, shownAtOf } from './rowBlock';
 import { ValueLine, ValueReview } from './ValueParts';
 import { useConversationRun, type ConversationActions } from './conversationRun';
+import type { RememberNameOptions } from './otherNames';
 import { btn, card, cx, muted, small } from './ui';
 
 export type { ConversationOutcome, ConversationActions } from './conversationRun';
@@ -49,6 +50,8 @@ export interface DocumentConversationCardProps {
   className?: string;
   /** Replaces the card's own surface classes (border, background, text colour), so it looks like the host's cards */
   surfaceClassName?: string;
+  /** "Remember this name" on her own "Yes, it is mine" (`QuestionCard`); off by default, never in a contact's app */
+  rememberName?: RememberNameOptions | null;
 }
 
 /**
@@ -61,7 +64,7 @@ export interface DocumentConversationCardProps {
  */
 export function DocumentConversationCard ({
   conversation: conv, status, sentAt, notices = [], engines, title, contactName, sourceOf, actions: givenActions, onNotMyDocument, onOpenDocument,
-  viewer = 'person', personName, locale, loadPdfJs, pdfOptions, className, surfaceClassName
+  viewer = 'person', personName, locale, loadPdfJs, pdfOptions, className, surfaceClassName, rememberName
 }: DocumentConversationCardProps) {
   // a contact's app never answers for her
   const actions = viewer === 'contact' ? null : givenActions;
@@ -124,6 +127,7 @@ export function DocumentConversationCard ({
           <QuestionCard
             key={q.item.id} question={q} contactName={contactName} sourceOf={sourceOf} busy={busy != null} canUndoMatch={!done}
             onAnswer={actions != null ? answerQ(q.item.id) : null} locale={locale} loadPdfJs={loadPdfJs} pdfOptions={pdfOptions}
+            rememberName={viewer === 'person' ? rememberName : null}
           />
         ))}
         {conv.identity !== 'not-mine' && docQuestions.map((q) => (
