@@ -67,7 +67,9 @@ vi.mock('hds-lib', async (importOriginal) => {
 });
 
 vi.mock('../src/components/StampGridPicker', () => ({
-  StampGridPicker: () => null,
+  StampGridPicker: () => null
+}));
+vi.mock('../src/components/representationAvailability', () => ({
   isRepresentationAvailable: () => false
 }));
 

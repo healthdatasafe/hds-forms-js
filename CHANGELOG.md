@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.65.1] - 2026-11-27
+
+No behaviour change: two helpers move out of component files so React Fast Refresh keeps working on them.
+
+### Changed
+
+- `permissionId` moves from `src/components/ConsentPanel.tsx` to `src/components/consentPermission.ts`, and
+  `isRepresentationAvailable` from `src/components/StampGridPicker.tsx` to `src/components/representationAvailability.ts`.
+  Neither is in the package index, which is unchanged; only a deep import of `hds-forms-js/src/components/…` sees the
+  move. `npm run lint` is back to 0 warnings (`react-refresh/only-export-components`).
+
 ### Development
 
 - Dev dependencies: vitest 3 → 4.1.12 and happy-dom 20 → 21.0.4, plus a lockfile refresh within the existing ranges
