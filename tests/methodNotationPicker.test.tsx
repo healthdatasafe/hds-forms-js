@@ -85,8 +85,8 @@ function Star ({ itemKeys, values = {}, onChange }: { itemKeys: string[]; values
 }
 
 describe('useMethodNotation', () => {
-  function Probe ({ itemKeys }: { itemKeys: string[] }) {
-    const n = useMethodNotation(itemKeys);
+  function Probe ({ itemKeys, methodId }: { itemKeys: string[]; methodId?: string }) {
+    const n = useMethodNotation(itemKeys, { methodId });
     return <pre data-n={JSON.stringify({ status: n.status, methodId: n.methodId, covers: n.covers, writes: n.writes })} />;
   }
   const read = (el: HTMLElement) => JSON.parse(el.querySelector('pre')!.getAttribute('data-n')!);
@@ -103,6 +103,14 @@ describe('useMethodNotation', () => {
     act(() => root?.unmount());
     delete settings[CERVICAL_FLUID_METHOD_KEY];
     expect(read(await mount(<Probe itemKeys={[MUCUS]} />)).status).toBe('none');
+  });
+
+  it('a given method wins over hers, and needs no setting (a professional typing a chart)', async () => {
+    expect(read(await mount(<Probe itemKeys={[MUCUS, BLEEDING]} methodId='creighton' />)))
+      .toEqual({ status: 'ready', methodId: 'creighton', covers: [MUCUS, BLEEDING], writes: [MUCUS, BLEEDING, BROWN] });
+    act(() => root?.unmount());
+    settings[CERVICAL_FLUID_METHOD_KEY] = 'creighton';
+    expect(read(await mount(<Probe itemKeys={[MUCUS]} methodId='femm' />)).status).toBe('none');
   });
 });
 

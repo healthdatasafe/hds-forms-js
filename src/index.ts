@@ -49,7 +49,7 @@ export { REPEATABLE_LABELS, REPEATABLE_OPTIONS, repeatableLabel, getItemGroup } 
 
 // Charting-method notation picker (plan 134): several items entered as one record (Creighton: sticker, number, letters)
 export { useMethodNotation } from './components/useMethodNotation';
-export type { MethodNotation } from './components/useMethodNotation';
+export type { MethodNotation, MethodNotationOptions } from './components/useMethodNotation';
 export { MethodNotationPicker } from './components/MethodNotationPicker';
 export type { MethodNotationPickerProps, NotationState } from './components/MethodNotationPicker';
 

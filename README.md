@@ -96,6 +96,8 @@ import { useMethodNotation, MethodNotationPicker, type NotationState } from 'hds
 const notation = useMethodNotation(['body-vulva-mucus-inspect', 'body-vulva-bleeding']);
 // notation.status: 'loading' | 'none' (render HDSFormField for each item) | 'ready'
 // notation.covers: the items the picker enters; notation.writes: every item key it may emit
+// A professional typing the chart of a person they follow, in that chart's method (not the signed-in person's own):
+// useMethodNotation(itemKeys, { methodId: 'creighton' })
 
 {notation.status === 'ready' && (
   <MethodNotationPicker notation={notation} values={values}
