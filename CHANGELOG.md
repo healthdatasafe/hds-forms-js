@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [0.56.1] - 2026-11-27
+
+Needs what 0.56.0 needs.
+
+### Changed
+
+- **`ChartReview`**: the day she taps is detailed under its own row (through `CycleChart`'s `rowNote`), above the next row
+  and the chart's legend, so on a phone it shows without scrolling past the legend. Nothing else moves.
+
+### Fixed
+
+- **`ChartReview`**: her records on days outside the chart's rows were counted under the chart as "not on the chart …
+  outside these cycles"; a host passing her whole record had that line with all of them. They are left out of it now.
+- **`ChartReview`** did not compile in a host built without `strictNullChecks` (its sources are type-checked by the
+  host): a refusal's reason is read with `'reason' in`, as elsewhere.
+
 ## [0.56.0] - 2026-11-26
 
 Needs hds-lib ≥ 2.74.0, data-model ≥ 4.39.0, as 0.55.0, and hds-feminine-cycle-ui ≥ 0.18.0 (peer, was ≥ 0.12.0).

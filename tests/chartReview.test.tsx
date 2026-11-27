@@ -221,6 +221,29 @@ describe('[CHART] ChartReview: the chart, the day she taps, her answers', () => 
     expect(a.dismiss).toHaveBeenCalledWith(['a1'], 'duplicate', expect.any(Number));
   });
 
+  it('the day\'s detail sits under its own row, before the next row and the legend; it follows the day to another row', async () => {
+    await render(review(actions()));
+    const cycles = () => [...container.querySelectorAll('.hdsfc-cycle')];
+    const legend = () => container.querySelector('.hdsfc-chart > .hdsfc-note')!;
+    const before = (a: Node, b: Node) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+    await click(dayButton(0, 3));
+    expect(cycles()[0].contains(detail())).toBe(true);
+    expect(before(detail()!, cycles()[1])).toBe(true);
+    expect(before(detail()!, legend())).toBe(true);
+    expect(container.querySelectorAll('[data-chart-day]')).toHaveLength(1);
+    expect(container.textContent).not.toContain('Tap a day on the chart to check it.');
+    await click(dayButton(1, 1));
+    expect(cycles()[1].contains(detail())).toBe(true);
+    expect(cycles()[0].querySelector('[data-chart-day]')).toBeNull();
+  });
+
+  it('her records on days outside the chart\'s rows are not said as "not on the chart"', async () => {
+    const elsewhere = { id: 'r9', streamIds: ['body-vulva-mucus-inspect'], type: MUCUS, content: mucusContent('6C'), time: timeOf(-40) };
+    await render(review(actions(), { recorded: [...recorded, elsewhere] }));
+    expect(container.querySelectorAll('.hdsfc-cycle')).toHaveLength(2);
+    expect(container.textContent).not.toContain('not on the chart');
+  });
+
   it('a draft day: Confirm with its values, Change one, Not on my chart; then the next day to check', async () => {
     const a = actions();
     await render(review(a));

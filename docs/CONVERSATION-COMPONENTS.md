@@ -282,7 +282,8 @@ A dated grid of a charting method (Creighton, data-model 4.36.0) checked as a ch
 `buildCycleChart({ draftRows })` (one per page and `grid.row`, a day per box; `draft`, `edited`, `incomplete`, `unread`;
 dated by her `which-row-date` answer). `ChartReview({ conversation, actions, recorded?, dayOf?, today?, sourceOf, columns?,
 lang?, contactName?, onEnterDay?, onReplace?, streamOf?, loadPdfJs?, pdfOptions? })` draws the chart (`CycleChart`) and,
-under it, the day she taps: what was read, her answers, its box on her document, Previous / Next. A draft day: Confirm,
+under the row of the day she taps (above the next row and the legend), that day: what was read, her answers, its box on
+her document, Previous / Next. A draft day: Confirm,
 Change (one value, `ValueCorrectionEditor`), Not on my chart (`skip`). A day she recorded otherwise: Keep mine
 (`duplicate`), and Replace only with `onReplace`, asked twice (confirm, then the host removes her record). A box not read:
 Enter it myself (`onEnterDay({ date, candidateIds })`: her own entry form, then `skip`; dated rows only) or Skip. A dated row
