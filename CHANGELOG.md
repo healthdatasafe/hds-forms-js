@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-11-27
+
+Needs hds-lib ≥ 2.77.0 for the Creighton change (it fetches converter v2); with an older one nothing changes.
+
+### Changed
+
+- The notation picker honours an annotation's `notFor` (Creighton model v2, plan 136): the frequency row hides once
+  the record can only be `0`, `0` alone is complete, and a frequency picked before is not stored with it
+  (`annotationAppliesTo`, `recordOf`). `2`, `2W`, `4` still require one. Editing an older `0` that carries a
+  frequency shows it; saving a new pick drops it.
+
 ## [0.56.1] - 2026-11-27
 
 Needs what 0.56.0 needs.

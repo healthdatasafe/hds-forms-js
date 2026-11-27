@@ -2,7 +2,7 @@ import React from 'react';
 import { localizeText } from 'hds-lib';
 import { RepresentationCell } from 'hds-feminine-cycle-ui';
 import { choices, compatible, pickedValue, resolve, toggle, type Selection } from '../schema/notationFacets';
-import { recordOf, type AnnotationPicks, type NotationModel } from '../schema/methodNotation';
+import { annotationAppliesTo, recordOf, type AnnotationPicks, type NotationModel } from '../schema/methodNotation';
 
 const HINT = { en: 'Incomplete: pick the rest of the record to save it.', fr: 'Incomplet : choisissez la suite de la notation pour l\'enregistrer.', es: 'Incompleto: elija el resto del registro para guardarlo.', it: 'Incompleto: scelga il resto della registrazione per salvarla.', 'pt-BR': 'Incompleto: escolha o restante do registro para salvá-lo.' };
 
@@ -33,7 +33,7 @@ const choiceClass = (pressed: boolean, disabled?: boolean) => `flex min-h-11 min
 
 /**
  * The rows of a method's notation (plan 134): a sticker row, then the method's rows (bleeding letters, number,
- * letters), then its annotation rows (frequency) while the record can still have a code. A choice that leads to no
+ * letters), then its annotation rows (frequency) while the record can still have a code they apply to. A choice that leads to no
  * record is not shown; a tap on a picked choice releases it. Under the rows: the record as written and its words, or
  * a hint while the picks are incomplete.
  *
@@ -44,7 +44,7 @@ export function NotationPicker ({ model, selection, onSelectionChange, annotatio
   const resolved = resolve(model.candidates, model.rows, selection);
   const record = recordOf(model, resolved, annotations);
   const empty = Object.keys(selection).length === 0 && Object.keys(annotations).length === 0;
-  const codePossible = compatible(model.candidates, selection).some(c => c.payload.mucus != null);
+  const stillPossible = compatible(model.candidates, selection);
 
   return (
     <div className='space-y-2' data-hds-notation=''>
@@ -82,7 +82,9 @@ export function NotationPicker ({ model, selection, onSelectionChange, annotatio
           </div>
         );
       })}
-      {codePossible && model.annotations.map(a => {
+      {model.annotations.map(a => {
+        // Shown while the record can still have a code the annotation applies to (not a letter alone, not `notFor`).
+        if (!stillPossible.some(c => annotationAppliesTo(a, c.payload.mucus))) return null;
         const rowLabel = tx(a.label) || a.id;
         return (
           <div key={a.id} role='group' aria-label={rowLabel} data-hds-notation-row={a.id} className='flex flex-wrap items-center gap-2'>

@@ -22,7 +22,14 @@ export interface NotationAnnotationLike {
   id: string;
   label?: any;
   requiredAtEntry?: boolean;
+  /** The codes it is neither asked with nor stored on (Creighton frequency: `0`, converter v2). Absent: every code. */
+  notFor?: string[];
   values: Array<{ value: string; label?: any }>;
+}
+
+/** Whether an annotation applies to a record with this mucus code (`notFor`); none applies to a record without one. */
+export function annotationAppliesTo (annotation: NotationAnnotationLike, mucus: string | undefined): boolean {
+  return mucus != null && !(Array.isArray(annotation.notFor) && annotation.notFor.includes(mucus));
 }
 
 /** Picked annotation values, by annotation id. */
@@ -221,19 +228,22 @@ export function buildNotation ({ methodDef, rep, itemKeys, current, dayContext }
 }
 
 /**
- * Whether the record is complete and how it is written: a resolved candidate, plus every required annotation when
- * it has a code ("L 6C X2"). Annotations of a record without a code (a bleeding letter alone) are left out.
+ * Whether the record is complete and how it is written: a resolved candidate, plus every required annotation that
+ * applies to its code ("L 6C X2"). Annotations of a record without a code (a bleeding letter alone) or of a code in
+ * their `notFor` (Creighton `0`) are left out, even when picked.
  */
 export function recordOf (model: NotationModel, resolved: { payload: NotationPayload } | null, picks: AnnotationPicks): { valid: boolean; text?: string; annotations?: AnnotationPicks } {
   if (!resolved) return { valid: false };
-  if (resolved.payload.mucus == null) return { valid: true, text: resolved.payload.text };
+  const mucus = resolved.payload.mucus;
+  if (mucus == null) return { valid: true, text: resolved.payload.text };
+  const applying = model.annotations.filter(a => annotationAppliesTo(a, mucus));
   const annotations: AnnotationPicks = {};
-  for (const a of model.annotations) {
+  for (const a of applying) {
     const v = picks[a.id];
     if (v != null && a.values.some(x => x.value === v)) annotations[a.id] = v;
   }
-  const valid = model.annotations.every(a => !a.requiredAtEntry || annotations[a.id] != null);
-  const text = [resolved.payload.text, ...model.annotations.map(a => annotations[a.id]).filter(Boolean)].join(' ');
+  const valid = applying.every(a => !a.requiredAtEntry || annotations[a.id] != null);
+  const text = [resolved.payload.text, ...applying.map(a => annotations[a.id]).filter(Boolean)].join(' ');
   return { valid, text, annotations: Object.keys(annotations).length ? annotations : undefined };
 }
 

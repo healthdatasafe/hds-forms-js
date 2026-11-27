@@ -1,14 +1,14 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { act } from 'react';
-import creightonFixture from './fixtures/creighton-v1.json';
+import creightonFixture from './fixtures/creighton-v2.json';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 
 /**
- * Plan 134 B4: the Creighton three-row entry, built from the generated definition (tests/fixtures/creighton-v1.json).
+ * Plan 134 B4: the Creighton three-row entry, built from the generated definition (tests/fixtures/creighton-v2.json).
  */
 const creighton: any = structuredClone(creightonFixture);
 const femm = {
@@ -178,6 +178,27 @@ describe('MethodNotationPicker', () => {
     await tap(el, 'bleeding', 'H');
     expect(row(el, 'frequency')).toBeNull();
     expect(calls.at(-1)).toEqual([{ [MUCUS]: undefined, [BLEEDING]: 0.75, [BROWN]: undefined }, { empty: false, valid: true, text: 'H' }]);
+  });
+
+  it('dry 0 takes no frequency (converter v2, practitioner Q1): the row hides, a frequency picked before is not stored', async () => {
+    settings[CERVICAL_FLUID_METHOD_KEY] = 'creighton';
+    const calls: any[] = [];
+    const el = await mount(<Star itemKeys={[MUCUS, BLEEDING]} onChange={(p, s) => calls.push([p, s])} />);
+    await tap(el, 'frequency', 'X2');
+    await tap(el, 'number', '0');
+    expect(row(el, 'frequency')).toBeNull();
+    expect(convertMethodToEvent).toHaveBeenLastCalledWith('cervical-fluid', 'creighton', '0');
+    expect(calls.at(-1)).toEqual([
+      { [MUCUS]: { vectors: { v: 1 }, source: { key: 'creighton', sourceData: '0' } }, [BLEEDING]: undefined, [BROWN]: undefined },
+      { empty: false, valid: true, text: '0' }
+    ]);
+    // 2 (damp) still takes one
+    await tap(el, 'number', '0');
+    await tap(el, 'number', '2');
+    expect(shown(el, 'frequency')).toEqual(['X2']);
+    expect(calls.at(-1)[1]).toEqual({ empty: false, valid: true, text: '2 X2' });
+    await tap(el, 'frequency', 'X2');
+    expect(calls.at(-1)[1].valid).toBe(false);
   });
 
   it('opens a stored record as picked: a code not offered (10), its frequency and a bleeding flow', async () => {
