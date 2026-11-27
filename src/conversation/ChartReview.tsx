@@ -111,6 +111,14 @@ export function ChartReview ({
   const built = buildCycleChart<ChartDraftEvent | ChartEvent>(recorded, rep, { dayOf: (e) => dayOf?.(e as ChartEvent) ?? null, today: today ?? localToday(), draftRows: rows });
   // her records on other days are not part of this chart: never said as "not on the chart"
   const model = { ...built, unplaced: built.unplaced.filter((u) => u.reason !== 'outside-rows') };
+  // what she confirmed or corrected from this chart is the chart's own: a day is "recorded otherwise" only by a record
+  // made elsewhere, never by her correction of one value while another of the day is still open
+  const ownWritten = new Set(conversation.proposedValues.flatMap((pv) => (pv.writtenEventId != null ? [pv.writtenEventId] : [])));
+  for (const c of model.cycles) {
+    for (const d of c.days) {
+      if (d.relation === 'differs' && d.events.every((e) => typeof e.id === 'string' && ownWritten.has(e.id))) delete d.relation;
+    }
+  }
   modelRef.current = model;
 
   const refOf = (day: ChartDay<any>): ChartDayRef | null => (day.draft?.ref as ChartDayRef | undefined) ?? null;

@@ -275,6 +275,21 @@ describe('[CHART] ChartReview: the chart, the day she taps, her answers', () => 
     expect(a.correct).toHaveBeenCalledWith('a3b', expect.objectContaining({ itemKey: 'body-vulva-bleeding', content: 0.55 }), expect.any(Number));
   });
 
+  it('a value she corrected from this chart is never "recorded otherwise": the day\'s other value stays to confirm', async () => {
+    const a9 = mucus('a9', 1, 9, '2', { frequency: 'X1' });
+    const items = [...chart(), a9, answer(a9, 'correct', { candidateIds: ['a9'], written: [{ candidateId: 'a9', eventId: 'w9' }] }), bleeding('a9b', 1, 9, 0.35)];
+    const mine = { id: 'w9', streamIds: ['body-vulva-mucus-inspect'], type: MUCUS, content: mucusContent('2', 'X2'), time: timeOf(9) };
+    const a = actions();
+    await render(review(a, { recorded: [...recorded, mine] }, items));
+    expect(container.querySelector('td[data-relation="differs"] .hdsfc-sr')?.textContent ?? '').not.toMatch(/^Day 9,/);
+    await click(dayButton(0, 9));
+    const d = detail()!;
+    expect(d.textContent).not.toContain('You recorded this day otherwise.');
+    expect(button('Keep mine', d)).toBeNull();
+    await click(button('Confirm', d));
+    expect(a.confirm).toHaveBeenCalledWith(['a9b'], expect.any(Number));
+  });
+
   it('recorded otherwise: Keep mine; Replace only with onReplace, after a second step, confirm then the host removes hers', async () => {
     const a = actions();
     await render(review(a));
