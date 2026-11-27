@@ -29,6 +29,9 @@ const itemDef = {
   data: { type: 'convertible', label: { en: 'Cervical fluid' }, streamId: ITEM, eventType: TYPE, 'converter-engine': { key: 'euclidian-distance', version: 'v0', models: 'cervical-fluid' } }
 };
 
+const PEAK = 'fertility-cycles-peak-day';
+const peakDef = { key: PEAK, data: { type: 'checkbox', label: { en: 'Mucus peak day' }, streamId: PEAK, eventType: 'activity/plain' } };
+
 vi.mock('hds-lib', async (importOriginal) => {
   const real: any = await importOriginal();
   return {
@@ -36,7 +39,7 @@ vi.mock('hds-lib', async (importOriginal) => {
     localizeText: (t: any) => (typeof t === 'string' ? t : (t?.[lang] ?? t?.en ?? '')),
     HDSSettings: { isHooked: true, get: (k: string) => settings[k] },
     getHDSModel: () => ({
-      itemsDefs: { forKey: (k: string) => (k === ITEM ? itemDef : null) },
+      itemsDefs: { forKey: (k: string) => (k === ITEM ? itemDef : k === PEAK ? peakDef : null) },
       eventTypes: { getEventTypeDefinition: () => null },
       converters: {
         getEngine: () => (loaded ? engine : undefined),
@@ -82,6 +85,12 @@ describe('proposalText of an observation', () => {
     expect(textOf(value('10KL'))).toBe('10KL — Stretchy, clear, lubricative (Creighton)');
     lang = 'fr';
     expect(textOf(value('10KL', { frequency: 'AD' }))).toContain(' · AD — toute la journée (4 fois ou plus) (');
+  });
+
+  it('a checkbox without content (the peak day) says "Yes", the day being said beside it, never a date of nothing', () => {
+    expect(proposalText({ itemKey: PEAK, type: 'activity/plain', content: null })).toBe('Yes');
+    lang = 'fr';
+    expect(proposalText({ itemKey: PEAK, type: 'activity/plain', content: null })).toBe('Oui');
   });
 
   it('is never the observation converted to the method she displays', () => {

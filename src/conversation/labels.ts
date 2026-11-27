@@ -143,6 +143,9 @@ export function proposalText (p: { itemKey?: string; type?: string; content?: un
     const def = typeof p.itemKey === 'string' ? getHDSModel().itemsDefs.forKey(p.itemKey, false) : null;
     const read = readObservationText(def?.data, p.content);
     if (read != null) return read;
+    // a checkbox without content (the peak day): its day is the data, said beside it; read alone it would be the date of
+    // an event with no time ("NaN.NaN.NaN")
+    if (p.content == null && def?.data?.type === 'checkbox') return tx('yes');
     const text = eventToShortText({ type: p.type, content: p.content, streamIds: def != null ? [def.data.streamId] : [], clientData: p.clientData ?? {} } as any);
     return typeof text === 'string' && text !== '' ? text : null;
   } catch {
