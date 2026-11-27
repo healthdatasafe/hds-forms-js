@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.65.0] - 2026-11-27
+
+The status bubble's value count is the number of results read: "88 values", as "88 results read on this picture".
+
+### Changed
+
+- `conversationProgress`: `values` no longer counts the boxes with writing that were not read (`notRead`: `unmapped`,
+  reason `not-read`), nor `keptAside`. They keep their own line ("6 boxes with writing were not read"), so a picture of
+  94 boxes, 6 of them not read, says "88 values" in the bubble, "88 results read on this picture" under it (D64).
+
 ### Fixed
 
 - Tests: `vite.config.ts` dedupes `react` and `react-dom`, so the suite also passes with `hds-feminine-cycle-ui` linked

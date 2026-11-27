@@ -1,7 +1,7 @@
 import { cmcConversation } from 'hds-lib';
 import type { ConversationItem, DocumentConversation, ProposedValueView, QuestionView } from 'hds-lib';
 import { alreadyInRecord, batchCandidates, isWritten, rowBlock, type RowBlock, type RowBlockOptions } from './rowBlock';
-import { tx } from './labels';
+import { notRead, tx } from './labels';
 import { ON_HOLD } from './workInProgress';
 
 /**
@@ -168,6 +168,7 @@ export function nextStep (conv: DocumentConversation, engines: readonly string[]
  * from the contact's `counts`, which also count the values of rows not dated yet: one total per document, B-2026-11-27-8)
  */
 export interface ConversationProgress {
+  /** the values read: a box with writing that was not read (`notRead`) is not one, it keeps its own line (D64) */
   values: number;
   /** every question about the document's values, answered or not */
   questions: number;
@@ -244,7 +245,10 @@ export function conversationProgress (conv: DocumentConversation, engines: reado
   for (const id of written) duplicates.delete(id);
   // a value re-proposed under a new candidate counts once: its replaced candidate (named by her answer about it) not
   const replaced = new Set(conv.proposedValues.filter((pv) => pv.state === 'replaced' && !present.has(pv.candidateId)).map((pv) => pv.candidateId));
-  const candidates = new Set([...present.keys(), ...answeredBy.keys(), ...written].filter((id) => !replaced.has(id)));
+  // a box with writing that was not read is no value: it has its own line ("6 boxes with writing were not read"), and
+  // "88 values" is the number of "88 results read on this picture" (D64)
+  const unread = new Set(conv.proposedValues.filter((pv) => notRead(pv.item.content)).map((pv) => pv.candidateId));
+  const candidates = new Set([...present.keys(), ...answeredBy.keys(), ...written].filter((id) => !replaced.has(id) && !unread.has(id)));
   let answered = 0;
   let waitingOnContact = 0;
   let keptAside = 0;
