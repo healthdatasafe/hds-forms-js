@@ -447,6 +447,20 @@ describe('[CONV-UI] bubbles and texts', () => {
     expect(container.textContent).toContain('one column per day');
     expect(container.textContent).not.toContain('cannot show yet');
   });
+  it('data-model 4.39.0 and 4.45.0 notices have their own words in every language, with the contact\'s name', () => {
+    const codes = ['columns-not-read', 'several-result-columns', 'lines-may-be-missing', 'grid-not-located', 'kind-not-read'];
+    for (const l of ['en', 'fr', 'es', 'it', 'pt-BR']) {
+      lang = l;
+      const unknown = conv.noticeText('x-acme-hello', 'Dr Test');
+      for (const code of codes) {
+        const text = conv.noticeText(code, 'Dr Test');
+        expect(text, l + ' ' + code).not.toBe(unknown);
+        expect(text, l + ' ' + code).toContain('Dr Test');
+        expect(text, l + ' ' + code).not.toMatch(/chart|graphique|gráfico|grafico/i);
+      }
+    }
+    lang = 'en';
+  });
   it('isWorking: received and reading (and an unknown status, R8) are work in progress; the rest, or a stale one, is not', () => {
     const at = (status: string, time = 1000) => ({ hds: { kind: 'task-status', status }, time });
     for (const s of ['received', 'reading', 'something-new']) expect(conv.isWorking(at(s), 1060), s).toBe(true);
