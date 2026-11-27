@@ -23,6 +23,8 @@ Needs hds-lib ≥ 2.74.0, data-model ≥ 4.39.0, as 0.55.0, and hds-feminine-cyc
 
 - `hds-feminine-cycle-ui` was bundled into `js/` though it is a peer dependency (since 0.42.0): a host loaded a second
   copy. It is external now, like `hds-lib` and `pdfjs-dist`.
+- A proposed observation of one field (`{ mucus: '10KL' }`) read while the converter is not loaded was said as JSON
+  ("{"mucus":"10KL"} · X2"): it is said by its code ("10KL · X2 (creighton)").
 
 ### Added (test app)
 

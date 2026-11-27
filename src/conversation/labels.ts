@@ -123,8 +123,10 @@ function readObservationText (itemData: any, content: any): string | null {
   const source = content?.source;
   if (itemData?.type !== 'convertible' || typeof source?.key !== 'string' || source.key === '_raw' || source.sourceData == null) return null;
   const methodDef = getHDSModel().converters?.getEngine(itemData['converter-engine']?.models)?.getMethodDef(source.key) as any;
-  if (methodDef == null && typeof source.sourceData === 'object') return null;
-  const parts = [observationLabel(methodDef, source.sourceData)];
+  // the converter not loaded: a value of one field ({ mucus: '10KL' }) is said by its code, never as JSON
+  const fields = methodDef == null && typeof source.sourceData === 'object' ? Object.values(source.sourceData) : null;
+  if (fields != null && (fields.length !== 1 || fields[0] == null || typeof fields[0] === 'object')) return null;
+  const parts = [observationLabel(methodDef, fields != null ? fields[0] : source.sourceData)];
   for (const [id, value] of Object.entries(source.annotations ?? {})) {
     if (typeof value !== 'string' || value === '') continue;
     const known = methodDef?.notation?.annotations?.find((a: any) => a.id === id)?.values?.find((v: any) => v.value === value);
