@@ -254,12 +254,16 @@ An option the version cannot label is shown, not selectable. Every choice questi
 ### `DocumentFieldsEditor`
 
 The document's kind (the pack's `documentKinds`) and date with its precision, prefilled with the proposal; returns
-only what she changed, for `confirmDocument`, and what she ticked about filing (`filingOf`).
+what she changed (plus the `initial` values she kept, below), for `confirmDocument`, and what she ticked about filing
+(`filingOf`).
 
 `initial?: { documentKind?, day? }` gives starting values that are hers (e.g. read from the file by the host, outside a
 conversation): they take the place of the proposal's and are sent on Save unless she clears or changes them, even when
-the proposal says the same. A kind the pack does not list, or a day not `YYYY-MM-DD`, is ignored. Read when the editor
-mounts: mount it once the values are known.
+the proposal says the same. So an `initial` value she keeps is **confirmed** on Save: it is written on the document and
+its pending entry goes. The host must therefore show that these values were read from the file, for her to check them.
+A kind the pack does not offer (unknown or deprecated), or a day that is not a real `YYYY-MM-DD` date (`2021-02-31`,
+`2021-13-01`), is ignored. Read once, when the editor mounts: mount it once the values are known (a later `initial` is
+not taken).
 
 ### `ValueCorrectionEditor`
 

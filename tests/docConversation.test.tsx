@@ -17,7 +17,8 @@ const ITEMS: Record<string, any> = {
 const KINDS: Record<string, any> = {
   'laboratory-report': { key: 'laboratory-report', label: { en: 'Laboratory report' } },
   'administrative-document': { key: 'administrative-document', label: { en: 'Administrative document' } },
-  other: { key: 'other', label: { en: 'Other document' } }
+  other: { key: 'other', label: { en: 'Other document' } },
+  'old-report': { key: 'old-report', label: { en: 'Old report' }, deprecated: true }
 };
 vi.mock('hds-lib', async (importOriginal) => {
   const real: any = await importOriginal();
@@ -26,7 +27,7 @@ vi.mock('hds-lib', async (importOriginal) => {
     localizeText: (t: any) => (typeof t === 'string' ? t : (t?.en ?? '')),
     getHDSModel: () => ({
       itemsDefs: { forKey: (k: string) => ITEMS[k] ?? null, forEvent: (e: any) => ITEMS[e.streamIds?.[0]] ?? null },
-      documentKinds: { label: (k: string) => KINDS[k]?.label.en ?? null, getAll: () => Object.values(KINDS) }
+      documentKinds: { label: (k: string) => KINDS[k]?.label.en ?? null, getAll: () => Object.values(KINDS).filter((k) => !k.deprecated) }
     }),
     eventToShortText: (e: any) => `${e.content} µg/L`,
     cmcConversation: {
@@ -331,6 +332,44 @@ describe('[DOC] the document step and her note', () => {
       expect((container.querySelector('select') as HTMLSelectElement).value).toBe('laboratory-report');
       expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2020-11-05');
       expect(button('Save')!.disabled).toBe(true);
+    });
+
+    it('a day that is not a real date is ignored (2021-02-31, 2021-13-01): the proposal\'s day stays, nothing sent', async () => {
+      for (const bad of ['2021-02-31', '2021-13-01', '2021-13-45']) {
+        await render(editor({ proposal: PROPOSAL, initial: { day: bad } }));
+        expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2020-11-05');
+        expect(button('Save')!.disabled).toBe(true);
+        await render(editor({ initial: { day: bad } }));
+        expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('');
+        expect(button('Save')!.disabled).toBe(true);
+      }
+    });
+
+    it('a deprecated kind is ignored', async () => {
+      await render(editor({ proposal: PROPOSAL, initial: { documentKind: 'old-report' } }));
+      expect((container.querySelector('select') as HTMLSelectElement).value).toBe('laboratory-report');
+      expect(button('Save')!.disabled).toBe(true);
+    });
+
+    it('read once at mount: a later initial does not take over the proposal\'s values', async () => {
+      const onSubmit = vi.fn();
+      await render(editor({ proposal: PROPOSAL, onSubmit }));
+      await act(async () => { root!.render(editor({ proposal: PROPOSAL, initial: { documentKind: 'administrative-document', day: '2021-03-04' }, onSubmit })); });
+      expect((container.querySelector('select') as HTMLSelectElement).value).toBe('laboratory-report');
+      expect((container.querySelector('input[type="date"]') as HTMLInputElement).value).toBe('2020-11-05');
+      expect(button('Save')!.disabled).toBe(true);
+    });
+
+    it('only pending fields: a kind not pending is not sent; "I do not know the date" wins over initial.day', async () => {
+      const onSubmit = vi.fn();
+      await render(editor({ pending: ['time'], initial: { documentKind: 'administrative-document', day: '2021-03-04' }, onSubmit }));
+      expect(container.querySelector('select')).toBeNull();
+      await click(button('Save'));
+      expect(onSubmit).toHaveBeenLastCalledWith({ time: Date.parse('2021-03-04T12:00:00Z') / 1000, timePrecision: 'day' }, undefined);
+      const unknown = container.querySelector('[data-document-fields-editor] input[type="checkbox"]') as HTMLInputElement;
+      await click(unknown);
+      await click(button('Save'));
+      expect(onSubmit).toHaveBeenLastCalledWith({ timePrecision: 'unknown' }, undefined);
     });
   });
 

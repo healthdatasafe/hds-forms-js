@@ -12,8 +12,8 @@ export interface DocumentFieldsEditorProps {
   proposal?: { documentKind?: string; time?: number; timePrecision?: string } | null;
   /**
    * Starting values that are hers (e.g. read from the file by the host): shown in place of the proposal's and sent on Save
-   * unless she clears or changes them. A kind the pack does not list, or a day not `YYYY-MM-DD`, is ignored. Read when the
-   * editor mounts.
+   * unless she clears or changes them, so Save confirms them. A kind the pack does not offer (unknown or deprecated), or a
+   * day that is not a real `YYYY-MM-DD` date, is ignored. Read once, when the editor mounts.
    */
   initial?: { documentKind?: string; day?: string } | null;
   busy?: boolean;
@@ -21,25 +21,34 @@ export interface DocumentFieldsEditorProps {
   filingOf?: (documentKind: string) => StepFiling | null;
   /** The step's own tick and its key (`ConversationStepBubble`): what she chose on the step holds here too, for the same place and readers */
   filingTick?: { stepKey: string; tick: [StepFilingTick, (tick: StepFilingTick) => void] };
-  /** Only what she changed (hds-lib `DocumentFields`): a kind key, a day, or `timePrecision: 'unknown'`; `filing` when she ticked it */
+  /** What she changed, plus the `initial` values she kept (hds-lib `DocumentFields`): a kind key, a day, or `timePrecision: 'unknown'`; `filing` when she ticked it */
   onSubmit: (correction: DocumentFields, filing?: StepFiling) => void;
   onCancel: () => void;
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
+/** A real calendar day as `YYYY-MM-DD` (not `2021-02-31`, not `2021-13-01`) */
+function isDay (day: string): boolean {
+  if (!DAY.test(day)) return false;
+  const time = dayToTime(day);
+  return Number.isFinite(time) && new Date(time * 1000).toISOString().slice(0, 10) === day;
+}
+
 /**
  * Her own date and kind for a document, instead of the contact's proposal: the pack's kinds (not deprecated), a day, or
- * "I do not know the date". Only the fields still waiting on the document are offered; only what she changed is sent,
- * plus the `initial` values she kept.
+ * "I do not know the date". Only the fields still waiting on the document are offered; what she changed is sent, plus
+ * the `initial` values she kept.
  */
 export function DocumentFieldsEditor ({ pending, proposal, initial, busy = false, filingOf, filingTick, onSubmit, onCancel }: DocumentFieldsEditorProps) {
   const kindId = useId();
   const dayId = useId();
   const kinds = documentKindOptions();
   const proposalDay = typeof proposal?.time === 'number' && proposal.timePrecision === 'day' ? new Date(proposal.time * 1000).toISOString().slice(0, 10) : '';
-  const herKind = initial?.documentKind != null && kinds.some((k) => k.key === initial.documentKind) ? initial.documentKind : null;
-  const herDay = initial?.day != null && DAY.test(initial.day) ? initial.day : null;
+  const [{ herKind, herDay }] = useState(() => ({
+    herKind: initial?.documentKind != null && kinds.some((k) => k.key === initial.documentKind) ? initial.documentKind : null,
+    herDay: initial?.day != null && isDay(initial.day) ? initial.day : null
+  }));
   const [kind, setKind] = useState(herKind ?? proposal?.documentKind ?? '');
   const [day, setDay] = useState(herDay ?? proposalDay);
   const [unknownDate, setUnknownDate] = useState(false);
