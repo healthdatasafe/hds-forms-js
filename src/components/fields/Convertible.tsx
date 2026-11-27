@@ -330,8 +330,8 @@ export function Convertible ({ label, description, value, onChange, converterEng
       {/* Where the stored value comes from; "recorded as" when it was recorded in another method */}
       {source && (
         <div className='mt-2 rounded bg-gray-100 px-2 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300'>
-          {localizeText(recordedElsewhere ? T.recordedAs : T.source)}: <span className='font-medium'>{observationLabel(engine.getMethodDef(source.key), source.sourceData)}</span>
-          <span className='ml-1'>({localizeText(engine.getMethodDef(source.key)?.name) || source.key})</span>
+          {localizeText(recordedElsewhere ? T.recordedAs : T.source)}: <span className='font-medium'>{observationLabel(engine.getMethodDef(source.key), source.sourceData)}</span>{' '}
+          <span>({localizeText(engine.getMethodDef(source.key)?.name) || source.key})</span>
         </div>
       )}
     </div>

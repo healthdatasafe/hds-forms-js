@@ -29,7 +29,7 @@ export { documentValuesOf, type DocumentValues } from './documentValues';
 export { readSourceAnchor, anchorDocumentId, anchoredAttachment, documentKindOf } from './sourceAnchor';
 export { ConversationStepBubble, DocumentStatusBubble } from './ConversationStepBubble';
 export type { ConversationStepBubbleProps, DocumentStatusBubbleProps } from './ConversationStepBubble';
-export { nextStep, conversationProgress, documentOrder, progressText } from './nextStep';
+export { nextStep, conversationProgress, documentOrder, progressText, toDateText } from './nextStep';
 export type { ConversationStep, StepOptions, ConversationProgress } from './nextStep';
 export { useStepChoices, STEP_CHOICES_KEY } from './useStepChoices';
 export type { StepChoices, StepChoicesStore, StepChoiceHandlers } from './useStepChoices';

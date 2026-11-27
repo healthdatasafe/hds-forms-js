@@ -12,7 +12,7 @@ import { anchorOn, shownAtOf } from './rowBlock';
 import { blockText, useConversationRun, type ConversationActions, type StepFiling } from './conversationRun';
 import { StepFilingChoice } from './StepFilingChoice';
 import { useStepFiling, type StepFilingTick } from './useStepFiling';
-import { progressText, type ConversationProgress, type ConversationStep } from './nextStep';
+import { progressText, toDateText, type ConversationProgress, type ConversationStep } from './nextStep';
 import { btn, bubbleIn, cx, small } from './ui';
 
 const wide = 'w-full max-w-[92%]';
@@ -431,6 +431,7 @@ export function DocumentStatusBubble ({ title, status, sentAt, notices = [], pro
         </p>
         <TaskStatusLine status={(status?.hds?.status as string | undefined) ?? null} errorCode={status?.hds?.errorCode} contactName={contactName} sinceS={status?.time ?? sentAt} locale={locale} />
         {progress != null && progressText(progress) !== '' && <p className={small}>{progressText(progress)}</p>}
+        {progress != null && toDateText(progress) !== '' && <p className={small} data-to-date=''>{toDateText(progress)}</p>}
         {notices.map((n) => <p key={n.alertEventId} className='mt-1 text-sm'>{noticeText(String(n.hds.code), contactName)}</p>)}
         {done && saved > 0 && (
           <p className='mt-1 text-sm font-medium' data-closing-line=''>
