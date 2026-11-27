@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cmcConversation, cmcDocuments, getHDSModel, HDSProfile } from 'hds-lib';
 import type { pryv as Pryv, ConversationAlert, ConversationItem, DocumentAlert, DocumentConversation, ScopePermission } from 'hds-lib';
 import type { ConversationActions, ConversationOutcome } from './conversationRun';
+import type { OtherName } from './otherNames';
 
 /** A relationship as the conversation reads it (hds-lib `CmcRelationship` fits) */
 export interface ConversationRel {
@@ -62,11 +63,26 @@ export interface DocumentConversationsOptions {
   onGranted?: () => Promise<void> | void;
   /** Answer `is-this-yours` itself on a profile match (R3, `basis: profile-match`); default true */
   autoConfirmIdentity?: boolean;
+  /**
+   * Her other names (data-model 4.47.0, the `contact/other-name-v1` contents of her `other-names` events, trashed ones
+   * left out): the profile match also compares them (R3), on an hds-lib that reads `ProfileForMatch.otherNames`. Absent
+   * or null: her profile only, as before. A document tried before they arrived is tried again with them.
+   */
+  otherNames?: readonly OtherName[] | null;
   /** Mark the proposed values her record already holds (R3, `basis: existing-value`); default true */
   autoMarkDuplicates?: boolean;
 }
 
 const SETTLED = new Set(['awaiting-answers', 'done']);
+
+/** An other name with its string parts only (`contact/other-name-v1` content), as hds-lib's match reads it */
+function plainName (o: OtherName): { given?: string; family?: string; use?: string } {
+  return {
+    ...(typeof o.given === 'string' ? { given: o.given } : {}),
+    ...(typeof o.family === 'string' ? { family: o.family } : {}),
+    ...(typeof o.use === 'string' ? { use: o.use } : {})
+  };
+}
 
 /**
  * What her app checks before she sees a step, for a document once the contact waits for her answers: whether her
@@ -288,16 +304,23 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
 
   const autoTried = useRef(new Set<string>());
   const auto = opts.autoConfirmIdentity !== false;
+  // her other names by value: a list the host rebuilds on each render is the same names
+  const otherNames = opts.otherNames ?? null;
+  const namesKey = otherNames == null ? '' : JSON.stringify(otherNames.map((o) => [o?.given ?? null, o?.family ?? null, o?.use ?? null]));
+  const otherNamesRef = useRef(otherNames);
+  otherNamesRef.current = otherNames;
   useEffect(() => {
     if (!auto || connection == null || !HDSProfile.isHooked) return;
-    const pending = state.documents.filter((d) => d.conversation.identity === 'open' && !autoTried.current.has(d.key));
+    const triedKey = (d: DocumentConversationData): string => `${d.key}|${namesKey}`;
+    const pending = state.documents.filter((d) => d.conversation.identity === 'open' && !autoTried.current.has(triedKey(d)));
     if (pending.length === 0) return;
-    let profile: { name?: string; surname?: string; dateOfBirth?: string };
-    try { profile = HDSProfile.getAll() as typeof profile; } catch { return; }
+    let profile: { name?: string; surname?: string; dateOfBirth?: string; otherNames?: Array<{ given?: string; family?: string; use?: string }> };
+    try { profile = { ...(HDSProfile.getAll() as typeof profile) }; } catch { return; }
+    if (otherNamesRef.current != null) profile.otherNames = otherNamesRef.current.filter((o) => o != null).map(plainName);
     (async () => {
       let answered = false;
       for (const d of pending) {
-        autoTried.current.add(d.key);
+        autoTried.current.add(triedKey(d));
         try {
           if (await cmcConversation.autoConfirmIdentity(connection, d.rel as any, { about: d.about, profile }) != null) answered = true;
         } catch (e) {
@@ -306,7 +329,7 @@ export function useDocumentConversations (connection: Pryv.Connection | null, re
       }
       if (answered) reload();
     })();
-  }, [auto, connection, state.documents, reload]);
+  }, [auto, connection, state.documents, reload, namesKey]);
 
   // R3, 4.26.0: a proposed document none of whose fields still waits on the document (she set them) settles itself
   const settleTried = useRef(new Set<string>());
