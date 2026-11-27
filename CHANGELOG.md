@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.62.0] - 2026-11-27
+
+### Changed
+
+- `DocumentFieldsEditor`: a kind given by `initial` (guessed from the file by the host) can be declined. "—" is then
+  selectable and sends no kind. Without `initial.documentKind`, "—" stays disabled as before (plan 144 W1 review).
+
 ## [0.61.0] - 2026-11-27
 
 The forms side of data-model 4.47.0 (plan 128 SUB-F, L6). Released before any contact lists an anchored date (R8,
