@@ -65,7 +65,14 @@ export function canonicalObservation (methodDef: any, data: any): any {
   const components: any[] = methodDef?.components || [];
   if (components.length !== 1) return data;
   const field = components[0].field;
-  const value = data !== null && typeof data === 'object' && field in data ? data[field] : data;
+  let value = data;
+  if (data !== null && typeof data === 'object') {
+    // `{ <field>: value }`, or one key under another name: older Cyclefeminin sympto-thermal days were written
+    // `{ mucus: 'creamy' }` though the method's field is `observation` (B-2026-11-23-2)
+    const keys = Object.keys(data);
+    if (field in data) value = data[field];
+    else if (keys.length === 1) value = data[keys[0]];
+  }
   const options: any[] = components[0].options || [];
   const exact = options.find((o: any) => o.value === value);
   if (exact) return exact.value;

@@ -167,6 +167,11 @@ describe('stored observation shapes (plan 131)', () => {
     expect(canonicalObservation(methodDefs.creighton, { mucus: '10KL' })).toBe('10KL');
     expect(observationLabel(methodDefs.creighton, { mucus: '10KL' })).toBe('10KL — Stretchy, clear');
   });
+  it('unwraps a one-key object stored under another field name (older Cyclefeminin, B-2026-11-23-2)', () => {
+    const symptoThermal = { components: [{ field: 'observation', options: [{ value: 'creamy', label: { en: 'Creamy' } }] }] };
+    expect(canonicalObservation(symptoThermal, { mucus: 'creamy' })).toBe('creamy');
+    expect(observationLabel(symptoThermal, { mucus: 'creamy' })).toBe('Creamy');
+  });
   it('reads another spelling of a case-insensitive method as the option itself', () => {
     expect(canonicalObservation(methodDefs.creighton, '10kl')).toBe('10KL');
     expect(observationLabel(methodDefs.creighton, '8c')).toBe('8C — Cloudy');

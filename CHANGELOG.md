@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.65.2] - 2026-11-28
+
+- `canonicalObservation` (so the method picker and `observationLabel`): a single-component observation stored as a
+  one-key object under another field name is read as its value. Older Cyclefeminin imports wrote sympto-thermal days as
+  `{ mucus: 'creamy' }` though the method's field is `observation`, so the picker showed no selection (B-2026-11-23-2).
+
 ## [0.65.1] - 2026-11-27
 
 No behaviour change: two helpers move out of component files so React Fast Refresh keeps working on them.
